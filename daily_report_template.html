@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MII Engineering - Supervisor Daily Report</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f5f7fa;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --ref-text: #8899aa;
+        }
+
+        html { font-size: 11.5px; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.4;
+        }
+
+        /* ===== PAGE CONTAINER ===== */
+        .page {
+            width: 297mm;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 10mm 12mm 12mm 12mm;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+        }
+        .header-left h1 {
+            font-size: 1.6rem;
+            color: var(--primary);
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .header-left .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+        .header-right {
+            text-align: right;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        .doc-ref { font-weight: 600; color: var(--primary); }
+
+        /* ===== INFO GRID ===== */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 0;
+            border: 1.5px solid var(--primary);
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+        .info-cell {
+            padding: 4px 8px;
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .info-cell:nth-child(4n) { border-right: none; }
+        .info-cell:nth-last-child(-n+4) { border-bottom: none; }
+        .info-cell label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+        }
+        .info-cell input, .info-cell select {
+            border: none;
+            font-size: 1rem;
+            width: 100%;
+            padding: 2px 0;
+            font-family: inherit;
+            color: var(--text);
+            background: transparent;
+            min-height: 1.6em;
+        }
+        .info-cell input:focus, .info-cell select:focus { outline: none; border-bottom: 1px solid var(--accent); }
+
+        /* ===== SECTION HEADERS ===== */
+        .section {
+            margin-bottom: 12px;
+        }
+        .section-header {
+            background: var(--primary);
+            color: var(--white);
+            padding: 5px 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 0.2px;
+        }
+        .section-header .rr-range {
+            font-weight: 400;
+            font-size: 0.85rem;
+            opacity: 0.85;
+        }
+
+        /* ===== GENERIC TABLE STYLING ===== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .data-table th {
+            background: #eef2f7;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            padding: 4px 6px;
+            text-align: left;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .data-table th.center { text-align: center; }
+        .data-table td {
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .data-table td.center { text-align: center; }
+        .data-table input[type="text"],
+        .data-table input[type="number"] {
+            border: none;
+            border-bottom: 1px dotted var(--border);
+            font-size: 0.9rem;
+            font-family: inherit;
+            padding: 1px 2px;
+            background: transparent;
+            color: var(--text);
+            width: 100%;
+        }
+        .data-table input[type="number"] { width: 40px; text-align: center; }
+        .data-table input:focus { outline: none; border-bottom-color: var(--accent); }
+        .data-table select {
+            border: none;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: transparent;
+            color: var(--text);
+            padding: 1px 0;
+            width: 100%;
+        }
+        .data-table select:focus { outline: none; }
+        .data-table tr.empty-row td { height: 28px; }
+        .data-table td.wrap-text { word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 220px; }
+
+        /* ===== CHECKLIST TABLE ===== */
+        .checklist {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        .checklist th {
+            background: #eef2f7;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            padding: 3px 6px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        .checklist th.center { text-align: center; }
+        .checklist td {
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .checklist .col-ref { width: 30px; text-align: center; font-weight: 600; color: var(--primary); font-size: 0.85rem; }
+        .checklist .col-check { width: 26px; text-align: center; }
+        .checklist .col-na { width: 26px; text-align: center; }
+        .checklist .col-forms { width: 90px; font-size: 0.8rem; color: var(--ref-text); }
+        .checklist .col-notes { width: 180px; }
+
+        /* Checkbox styling */
+        .check-box {
+            width: 18px;
+            height: 18px;
+            border: 1.5px solid var(--border);
+            display: inline-block;
+            cursor: pointer;
+            vertical-align: middle;
+            border-radius: 2px;
+            position: relative;
+            background: var(--white);
+        }
+        .check-box.checked {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        .check-box.checked::after {
+            content: '\2713';
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            position: absolute;
+            top: -1px;
+            left: 2px;
+        }
+        .check-box.na-checked {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+        .check-box.na-checked::after {
+            content: '\2014';
+            color: #6c757d;
+            font-size: 13px;
+            font-weight: 700;
+            position: absolute;
+            top: -2px;
+            left: 2px;
+        }
+
+        .note-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px dotted var(--border);
+            font-size: 0.9rem;
+            font-family: inherit;
+            padding: 2px 2px;
+            background: transparent;
+            color: var(--text);
+        }
+        .note-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+        .duty-text { line-height: 1.35; }
+        .duty-text .detail { font-size: 0.8rem; color: var(--text-light); margin-top: 1px; }
+
+        /* ===== MANNING SUMMARY ===== */
+        .manning-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-top: none;
+        }
+        .manning-summary-cell {
+            padding: 4px 8px;
+            border-right: 1px solid var(--border);
+            text-align: center;
+        }
+        .manning-summary-cell:last-child { border-right: none; }
+        .manning-summary-cell label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            font-weight: 600;
+            text-transform: uppercase;
+            display: block;
+        }
+        .manning-summary-cell .total-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Add row button (digital only) */
+        .add-row-btn {
+            display: block;
+            width: 100%;
+            padding: 6px;
+            border: 2px dashed var(--border);
+            background: transparent;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: center;
+        }
+        .add-row-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ===== INCIDENTS SECTION ===== */
+        .incidents-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border: 1px solid var(--border);
+        }
+        .incident-row {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            font-size: 0.95rem;
+            gap: 8px;
+        }
+        .incident-row:nth-child(even) { border-right: none; }
+        .incident-row:nth-last-child(-n+2) { border-bottom: none; }
+        .yn-group {
+            display: flex;
+            gap: 3px;
+            flex-shrink: 0;
+        }
+        .yn-box {
+            width: 22px;
+            height: 18px;
+            border: 1.5px solid var(--border);
+            font-size: 0.75rem;
+            text-align: center;
+            line-height: 16px;
+            cursor: pointer;
+            border-radius: 2px;
+            font-weight: 600;
+            color: var(--text-light);
+            background: var(--white);
+        }
+        .yn-box.yes-active { background: var(--danger); color: white; border-color: var(--danger); }
+        .yn-box.no-active { background: var(--success); color: white; border-color: var(--success); }
+        .incident-label { flex: 1; font-size: 0.9rem; }
+        .incident-ref-input {
+            width: 70px;
+            border: none;
+            border-bottom: 1px dotted var(--border);
+            font-size: 0.85rem;
+            font-family: inherit;
+            text-align: center;
+        }
+        .incident-ref-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+        /* ===== NARRATIVE / PROGRESS ===== */
+        .narrative-section {
+            border: 1px solid var(--border);
+            margin-bottom: 6px;
+        }
+        .narrative-label {
+            background: #eef2f7;
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-light);
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+        .narrative-label .rr-ref { font-weight: 400; font-size: 0.75rem; }
+        .narrative-box {
+            min-height: 70px;
+            padding: 4px 8px;
+            font-size: 0.95rem;
+            line-height: 1.65;
+            background-image: repeating-linear-gradient(
+                transparent, transparent 20px, #e8ecf0 20px, #e8ecf0 21px
+            );
+        }
+        .narrative-box textarea {
+            width: 100%;
+            border: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.65;
+            resize: vertical;
+            min-height: 70px;
+            background: transparent;
+            color: var(--text);
+        }
+        .narrative-box textarea:focus { outline: none; }
+        .narrative-box.large { min-height: 100px; }
+        .narrative-box.large textarea { min-height: 100px; }
+
+        /* ===== WEEKLY TRACKER ===== */
+        .weekly-strip {
+            border: 1.5px solid var(--warning);
+            margin-bottom: 12px;
+        }
+        .weekly-header {
+            background: var(--warning);
+            color: var(--text);
+            padding: 3px 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .weekly-items {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            font-size: 0.9rem;
+        }
+        .weekly-item {
+            padding: 3px 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid #f0e0b0;
+            border-right: 1px solid #f0e0b0;
+        }
+        .weekly-item:nth-child(even) { border-right: none; }
+        .weekly-item:nth-last-child(-n+2) { border-bottom: none; }
+        .weekly-item .ref { color: var(--warning); font-weight: 600; font-size: 0.85rem; }
+
+        /* ===== SIGN-OFF ===== */
+        .signoff {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border: 1.5px solid var(--primary);
+            margin-top: 8px;
+        }
+        .signoff-block {
+            padding: 6px 10px;
+        }
+        .signoff-block:first-child { border-right: 1.5px solid var(--primary); }
+        .signoff-block h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+        }
+        .sig-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 4px;
+        }
+        .sig-row label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            white-space: nowrap;
+        }
+        .sig-line {
+            flex: 1;
+            border-bottom: 1px solid var(--text);
+            min-height: 22px;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            margin-top: 8px;
+            padding-top: 4px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--ref-text);
+        }
+
+        /* ===== PAGE BREAKS ===== */
+        .page-break {
+            page-break-before: always;
+            margin-top: 0;
+            padding-top: 10mm;
+        }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            html { font-size: 10.5px; }
+            body { background: white; }
+            .page {
+                margin: 0;
+                padding: 8mm 10mm 10mm 10mm;
+                box-shadow: none;
+                width: 100%;
+            }
+            .check-box, .yn-box { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .section-header, .weekly-header, .status-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .narrative-box { background-image: repeating-linear-gradient(transparent, transparent 20px, #d0d5dd 20px, #d0d5dd 21px); }
+            input, textarea { border-bottom-style: solid !important; }
+            .add-row-btn { display: none; }
+            th { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+        }
+
+        /* ===== SCREEN ENHANCEMENTS ===== */
+        @media screen {
+            .page {
+                box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+                margin: 20px auto;
+                border-radius: 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+
+    <!-- ============================================================ -->
+    <!-- PAGE 1: HEADER, WORK PLAN, MANNING                          -->
+    <!-- ============================================================ -->
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <h1>Supervisor Daily Report</h1>
+            <div class="subtitle">MII Engineering — Supervisor R&R Compliance Record</div>
+        </div>
+        <div class="header-right">
+            <div class="doc-ref">SF-DR-SUP-001</div>
+            <div>Rev 0.3 DRAFT</div>
+        </div>
+    </div>
+
+    <!-- INFO GRID -->
+    <div class="info-grid">
+        <div class="info-cell"><label>Date</label><input type="date" /></div>
+        <div class="info-cell"><label>Supervisor</label>
+            <select id="supervisor-select">
+                <option value="">—</option>
+                <option>Chris Harris</option>
+                <option>Christopher Scourfield</option>
+                <option>Craig Kelly</option>
+                <option>Daniel Ellis-Pattern</option>
+                <option>Darren Booth</option>
+                <option>Darren Tudor</option>
+                <option>Gavin Gwyn</option>
+                <option>James Jones</option>
+                <option>Michael James</option>
+                <option>Richard Lacey</option>
+                <option>Richard Samuel</option>
+                <option>Richie Clayton</option>
+                <option>Saikiran Rudra</option>
+                <option>Samuel Jones</option>
+                <option>Sara Jenkins</option>
+                <option>Vikas Patel</option>
+                <option value="_other">Other...</option>
+            </select>
+        </div>
+        <div class="info-cell"><label>Site / Project</label><input type="text" value="Port Talbot" /></div>
+        <div class="info-cell"><label>Zone / Area</label><input type="text" /></div>
+        <div class="info-cell"><label>Shift</label><input type="text" placeholder="e.g. 07:00 – 17:30" /></div>
+        <div class="info-cell"><label>Weather</label><input type="text" /></div>
+        <div class="info-cell"><label>Week Commencing</label><input type="date" /></div>
+        <div class="info-cell"><label>Day</label>
+            <select>
+                <option value="">—</option>
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option>Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+                <option>Saturday</option>
+                <option>Sunday</option>
+            </select>
+        </div>
+    </div>
+
+
+    <!-- ===== DAILY WORK PLAN ===== -->
+    <div class="section">
+        <div class="section-header">
+            Today's Work Plan
+            <span class="rr-range">R&R 1 — Review daily work plan &amp; task allocations</span>
+        </div>
+        <table class="data-table" id="work-plan-table">
+            <thead>
+                <tr>
+                    <th style="width:50px">Task ID</th>
+                    <th style="min-width:150px">Task / Activity</th>
+                    <th style="min-width:100px">Location</th>
+                    <th style="min-width:70px">Trade</th>
+                    <th class="center" style="width:50px">Planned<br>Crew</th>
+                    <th class="center" style="width:50px">Actual<br>Crew</th>
+                    <th style="width:65px" class="center">Status</th>
+                    <th style="width:35px" class="center">%</th>
+                    <th style="min-width:130px">Notes / Progress</th>
+                </tr>
+            </thead>
+            <tbody id="work-plan-body">
+                <tr>
+                    <td>4039</td>
+                    <td class="wrap-text">CAS-OB 1 & Steel Desulph Removal</td>
+                    <td>CAS OB 1 Area</td>
+                    <td>MII</td>
+                    <td class="center">6</td>
+                    <td class="center">5</td>
+                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
+                    <td class="center">40</td>
+                    <td>Delayed 3hrs awaiting crane access. 5 crew on stand-by. CE notified to CM</td>
+                </tr>
+                <tr>
+                    <td>4047</td>
+                    <td class="wrap-text">Vessel 1 Steam Room Removals</td>
+                    <td>RED Bay Zone B (5-8.5)</td>
+                    <td>MII</td>
+                    <td class="center">4</td>
+                    <td class="center">4</td>
+                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
+                    <td class="center">25</td>
+                    <td>Pipework removal ongoing. Access scaffold in place</td>
+                </tr>
+                <tr>
+                    <td>4050</td>
+                    <td class="wrap-text">Ladle Scrapping</td>
+                    <td>Teeming Bay Zone A (3-5)</td>
+                    <td>MII</td>
+                    <td class="center">5</td>
+                    <td class="center">5</td>
+                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
+                    <td class="center">60</td>
+                    <td>Burning out ladle 3. Good progress</td>
+                </tr>
+                <tr>
+                    <td>4053</td>
+                    <td class="wrap-text">Removal of Hood Water Trestles</td>
+                    <td>External - Misc</td>
+                    <td>MII</td>
+                    <td class="center">5</td>
+                    <td class="center">5</td>
+                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
+                    <td class="center">30</td>
+                    <td>Crane on stand-by for PM lift</td>
+                </tr>
+                <tr>
+                    <td>4028</td>
+                    <td class="wrap-text">Cutting and Burning Ladle</td>
+                    <td>Teeming Bay Zone A (3-5)</td>
+                    <td>MII</td>
+                    <td class="center">3</td>
+                    <td class="center">3</td>
+                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
+                    <td class="center">70</td>
+                    <td>Ladle 2 complete. Ladle 3 started</td>
+                </tr>
+                <tr>
+                    <td>4034</td>
+                    <td class="wrap-text">Removal of HM Bay Rails</td>
+                    <td>RED Bay Zone B (5-8.5)</td>
+                    <td>MII</td>
+                    <td class="center">4</td>
+                    <td class="center">3</td>
+                    <td class="center"><span style="color:var(--warning);font-weight:600">Planned</span></td>
+                    <td class="center">0</td>
+                    <td>Awaiting isolation confirmation. Start PM</td>
+                </tr>
+                <tr>
+                    <td>4032</td>
+                    <td class="wrap-text">Dosing Station Removals</td>
+                    <td>Charging Bay Zone D (10-13)</td>
+                    <td>MII</td>
+                    <td class="center">2</td>
+                    <td class="center">2</td>
+                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
+                    <td class="center">45</td>
+                    <td>Pipework disconnection. On programme</td>
+                </tr>
+                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+        <button class="add-row-btn" onclick="addWorkRow()">+ Add Activity Row</button>
+    </div>
+
+
+    <!-- ===== MANNING TRACKER ===== -->
+    <div class="section">
+        <div class="section-header">
+            Manning Tracker
+            <span class="rr-range">R&R 5, 14, 15 — Competence, subcon monitoring &amp; attendance</span>
+        </div>
+        <table class="data-table" id="manning-table">
+            <thead>
+                <tr>
+                    <th style="min-width:130px">Name</th>
+                    <th style="min-width:70px">Company / Trade</th>
+                    <th class="center" style="width:50px">Planned</th>
+                    <th class="center" style="width:50px">Actual</th>
+                    <th class="center" style="width:40px">+/&minus;</th>
+                    <th style="width:60px">Task ID(s)</th>
+                    <th style="min-width:130px">Notes</th>
+                </tr>
+            </thead>
+            <tbody id="manning-body">
+                <tr>
+                    <td>
+                        <select class="name-select" onchange="handleNameSelect(this)">
+                            <option value="">— Select —</option>
+                            <option selected>D. Evans</option>
+                            <option>G. Thomas</option>
+                            <option>J. Williams</option>
+                            <option>K. Morgan</option>
+                            <option>L. Davies</option>
+                            <option>M. Rees</option>
+                            <option>N. Patel</option>
+                            <option>P. Jones</option>
+                            <option>R. Hughes</option>
+                            <option>S. Lewis</option>
+                            <option>T. Richards</option>
+                            <option>W. Griffiths</option>
+                            <option value="_other">Other...</option>
+                        </select>
+                    </td>
+                    <td>MII</td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-planned" oninput="calcVariance(this)" /></td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-actual" oninput="calcVariance(this)" /></td>
+                    <td class="center variance-cell" style="color:#1a1a1a">0</td>
+                    <td>4039</td>
+                    <td>Burning team lead - CAS OB 1</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select class="name-select" onchange="handleNameSelect(this)">
+                            <option value="">— Select —</option>
+                            <option>D. Evans</option>
+                            <option selected>G. Thomas</option>
+                            <option>J. Williams</option>
+                            <option>K. Morgan</option>
+                            <option>L. Davies</option>
+                            <option>M. Rees</option>
+                            <option>N. Patel</option>
+                            <option>P. Jones</option>
+                            <option>R. Hughes</option>
+                            <option>S. Lewis</option>
+                            <option>T. Richards</option>
+                            <option>W. Griffiths</option>
+                            <option value="_other">Other...</option>
+                        </select>
+                    </td>
+                    <td>MII</td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-planned" oninput="calcVariance(this)" /></td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-actual" oninput="calcVariance(this)" /></td>
+                    <td class="center variance-cell" style="color:#1a1a1a">0</td>
+                    <td>4039</td>
+                    <td>Burning team - CAS OB 1</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select class="name-select" onchange="handleNameSelect(this)">
+                            <option value="">— Select —</option>
+                            <option>D. Evans</option>
+                            <option>G. Thomas</option>
+                            <option selected>J. Williams</option>
+                            <option>K. Morgan</option>
+                            <option>L. Davies</option>
+                            <option>M. Rees</option>
+                            <option>N. Patel</option>
+                            <option>P. Jones</option>
+                            <option>R. Hughes</option>
+                            <option>S. Lewis</option>
+                            <option>T. Richards</option>
+                            <option>W. Griffiths</option>
+                            <option value="_other">Other...</option>
+                        </select>
+                    </td>
+                    <td>MII</td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-planned" oninput="calcVariance(this)" /></td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-actual" oninput="calcVariance(this)" /></td>
+                    <td class="center variance-cell" style="color:#1a1a1a">0</td>
+                    <td>4047</td>
+                    <td>Steam room pipework. CSCS expires 05/03</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select class="name-select" onchange="handleNameSelect(this)">
+                            <option value="">— Select —</option>
+                            <option>D. Evans</option>
+                            <option>G. Thomas</option>
+                            <option>J. Williams</option>
+                            <option selected>K. Morgan</option>
+                            <option>L. Davies</option>
+                            <option>M. Rees</option>
+                            <option>N. Patel</option>
+                            <option>P. Jones</option>
+                            <option>R. Hughes</option>
+                            <option>S. Lewis</option>
+                            <option>T. Richards</option>
+                            <option>W. Griffiths</option>
+                            <option value="_other">Other...</option>
+                        </select>
+                    </td>
+                    <td>MII</td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-planned" oninput="calcVariance(this)" /></td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-actual" oninput="calcVariance(this)" /></td>
+                    <td class="center variance-cell" style="color:#1a1a1a">0</td>
+                    <td>4050</td>
+                    <td>Ladle burning</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select class="name-select" onchange="handleNameSelect(this)">
+                            <option value="">— Select —</option>
+                            <option>D. Evans</option>
+                            <option>G. Thomas</option>
+                            <option>J. Williams</option>
+                            <option>K. Morgan</option>
+                            <option selected>L. Davies</option>
+                            <option>M. Rees</option>
+                            <option>N. Patel</option>
+                            <option>P. Jones</option>
+                            <option>R. Hughes</option>
+                            <option>S. Lewis</option>
+                            <option>T. Richards</option>
+                            <option>W. Griffiths</option>
+                            <option value="_other">Other...</option>
+                        </select>
+                    </td>
+                    <td>MII</td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-planned" oninput="calcVariance(this)" /></td>
+                    <td class="center"><input type="number" min="0" value="0" class="manning-actual" oninput="calcVariance(this)" /></td>
+                    <td class="center variance-cell" style="color:#dc3545">-1</td>
+                    <td>4034</td>
+                    <td>No show — reported to CM</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select class="name-select" onchange="handleNameSelect(this)">
+                            <option value="">— Select —</option>
+                            <option>D. Evans</option>
+                            <option>G. Thomas</option>
+                            <option>J. Williams</option>
+                            <option>K. Morgan</option>
+                            <option>L. Davies</option>
+                            <option selected>M. Rees</option>
+                            <option>N. Patel</option>
+                            <option>P. Jones</option>
+                            <option>R. Hughes</option>
+                            <option>S. Lewis</option>
+                            <option>T. Richards</option>
+                            <option>W. Griffiths</option>
+                            <option value="_other">Other...</option>
+                        </select>
+                    </td>
+                    <td>MII</td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-planned" oninput="calcVariance(this)" /></td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-actual" oninput="calcVariance(this)" /></td>
+                    <td class="center variance-cell" style="color:#1a1a1a">0</td>
+                    <td>4053</td>
+                    <td>Hood water trestles - crane banksman</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select class="name-select" onchange="handleNameSelect(this)">
+                            <option value="">— Select —</option>
+                            <option>D. Evans</option>
+                            <option>G. Thomas</option>
+                            <option>J. Williams</option>
+                            <option>K. Morgan</option>
+                            <option>L. Davies</option>
+                            <option>M. Rees</option>
+                            <option selected>N. Patel</option>
+                            <option>P. Jones</option>
+                            <option>R. Hughes</option>
+                            <option>S. Lewis</option>
+                            <option>T. Richards</option>
+                            <option>W. Griffiths</option>
+                            <option value="_other">Other...</option>
+                        </select>
+                    </td>
+                    <td>MII</td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-planned" oninput="calcVariance(this)" /></td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-actual" oninput="calcVariance(this)" /></td>
+                    <td class="center variance-cell" style="color:#1a1a1a">0</td>
+                    <td>4028</td>
+                    <td>Ladle cutting</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select class="name-select" onchange="handleNameSelect(this)">
+                            <option value="">— Select —</option>
+                            <option>D. Evans</option>
+                            <option>G. Thomas</option>
+                            <option>J. Williams</option>
+                            <option>K. Morgan</option>
+                            <option>L. Davies</option>
+                            <option>M. Rees</option>
+                            <option>N. Patel</option>
+                            <option selected>P. Jones</option>
+                            <option>R. Hughes</option>
+                            <option>S. Lewis</option>
+                            <option>T. Richards</option>
+                            <option>W. Griffiths</option>
+                            <option value="_other">Other...</option>
+                        </select>
+                    </td>
+                    <td>MII</td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-planned" oninput="calcVariance(this)" /></td>
+                    <td class="center"><input type="number" min="0" value="1" class="manning-actual" oninput="calcVariance(this)" /></td>
+                    <td class="center variance-cell" style="color:#1a1a1a">0</td>
+                    <td>4032</td>
+                    <td>Dosing station pipework</td>
+                </tr>
+                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+        <button class="add-row-btn" onclick="addManningRow()">+ Add Row</button>
+
+        <!-- Manning summary totals -->
+        <div class="manning-summary">
+            <div class="manning-summary-cell">
+                <label>Total Planned</label>
+                <div class="total-value" id="total-planned">0</div>
+            </div>
+            <div class="manning-summary-cell">
+                <label>Total Actual</label>
+                <div class="total-value" id="total-actual">0</div>
+            </div>
+            <div class="manning-summary-cell">
+                <label>Variance</label>
+                <div class="total-value" id="total-variance">0</div>
+            </div>
+            <div class="manning-summary-cell">
+                <label>Total on Site</label>
+                <div class="total-value" id="total-site">—</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- PAGE 2: R&R CHECKLIST, INCIDENTS                            -->
+    <!-- ============================================================ -->
+    <div class="page-break"></div>
+
+    <!-- ===== START OF SHIFT ===== -->
+    <div class="section">
+        <div class="section-header">
+            Start of Shift Checks
+            <span class="rr-range">R&R 1–7</span>
+        </div>
+        <table class="checklist">
+            <thead>
+                <tr>
+                    <th class="col-ref">Ref</th>
+                    <th>Duty</th>
+                    <th class="col-check center">&check;</th>
+                    <th class="col-na center">N/A</th>
+                    <th class="col-forms">Form / Link</th>
+                    <th class="col-notes">Notes / Exceptions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-ref">1</td>
+                    <td class="duty-text">DSUM attended, daily plan & task allocations reviewed</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">Work File / Lookahead</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">2</td>
+                    <td class="duty-text">Toolbox talk / method statement briefing delivered
+                        <div class="detail">Topic & attendance recorded</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">SF 012B</td>
+                    <td class="col-notes"><input class="note-input" type="text" placeholder="Topic:" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">3</td>
+                    <td class="duty-text">Permits to work obtained before work commenced
+                        <div class="detail">Isolations, air monitoring, confined space checked if applicable</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">PTW / WI (S01)</td>
+                    <td class="col-notes"><input class="note-input" type="text" placeholder="Permit ref(s):" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">4</td>
+                    <td class="duty-text">POWRAs completed & reviewed by supervisor
+                        <div class="detail">Before starting, on return to area, after any change</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms"><a href="https://forms.office.com/Pages/ResponsePage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUNVhJQ1NWVE1FSDMwUlREVU4zNjZUOERINyQlQCN0PWcu" target="_blank" style="color:var(--accent);text-decoration:underline;">POWRA Form</a></td>
+                    <td class="col-notes"><input class="note-input" type="text" placeholder="Count:" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">5</td>
+                    <td class="duty-text">Workforce competency confirmed for today's tasks
+                        <div class="detail">Qualifications, tickets, inductions current</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">SF 021A / SF 045F</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">6</td>
+                    <td class="duty-text">PPE available, worn correctly & in good condition</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms"><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5iwnyfVzpURlOijWMAbk_tI9UNjBIRTNDWUhER0RRMk4wTUw1UTRPMzJLNC4u&origin=QRCode&qrcodeorigin=presentation" target="_blank" style="color:var(--accent);text-decoration:underline;">Inspection Report</a></td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">7</td>
+                    <td class="duty-text">Pre-use equipment inspections completed
+                        <div class="detail">Telehandlers, MEWPs, lifting gear, power tools</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">SSW E06/07/08<br>SF 019</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== DURING WORKS ===== -->
+    <div class="section">
+        <div class="section-header">
+            During Works — Monitoring & Supervision
+            <span class="rr-range">R&R 8–14</span>
+        </div>
+        <table class="checklist">
+            <thead>
+                <tr>
+                    <th class="col-ref">Ref</th>
+                    <th>Duty</th>
+                    <th class="col-check center">&check;</th>
+                    <th class="col-na center">N/A</th>
+                    <th class="col-forms">Form / Link</th>
+                    <th class="col-notes">Notes / Exceptions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-ref">8</td>
+                    <td class="duty-text">Suitable level of supervision maintained for all activities</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">—</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">9</td>
+                    <td class="duty-text">Quality & ITP compliance monitored; inspections called at hold points</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">SF 010D/E<br>SF 065H/J</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">10</td>
+                    <td class="duty-text">RAMS, method statement & PPE compliance monitored
+                        <div class="detail">Intervene & stop work if unsafe</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">JMS / RAMS<br>SF 042</td>
+                    <td class="col-notes"><input class="note-input" type="text" placeholder="Interventions:" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">11</td>
+                    <td class="duty-text">Hazard reporting & near-miss culture encouraged</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">SF 013C / SF 061</td>
+                    <td class="col-notes"><input class="note-input" type="text" placeholder="Reports:" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">12</td>
+                    <td class="duty-text">Environmental controls monitored — waste, spills, dust, noise</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">SF 033 / WTN</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">13</td>
+                    <td class="duty-text">Deliveries received, checked against PO & documentation</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">Del. Notes<br>Mat. Certs</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">14</td>
+                    <td class="duty-text">Subcontractor activities & compliance monitored</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">IMSP 016</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== END OF SHIFT ===== -->
+    <div class="section">
+        <div class="section-header">
+            End of Shift Checks
+            <span class="rr-range">R&R 15–20</span>
+        </div>
+        <table class="checklist">
+            <thead>
+                <tr>
+                    <th class="col-ref">Ref</th>
+                    <th>Duty</th>
+                    <th class="col-check center">&check;</th>
+                    <th class="col-na center">N/A</th>
+                    <th class="col-forms">Form / Link</th>
+                    <th class="col-notes">Notes / Exceptions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-ref">15</td>
+                    <td class="duty-text">Daily progress, attendance & programme impacts recorded</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">Work File<br>Timesheet</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">16</td>
+                    <td class="duty-text">Site registers updated (personnel, equipment, permits)</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">SF 057</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">17</td>
+                    <td class="duty-text">All permits returned, cancelled or suspended
+                        <div class="detail">Isolations & lockout procedures completed</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">PTW forms</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">18</td>
+                    <td class="duty-text">Work area left in acceptable condition; photos taken</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">—</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">19</td>
+                    <td class="duty-text">Progress & issues reported to Construction Manager</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">This report</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">20</td>
+                    <td class="duty-text">Next day's work plan reviewed; resources & materials confirmed</td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms">Lookahead</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== INCIDENTS & ISSUES ===== -->
+    <div class="section">
+        <div class="section-header">
+            Incidents & Issues
+            <span class="rr-range">Triggers R&R 50–62 if Yes</span>
+        </div>
+        <div class="incidents-grid">
+            <div class="incident-row">
+                <div class="yn-group">
+                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
+                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
+                </div>
+                <span class="incident-label">Accidents / near misses</span>
+                <input class="incident-ref-input" type="text" placeholder="Ref #" />
+            </div>
+            <div class="incident-row">
+                <div class="yn-group">
+                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
+                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
+                </div>
+                <span class="incident-label">Stop-work interventions</span>
+                <input class="incident-ref-input" type="text" placeholder="Detail" />
+            </div>
+            <div class="incident-row">
+                <div class="yn-group">
+                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
+                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
+                </div>
+                <span class="incident-label">NCRs raised</span>
+                <input class="incident-ref-input" type="text" placeholder="NCR #" />
+            </div>
+            <div class="incident-row">
+                <div class="yn-group">
+                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
+                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
+                </div>
+                <span class="incident-label">Equipment quarantined</span>
+                <input class="incident-ref-input" type="text" placeholder="Detail" />
+            </div>
+            <div class="incident-row">
+                <div class="yn-group">
+                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
+                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
+                </div>
+                <span class="incident-label">Environmental incidents</span>
+                <input class="incident-ref-input" type="text" placeholder="Detail" />
+            </div>
+            <div class="incident-row">
+                <div class="yn-group">
+                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
+                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
+                </div>
+                <span class="incident-label">Early warnings raised (NEC)</span>
+                <input class="incident-ref-input" type="text" placeholder="EW #" />
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- PAGE 3: PROGRESS NARRATIVE, WEEKLY, SIGN-OFF                -->
+    <!-- ============================================================ -->
+    <div class="page-break"></div>
+
+    <!-- ===== PROGRESS NARRATIVE ===== -->
+    <div class="section">
+        <div class="section-header">
+            Progress Summary & Narrative
+            <span class="rr-range">R&R 15, 19, 20</span>
+        </div>
+
+        <div class="narrative-section">
+            <div class="narrative-label">Today's Progress vs Programme <span class="rr-ref">Reference Task IDs where possible</span></div>
+            <div class="narrative-box large"><textarea rows="6"></textarea></div>
+        </div>
+
+        <div class="narrative-section">
+            <div class="narrative-label">Issues, Delays & Blockers <span class="rr-ref">Flag potential Early Warnings (R&R 24)</span></div>
+            <div class="narrative-box large"><textarea rows="5">Task 4039 (CAS-OB 1 &amp; Steel Desulph Removal) — Crane not available until 11:00. 5 crew stood down for 3 hours from 08:00. Client informed crane was committed to Tata works in adjacent bay. No prior notice given. Notified CM as potential Compensation Event — access &amp; plant not provided per programme. EW raised.</textarea></div>
+        </div>
+
+        <div class="narrative-section">
+            <div class="narrative-label">Plan for Tomorrow <span class="rr-ref">Resources, materials, permits, plant required (R&R 20)</span></div>
+            <div class="narrative-box large"><textarea rows="5"></textarea></div>
+        </div>
+
+        <div class="narrative-section">
+            <div class="narrative-label">General Notes / Observations <span class="rr-ref">Welfare, visitors, client interface, other</span></div>
+            <div class="narrative-box"><textarea rows="4"></textarea></div>
+        </div>
+    </div>
+
+    <!-- ===== WEEKLY TRACKER ===== -->
+    <div class="weekly-strip">
+        <div class="weekly-header">Weekly Items — Complete When Due (R&R 21–24)</div>
+        <div class="weekly-items">
+            <div class="weekly-item">
+                <span class="check-box" onclick="toggleCheck(this)"></span>
+                <span class="ref">21</span>
+                <a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUNEQyVlA0TjBDRTJaWkVZOEE3TzQwMFRMSyQlQCN0PWcu&route=shorturl" target="_blank" style="color:var(--accent);text-decoration:underline;">Formal workplace inspection</a> completed
+            </div>
+            <div class="weekly-item">
+                <span class="check-box" onclick="toggleCheck(this)"></span>
+                <span class="ref">22</span>
+                Site progress / coordination meeting attended
+            </div>
+            <div class="weekly-item">
+                <span class="check-box" onclick="toggleCheck(this)"></span>
+                <span class="ref">23</span>
+                Lookahead schedule input provided
+            </div>
+            <div class="weekly-item">
+                <span class="check-box" onclick="toggleCheck(this)"></span>
+                <span class="ref">24</span>
+                Early warnings raised to CM
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SIGN-OFF ===== -->
+    <div class="signoff">
+        <div class="signoff-block">
+            <h4>Supervisor</h4>
+            <div class="sig-row"><label>Name:</label><div class="sig-line"></div></div>
+            <div class="sig-row"><label>Signed:</label><div class="sig-line"></div></div>
+            <div class="sig-row"><label>Date / Time:</label><div class="sig-line"></div></div>
+        </div>
+        <div class="signoff-block">
+            <h4>Construction Manager Review</h4>
+            <div class="sig-row"><label>Name:</label><div class="sig-line"></div></div>
+            <div class="sig-row"><label>Signed:</label><div class="sig-line"></div></div>
+            <div class="sig-row"><label>Date / Time:</label><div class="sig-line"></div></div>
+        </div>
+    </div>
+
+    <!-- ===== API OUTPUT DEMO — CE DETECTION ===== -->
+    <div class="section" style="margin-top:16px;">
+        <div class="section-header" style="background:#1a1a2e;">
+            API Output — Compensation Event Detection
+            <span class="rr-range" style="opacity:0.7;">Automated analysis from daily report narrative</span>
+        </div>
+        <div style="background:#1a1a2e; color:#e0e0e0; font-family:'Consolas','Courier New',monospace; font-size:0.85rem; padding:14px 16px; border:1px solid #333; border-top:none; line-height:1.6;">
+            <div style="color:#6ec6ff;margin-bottom:6px;">// Claude API — Daily Report CE Scan — 02/03/2026</div>
+            <div style="color:#ff9800;margin-bottom:10px; font-weight:700;">&#9888; COMPENSATION EVENT DETECTED</div>
+            <table style="width:100%; color:#e0e0e0; font-family:inherit; font-size:inherit; border-collapse:collapse;">
+                <tr>
+                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Task ID:</td>
+                    <td style="padding:2px 0; font-weight:700; color:#fff;">4039</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Activity:</td>
+                    <td style="padding:2px 0;">CAS-OB 1 & Steel Desulph Removal</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Cause:</td>
+                    <td style="padding:2px 0;">Crane access not provided — committed to client works (no prior notice)</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Delay:</td>
+                    <td style="padding:2px 0; font-weight:700; color:#ff5252;">3 hours</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Crew affected:</td>
+                    <td style="padding:2px 0; font-weight:700; color:#ff5252;">5 operatives</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Standing time:</td>
+                    <td style="padding:2px 0; font-weight:700; color:#ff5252;">15 man-hours</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">NEC clause:</td>
+                    <td style="padding:2px 0;">60.1(3) — Employer does not provide access / plant by date in programme</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Early Warning:</td>
+                    <td style="padding:2px 0; color:#4caf50;">Raised &#10003;</td>
+                </tr>
+            </table>
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid #333;">
+                <div style="color:#6ec6ff; margin-bottom:4px;">// Recommended action → Planner</div>
+                <div style="color:#ffcc02;">Record CE in register. Assess time impact on Task 4039 critical path.</div>
+                <div style="color:#ffcc02;">Cost impact: 15 man-hours × blended rate = quotation required within 3 weeks (cl. 62.3).</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <span>SF-DR-SUP-001 Rev 0.3 DRAFT — MII Engineering</span>
+        <span>R&R Ref: Supervisor Checklist Rev 3 — Appendix 04 Issue 7</span>
+    </div>
+
+</div>
+
+
+<!-- ===== INTERACTIVE JS (digital use only) ===== -->
+<script>
+    function toggleCheck(el) {
+        const row = el.closest('tr') || el.closest('.weekly-item');
+        if (row) {
+            const naBox = row.querySelectorAll('.check-box')[1];
+            if (naBox && naBox !== el) naBox.classList.remove('na-checked');
+        }
+        el.classList.toggle('checked');
+    }
+
+    function toggleNA(el) {
+        const row = el.closest('tr');
+        if (row) {
+            const checkBox = row.querySelectorAll('.check-box')[0];
+            if (checkBox && checkBox !== el) checkBox.classList.remove('checked');
+        }
+        el.classList.toggle('na-checked');
+    }
+
+    function toggleYN(el, type) {
+        const group = el.closest('.yn-group');
+        const boxes = group.querySelectorAll('.yn-box');
+        if (type === 'yes') {
+            el.classList.toggle('yes-active');
+            boxes[1].classList.remove('no-active');
+        } else {
+            el.classList.toggle('no-active');
+            boxes[0].classList.remove('yes-active');
+        }
+    }
+
+    // "Other" handler for any select with _other option
+    function handleOtherSelect(sel, promptText) {
+        if (sel.value === '_other') {
+            const custom = prompt(promptText);
+            if (custom) {
+                const opt = document.createElement('option');
+                opt.value = custom;
+                opt.textContent = custom;
+                sel.insertBefore(opt, sel.querySelector('[value="_other"]'));
+                sel.value = custom;
+            } else {
+                sel.value = '';
+            }
+        }
+    }
+
+    document.getElementById('supervisor-select').addEventListener('change', function() {
+        handleOtherSelect(this, 'Enter supervisor name:');
+    });
+
+    function handleNameSelect(sel) {
+        handleOtherSelect(sel, 'Enter person name:');
+    }
+
+    // Status select HTML for reuse
+    const statusSelectHTML = `
+        <select>
+            <option value="">—</option>
+            <option>Planned</option>
+            <option>Started</option>
+            <option>Complete</option>
+            <option>Blocked</option>
+            <option>Stopped</option>
+        </select>`;
+
+    // Add work plan row
+    function addWorkRow() {
+        const tbody = document.getElementById('work-plan-body');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" style="width:46px" /></td>
+            <td><input type="text" /></td>
+            <td><input type="text" /></td>
+            <td><input type="text" /></td>
+            <td class="center"><input type="number" min="0" /></td>
+            <td class="center"><input type="number" min="0" /></td>
+            <td class="center">${statusSelectHTML}</td>
+            <td class="center"><input type="number" min="0" max="100" style="width:32px" /></td>
+            <td><input type="text" /></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    // Name dropdown HTML (grab from first manning row)
+    const nameSelectHTML = document.querySelector('.name-select').outerHTML.replace(/selected/g, '');
+
+    // Add manning row
+    function addManningRow() {
+        const tbody = document.getElementById('manning-body');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${nameSelectHTML}</td>
+            <td><input type="text" /></td>
+            <td class="center"><input type="number" min="0" class="manning-planned" oninput="calcVariance(this)" /></td>
+            <td class="center"><input type="number" min="0" class="manning-actual" oninput="calcVariance(this)" /></td>
+            <td class="center variance-cell"></td>
+            <td><input type="text" /></td>
+            <td><input type="text" /></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    // Calculate variance and update totals
+    function calcVariance(el) {
+        const row = el.closest('tr');
+        const planned = parseInt(row.querySelector('.manning-planned')?.value) || 0;
+        const actual = parseInt(row.querySelector('.manning-actual')?.value) || 0;
+        const variance = actual - planned;
+        const cell = row.querySelector('.variance-cell');
+        if (cell) {
+            cell.textContent = variance === 0 ? '0' : (variance > 0 ? '+' + variance : variance);
+            cell.style.color = variance < 0 ? '#dc3545' : variance > 0 ? '#28a745' : '#1a1a1a';
+        }
+        updateManningTotals();
+    }
+
+    function updateManningTotals() {
+        let totalPlanned = 0, totalActual = 0;
+        document.querySelectorAll('.manning-planned').forEach(inp => {
+            totalPlanned += parseInt(inp.value) || 0;
+        });
+        document.querySelectorAll('.manning-actual').forEach(inp => {
+            totalActual += parseInt(inp.value) || 0;
+        });
+        const variance = totalActual - totalPlanned;
+        document.getElementById('total-planned').textContent = totalPlanned;
+        document.getElementById('total-actual').textContent = totalActual;
+        const varEl = document.getElementById('total-variance');
+        varEl.textContent = variance === 0 ? '0' : (variance > 0 ? '+' + variance : variance);
+        varEl.style.color = variance < 0 ? '#dc3545' : variance > 0 ? '#28a745' : '#003366';
+    }
+
+    // Calculate totals on page load for demo data
+    updateManningTotals();
+</script>
+
+</body>
+</html>

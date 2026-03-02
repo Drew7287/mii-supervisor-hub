@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MII Engineering — Supervisor Hub</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .topbar .user-info {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .topbar .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        /* ===== GREETING ===== */
+        .greeting {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 24px 8px;
+        }
+        .greeting h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .greeting p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        /* ===== CARD GRID ===== */
+        .card-grid {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+        .card:active {
+            transform: translateY(-1px);
+        }
+
+        .card-accent {
+            height: 6px;
+            width: 100%;
+        }
+        .card-accent.blue { background: var(--accent); }
+        .card-accent.green { background: var(--success); }
+        .card-accent.amber { background: var(--warning); }
+        .card-accent.red { background: var(--danger); }
+
+        .card-body {
+            padding: 20px 22px 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 14px;
+        }
+        .card-icon.blue { background: #e8f2fc; color: var(--accent); }
+        .card-icon.green { background: #e6f7ec; color: var(--success); }
+        .card-icon.amber { background: #fff6e0; color: var(--warning); }
+        .card-icon.red { background: #fde8ea; color: var(--danger); }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+        .card-desc {
+            font-size: 0.88rem;
+            color: var(--text-light);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .card-tag {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .card-tag.daily { background: #e8f2fc; color: var(--accent); }
+        .card-tag.event { background: #e6f7ec; color: var(--success); }
+        .card-tag.weekly { background: #fff6e0; color: #b07d00; }
+
+        .card-arrow {
+            font-size: 1.1rem;
+            color: var(--border);
+            transition: color 0.15s ease, transform 0.15s ease;
+        }
+        .card:hover .card-arrow {
+            color: var(--accent);
+            transform: translateX(3px);
+        }
+
+        /* ===== COMING SOON OVERLAY ===== */
+        .card.coming-soon {
+            position: relative;
+        }
+        .card.coming-soon .card-body { opacity: 0.55; }
+        .coming-soon-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--primary);
+            color: var(--white);
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 3px 10px;
+            border-radius: 4px;
+        }
+
+        /* ===== QUICK STATS BAR ===== */
+        .stats-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 18px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .stat-value.green { color: var(--success); }
+        .stat-value.amber { color: var(--warning); }
+        .stat-value.red { color: var(--danger); }
+
+        /* ===== FOOTER ===== */
+        .hub-footer {
+            text-align: center;
+            padding: 32px 24px;
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <h1>MII Engineering — Supervisor Hub</h1>
+        <div class="user-info">
+            <span>Enabling Works, Port Talbot</span>
+            <div class="user-avatar">DE</div>
+        </div>
+    </div>
+
+    <!-- GREETING -->
+    <div class="greeting">
+        <h2 id="greeting-text">Good morning</h2>
+        <p id="date-text"></p>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-value">32</div>
+            <div class="stat-label">Manning Today</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value green">7</div>
+            <div class="stat-label">Active Tasks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value amber">1</div>
+            <div class="stat-label">Open CEs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value red">2</div>
+            <div class="stat-label">Actions Due</div>
+        </div>
+    </div>
+
+    <!-- CARD GRID -->
+    <div class="card-grid">
+
+        <!-- DAILY REPORT -->
+        <a class="card" href="daily_report_template.html">
+            <div class="card-accent blue"></div>
+            <div class="card-body">
+                <div class="card-icon blue">&#128203;</div>
+                <div class="card-title">Daily Report</div>
+                <div class="card-desc">
+                    Work plan, manning tracker, R&R checklist, progress narrative.
+                    Maps to Supervisor R&R items 1–20. Feeds CE detection pipeline.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag daily">Daily</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- SHEQ OBSERVATIONS -->
+        <a class="card coming-soon" href="#">
+            <div class="card-accent green"></div>
+            <span class="coming-soon-badge">Coming Soon</span>
+            <div class="card-body">
+                <div class="card-icon green">&#128065;</div>
+                <div class="card-title">SHEQ Observations</div>
+                <div class="card-desc">
+                    Log safety, health, environment &amp; quality observations on site.
+                    Positive and negative. Feeds into RAMSBuilder action tracker.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Per Event</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- SSW / TOOLBOX TALKS -->
+        <a class="card" href="ssw.html">
+            <div class="card-accent red"></div>
+            <div class="card-body">
+                <div class="card-icon red">&#128214;</div>
+                <div class="card-title">SSW / Toolbox Talks</div>
+                <div class="card-desc">
+                    Full library of 90 Safe Systems of Work. Search by topic or ref code.
+                    Links direct to SharePoint PDFs. Use for daily briefings (R&R 2).
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Reference</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- WORKPLACE INSPECTIONS -->
+        <a class="card coming-soon" href="#">
+            <div class="card-accent amber"></div>
+            <span class="coming-soon-badge">Coming Soon</span>
+            <div class="card-body">
+                <div class="card-icon amber">&#128269;</div>
+                <div class="card-title">Workplace Inspections</div>
+                <div class="card-desc">
+                    Formal weekly workplace inspection. Checklist-driven with photo upload.
+                    Maps to R&R item 21. Currently via MS Forms.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag weekly">Weekly</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="hub-footer">
+        MII Engineering Ltd &mdash; Supervisor Digital Toolkit &mdash; Prototype v0.1
+    </div>
+
+<script>
+    // Dynamic greeting
+    const hour = new Date().getHours();
+    const greetEl = document.getElementById('greeting-text');
+    if (hour < 12) greetEl.textContent = 'Good morning';
+    else if (hour < 17) greetEl.textContent = 'Good afternoon';
+    else greetEl.textContent = 'Good evening';
+
+    // Today's date
+    const now = new Date();
+    const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    document.getElementById('date-text').textContent = now.toLocaleDateString('en-GB', opts);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MII Engineering — Safe Systems of Work</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar h1 { font-size: 1.2rem; font-weight: 700; }
+        .topbar a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.15s;
+        }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== CONTENT ===== */
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+
+        /* ===== SEARCH BAR ===== */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .search-input:focus { border-color: var(--accent); }
+        .search-input::placeholder { color: #aab4c0; }
+
+        .result-count {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            padding: 4px 0 8px;
+        }
+
+        /* ===== LETTER GROUP ===== */
+        .letter-group {
+            margin-bottom: 20px;
+        }
+        .letter-header {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--white);
+            background: var(--primary);
+            padding: 5px 14px;
+            border-radius: 6px 6px 0 0;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== SSW LIST ===== */
+        .ssw-list {
+            list-style: none;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            overflow: hidden;
+        }
+        .ssw-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f2f5;
+            transition: background 0.1s;
+            text-decoration: none;
+            color: inherit;
+            gap: 12px;
+        }
+        .ssw-item:last-child { border-bottom: none; }
+        .ssw-item:hover { background: #f5f8fc; }
+
+        .ssw-ref {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            background: #e8f2fc;
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            min-width: 46px;
+            text-align: center;
+        }
+        .ssw-title {
+            flex: 1;
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .ssw-rev {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            white-space: nowrap;
+        }
+        .ssw-icon {
+            font-size: 1rem;
+            color: var(--danger);
+            opacity: 0.6;
+        }
+        .ssw-open {
+            font-size: 0.75rem;
+            color: var(--accent);
+            opacity: 0;
+            transition: opacity 0.15s;
+            white-space: nowrap;
+        }
+        .ssw-item:hover .ssw-open { opacity: 1; }
+
+        /* ===== LETTER NAV ===== */
+        .letter-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 18px;
+        }
+        .letter-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: var(--white);
+            color: var(--primary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.1s, color 0.1s;
+            text-decoration: none;
+        }
+        .letter-btn:hover { background: var(--primary); color: var(--white); }
+        .letter-btn.disabled {
+            opacity: 0.3;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* ===== HIDDEN ===== */
+        .hidden { display: none !important; }
+
+        /* ===== TOOLBOX TALK LINK ===== */
+        .tbt-link {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .tbt-link a {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .tbt-link span {
+            font-size: 0.82rem;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <h1>Safe Systems of Work — Toolbox Talks</h1>
+        <a href="index.html">&larr; Back to Hub</a>
+    </div>
+
+    <div class="content">
+
+        <div class="page-title">SSW Library</div>
+        <div class="page-subtitle">Select a topic to open the toolbox talk PDF on SharePoint. Use search to filter by keyword or reference code.</div>
+
+        <div class="tbt-link">
+            <span style="font-size:1.2rem;">&#128203;</span>
+            <div>
+                <a href="https://miiengineering.sharepoint.com/sites/IMS/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FIMS%2FShared%20Documents%2FSafe%20Systems%20of%20Work%20%28Toolbox%20Talks%29&viewid=67c8993b%2D6667%2D448b%2D9e58%2D34d65a2d7e80" target="_blank">SF 012B — Toolbox Talk Acknowledgement Form</a>
+                <br><span>Use this form to record attendance after delivering a toolbox talk</span>
+            </div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="search-bar">
+            <input type="text" class="search-input" id="search" placeholder="Search by topic, ref code, or keyword... e.g. crane, H04, working at height" oninput="filterSSW()" />
+        </div>
+
+        <div class="letter-nav" id="letter-nav"></div>
+
+        <div class="result-count" id="result-count"></div>
+
+        <div id="ssw-container"></div>
+
+    </div>
+
+<script>
+    // SharePoint base URL for direct file links
+    const SP_BASE = 'https://miiengineering.sharepoint.com/sites/IMS/Shared%20Documents/Safe%20Systems%20of%20Work%20(Toolbox%20Talks)/';
+
+    // SSW data: [ref, title, rev, filename]
+    const SSW_DATA = [
+        ["A02", "Access & Egress", "Rev 4", "SSW(A02) Rev. 4 Access & Egress.pdf"],
+        ["A05", "Alcohol and Drugs", "Rev 2", "SSW(A05) (Rev 2) Alcohol and Drugs.pdf"],
+        ["A06", "Asbestos", "Rev 3", "SSW(A06) (Rev 3) Asbestos.pdf"],
+        ["A07", "Angle Grinders", "Rev 5", "SSW (A07) (Rev 5) Angle Grinders.pdf"],
+        ["A08", "Acetylene", "Rev 0", "SSW(A08) (Rev 0) Acetylene.pdf"],
+        ["B01", "Banksman / Vehicle Marshall", "Rev 0", "SSW(B01) Rev. 0 Banksman Vehicle Marshall.pdf"],
+        ["C03", "Compressed Gas Cylinders", "Rev 5", "SSW(C03) Rev. 5 Compressed Gas Cylinders.pdf"],
+        ["C04", "Confined Spaces", "Rev 2", "SSW(C04) (Rev2) Confined spaces.pdf"],
+        ["C07", "Cutting, Gouging & Welding", "Rev 5", "SSW(C07) Rev. 5 Cutting Gouging & Welding.pdf"],
+        ["C08", "Crane Signalling Operations", "Rev 1", "SSW(C08) (Rev 1) Crane Signalling Operations.pdf"],
+        ["C09", "COSHH", "Rev 2", "SSW(C09) (Rev 2) COSHH.pdf"],
+        ["D02", "Display Screen Equipment", "Rev 1", "SSW(D02) (Rev1) Dispay Screen Equipment.pdf"],
+        ["D03", "Driving", "Rev 1", "SSW(D03) (Rev1) Driving.pdf"],
+        ["D04", "Driving Safely", "Rev 6", "SSW(D04) (Rev 6) Driving Safely.pdf"],
+        ["D05", "Driving — Environmental Considerations", "Rev 1", "SSW(D05) (Rev 1) Driving - Environmental Considerations.pdf"],
+        ["D06", "Diesel Engine Exhaust Emissions", "Rev 0", "SSW(D06) (Rev 0) Diesel Engine Exhaust Emissions.pdf"],
+        ["E01", "Electricity at Work", "Rev 1", "SSW(E01) (Rev1) Electricity at work.pdf"],
+        ["E03", "Emergency Procedures", "Rev 1", "SSW(E03) (Rev1) Emergency Procedures.pdf"],
+        ["E04", "Employee Responsibilities", "Rev 3", "SSW(E04) (Rev 3) Employee Responsibilities.pdf"],
+        ["E05", "Energy Efficiency", "Rev 6", "SSW(E05) (Rev 6) Energy Efficiency.pdf"],
+        ["E06", "Equipment Pre-Use Inspections — Portable Electrical Equipment", "Rev 0", "SSW(E06) (Rev 0) Equipment Pre-Use Inspections - Portable Electrical Equipment.pdf"],
+        ["E07", "Equipment Pre-Use Inspections — Hand Tools", "Rev 0", "SSW(E07) (Rev 0) Equipment Pre-Use Inspections - Hand Tools.pdf"],
+        ["E08", "Equipment Pre-Use Inspections — Lifting Accessories", "Rev 0", "SSW(E08) (Rev 0) Equipment Pre-Use Inspections - Lifting Accessories.pdf"],
+        ["F01", "Fire Prevention", "Rev 1", "SSW(F01) (Rev1) Fire Prevention.pdf"],
+        ["F02", "Fire Procedures", "Rev 1", "SSW(F02) (Rev1)  Fire Procedures.pdf"],
+        ["F03", "First Aid", "Rev 1", "SSW(F03) (Rev1) First Aid.pdf"],
+        ["F04", "Flammable Liquids", "Rev 1", "SSW(F04) (Rev1) Flammable Liquids.pdf"],
+        ["F05", "Fire Extinguishers", "Rev 0", "SSW(F05) (Rev 0) Fire Extinguishers.pdf"],
+        ["G01", "Gas Monitors", "Rev 1", "SSW(G01) Rev. 1 Gas Monitors.pdf"],
+        ["H01", "Hazard Checklist", "Rev 3", "SSW(H01) (Rev 3) Hazard checklist.pdf"],
+        ["H03", "Hierarchy of Control", "Rev 1", "SSW(H03) (Rev1) Hierachy of Control.pdf"],
+        ["H04", "Hot Work Procedure", "Rev 2", "SSW(H04) (Rev 2) Hot Work Procedure.pdf"],
+        ["H06", "Housekeeping & Safe Storage", "Rev 2", "SSW(H06) (Rev2) Housekeeping & Safe Storage.pdf"],
+        ["H07", "Hydraulics", "Rev 1", "SSW(H07) (Rev1) Hydraulics.pdf"],
+        ["H08", "Hand Protection", "Rev 2", "SSW(H08) (Rev2) Hand Protection.pdf"],
+        ["H09", "Hazard & Near Miss Reporting", "Rev 1", "SSW(H09)(Rev1) Hazard & Near miss reporting.pdf"],
+        ["H10", "Hearing Protection", "Rev 2", "SSW(H10) Rev 2 Hearing Protection.pdf"],
+        ["H11", "Health Hazard — Bird Droppings", "Rev 1", "SSW(H11) Rev1 Health Hazard - Bird Droppings.pdf"],
+        ["H12", "Human Factors — Physical Stressors and Human Reliability", "Rev 0", "SSW(H12) (Rev 0) Human Factors - Physical Stressors and Human Reliability.pdf"],
+        ["H13", "Heat Stress", "Rev 0", "SSW(H13) (Rev 0) Heat Stress.pdf"],
+        ["H14", "Hand Washing (COVID-19)", "Rev 0", "SSW(H14) (Rev 0) Hand Washing (COVID-19).pdf"],
+        ["I03", "Ionising Radiation", "Rev 1", "SSW(I03) (Rev1) Ionising Radiation.pdf"],
+        ["I04", "Isolation of Plant & Equipment", "Rev 3", "SSW(I04) Rev. 3 Isolation of Plant & Equipment.pdf"],
+        ["I05", "Isolation Procedures (COVID-19)", "Rev 9", "SSW(I05) (Rev 9) Isolation Procedures (COVID-19).pdf"],
+        ["L02", "Lead", "Rev 1", "SSW(L02) (Rev1) Lead.pdf"],
+        ["L03", "Lift Trucks", "Rev 5", "SSW(L03) (Rev 5) Lift Trucks.pdf"],
+        ["L04", "Lighting", "Rev 2", "SSW(L04) (Rev2) Lighting.pdf"],
+        ["L05", "Lift Operations and Lifting Equipment", "Rev 5", "SSW(L05) (Rev 5) Lift Operations and Lifting equipment.pdf"],
+        ["L06", "Local Exhaust Ventilation (LEV)", "Rev 0", "SSW(L06) (Rev 0) Local Exhaust Ventilation (LEV).pdf"],
+        ["L07", "Loading & Unloading (Load-Safe)", "Rev 1", "SSW(L07) (Rev 1) Loading & Unloading (Load-Safe)  -  Compatibility Mode.pdf"],
+        ["L08", "Layers of Management", "Rev 0", "SSW(L08) Rev. 0 Layers of Management.pdf"],
+        ["L09", "Lone Working", "Rev 0", "SSW(L09) (Rev 0) Lone Working.pdf"],
+        ["L10", "Load Security", "Rev 1", "SSW(L10) (Rev 1) Load Security.pdf"],
+        ["M01", "Machinery Safety", "Rev 1", "SSW(M01) (Rev1) Machinery safety.pdf"],
+        ["M02", "Maintenance of Plant and Equipment", "Rev 1", "SSW(M02) (Rev1) Maintenance of plant and equipment.pdf"],
+        ["M03", "Manual Handling", "Rev 3", "SSW(M03) (Rev3) Manual Handling.pdf"],
+        ["M04", "MEWP", "Rev 2", "SSW(M04) (Rev 2) MEWP.pdf"],
+        ["N02", "Noise Control", "Rev 1", "SSW(N02) (Rev1) Noise Control.pdf"],
+        ["O02", "Oil & Grease", "Rev 1", "SSW(O02) (Rev1) Oil & Grease.pdf"],
+        ["O03", "Oxygen", "Rev 1", "SSW(O03) (Rev 1) Oxygen.pdf"],
+        ["O04", "Overhead Power Lines", "Rev 0", "SSW(O04) Rev. 0 Overhead Power Lines.pdf"],
+        ["P01", "Permits to Work", "Rev 1", "SSW(P01) (Rev1) Permits to work.pdf"],
+        ["P02", "Personal Hygiene", "Rev 1", "SSW(P02) (Rev1) Personal Hygiene.pdf"],
+        ["P03", "Personal Protective Equipment", "Rev 3", "SSW(P03) (Rev 3) Personal Protective Equipment.pdf"],
+        ["P04", "Personal Safety", "Rev 1", "SSW(P04) (Rev1) Personal Safety.pdf"],
+        ["P05", "Pressure Systems", "Rev 1", "SSW(P05) (Rev1) Pressure Systems.pdf"],
+        ["P06", "Environment-Friendly Printing Practices", "Rev 2", "SSW(P06) (Rev 2) Environment-Friendly Printing Practices.pdf"],
+        ["P07", "Pinch & Trapping Points", "Rev 1", "SSW(P07) (Rev1) Pinch & trapping points.pdf"],
+        ["P08", "Point of Work Risk Assessments", "Rev 2", "SSW(P08) (Rev 2) Point of Work Risk Assessments.pdf"],
+        ["P09", "Prevention of Drips, Leaks and Spillages", "Rev 0", "SSW(P09) (Rev 0) Prevention of drips, leaks and spillages.pdf"],
+        ["P10", "Pneumatic Tools", "Rev 0", "SSW(P10) (Rev 0) Pneumatic Tools.pdf"],
+        ["P11", "Powder-Actuated Tools", "Rev 0", "SSW(P11) (Rev 0) Powder-actuated Tools.pdf"],
+        ["R03", "Risk Assessment", "Rev 1", "SSW(R03) (Rev1) Risk Assessment.pdf"],
+        ["R04", "RPE", "Rev 0", "SSW(R04) (Rev 0) RPE.pdf"],
+        ["S04", "Statutory Inspections", "Rev 1", "SSW(S04) (Rev1) Statutory Inspections.pdf"],
+        ["S05", "Stress", "Rev 1", "SSW(S05) (Rev1) Stress.pdf"],
+        ["S06", "Slinging", "Rev 1", "SSW(S06) (Rev 1) Slinging.pdf"],
+        ["S07", "Spill Response", "Rev 2", "SSW(S07) (Rev 2) Spill Response.pdf"],
+        ["S08", "Scaffold Safety", "Rev 2", "SSW(S08) (Rev2) Scaffold Safety.pdf"],
+        ["S09", "Slips, Trips & Falls", "Rev 1", "SSW(S09) (Rev1) Slips, Trips & Falls.pdf"],
+        ["S10", "Sun Safety", "Rev 0", "SSW(S10) (Rev0) Sun Safety.pdf"],
+        ["S11", "Situational Awareness", "Rev 0", "SSW(S11) (Rev 0) Situational Awareness.pdf"],
+        ["S12", "Social Distancing", "Rev 2", "SSW(S12) (Rev 2) Social Distancing.pdf"],
+        ["S13", "Safe Behaviours at Work", "Rev 0", "SSW(S13) (Rev 0) Safe Behaviours at Work.pdf"],
+        ["S14", "Safety Harnesses — Fall Restraint & Fall Arrest", "Rev 0", "SSW(S14) (Rev 0) Safety Harnesses - Fall Restraint & Fall Arrest.pdf"],
+        ["T01", "Temperature", "Rev 1", "SSW(T01) (Rev1) Temperature.pdf"],
+        ["T02", "Temporary and Casual Employees", "Rev 1", "SSW(T02) (Rev1) Temporary and Casual Employees.pdf"],
+        ["T03", "Transportation of Gas Cylinders", "Rev 1", "SSW(T03) (Rev1) Transportation of Gas Cylinders.pdf"],
+        ["T04", "Tata Steel PICWP", "Rev 3", "SSW(T04) (Rev 3) Tata Steel PICWP.pdf"],
+        ["U01", "Use of Hand Tools", "Rev 3", "SSW(U01) (Rev3) use of Hand Tools.pdf"],
+        ["U02", "Use of Ladders", "Rev 4", "SSW(U02) (Rev 4) Use of Ladders.pdf"],
+        ["U03", "Use of Jacks", "Rev 2", "SSW(U03) (Rev 2) Use of Jacks.pdf"],
+        ["V01", "Ventilation", "Rev 1", "SSW(V01) (Rev1) Ventilation.pdf"],
+        ["V03", "Vibration", "Rev 4", "SSW(V03) (Rev 4) Vibration.pdf"],
+        ["W02", "Waste Management", "Rev 3", "SSW(W02) (Rev 3) Waste Management.pdf"],
+        ["W04", "Working at Height", "Rev 6", "SSW(W04) (Rev 6) Working at Height.pdf"],
+        ["W06", "Waste Minimisation", "Rev 1", "SSW(W06) (Rev1) Waste Minimisation.pdf"],
+        ["W07", "Workshop Safety", "Rev 1", "SSW(W07) (Rev1) Workshop Safety.pdf"],
+        ["W08", "Weil's Disease", "Rev 1", "SSW(W08) (Rev1) Weil's Desease.pdf"],
+        ["W09", "Water Efficiency", "Rev 0", "SSW(W09) (Rev 0) Water Efficiency.pdf"],
+        ["W10", "Working Parties in Close Proximity", "Rev 0", "SSW(W10) (Rev 0) Working Parties in Close Proximity.pdf"]
+    ];
+
+    const container = document.getElementById('ssw-container');
+    const searchInput = document.getElementById('search');
+    const countEl = document.getElementById('result-count');
+    const navEl = document.getElementById('letter-nav');
+
+    // Get unique letters
+    const letters = [...new Set(SSW_DATA.map(s => s[0][0]))].sort();
+
+    // Build letter nav
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(l => {
+        const a = document.createElement('a');
+        a.className = 'letter-btn' + (letters.includes(l) ? '' : ' disabled');
+        a.textContent = l;
+        a.href = '#group-' + l;
+        a.onclick = function(e) {
+            if (this.classList.contains('disabled')) { e.preventDefault(); return; }
+            // Clear search to show all
+            searchInput.value = '';
+            filterSSW();
+        };
+        navEl.appendChild(a);
+    });
+
+    function buildURL(filename) {
+        return SP_BASE + encodeURIComponent(filename);
+    }
+
+    function render(data) {
+        container.innerHTML = '';
+        // Group by first letter of ref
+        const groups = {};
+        data.forEach(s => {
+            const letter = s[0][0];
+            if (!groups[letter]) groups[letter] = [];
+            groups[letter].push(s);
+        });
+
+        const sortedLetters = Object.keys(groups).sort();
+        sortedLetters.forEach(letter => {
+            const div = document.createElement('div');
+            div.className = 'letter-group';
+            div.id = 'group-' + letter;
+
+            const header = document.createElement('div');
+            header.className = 'letter-header';
+            header.textContent = letter;
+            div.appendChild(header);
+
+            const ul = document.createElement('ul');
+            ul.className = 'ssw-list';
+
+            groups[letter].forEach(([ref, title, rev, filename]) => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.className = 'ssw-item';
+                a.href = buildURL(filename);
+                a.target = '_blank';
+                a.innerHTML = `
+                    <span class="ssw-ref">${ref}</span>
+                    <span class="ssw-title">${title}</span>
+                    <span class="ssw-rev">${rev}</span>
+                    <span class="ssw-icon">&#128196;</span>
+                    <span class="ssw-open">Open on SharePoint &rarr;</span>
+                `;
+                li.appendChild(a);
+                ul.appendChild(li);
+            });
+
+            div.appendChild(ul);
+            container.appendChild(div);
+        });
+
+        countEl.textContent = data.length + ' of ' + SSW_DATA.length + ' toolbox talks';
+    }
+
+    function filterSSW() {
+        const q = searchInput.value.toLowerCase().trim();
+        if (!q) {
+            render(SSW_DATA);
+            return;
+        }
+        const terms = q.split(/\s+/);
+        const filtered = SSW_DATA.filter(([ref, title, rev]) => {
+            const haystack = (ref + ' ' + title + ' ' + rev).toLowerCase();
+            return terms.every(t => haystack.includes(t));
+        });
+        render(filtered);
+    }
+
+    // Initial render
+    render(SSW_DATA);
+</script>
+
+</body>
+</html>
