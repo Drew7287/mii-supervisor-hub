@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pre-Use Inspection</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+            padding-bottom: 90px;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* FORM HEADER */
+        .form-header {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px 20px 0;
+        }
+        .form-ref {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--accent);
+        }
+        .form-header h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 2px 0 6px;
+        }
+        .form-desc {
+            font-size: 0.82rem;
+            color: var(--text-light);
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        /* FIELDS */
+        .fields {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 12px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .field label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            margin-bottom: 3px;
+        }
+        .field input, .field select {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* STATUS BANNER */
+        .status-banner {
+            max-width: 700px;
+            margin: 12px auto 0;
+            padding: 0 20px;
+        }
+        .status-bar {
+            border-radius: 8px;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .status-bar.pending { background: #f0f2f5; color: var(--text-light); }
+        .status-bar.pass { background: #e6f7ec; color: var(--success); }
+        .status-bar.fail { background: #fde8ea; color: var(--danger); }
+        .status-counts {
+            font-size: 0.78rem;
+            font-weight: 400;
+        }
+
+        /* CHECKLIST */
+        .checklist {
+            max-width: 700px;
+            margin: 12px auto 0;
+            padding: 0 20px;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            padding: 14px 0 8px;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .check-item {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .check-item.pass { border-color: var(--success); }
+        .check-item.fail { border-color: var(--danger); }
+        .check-item.na { border-color: #ccc; opacity: 0.6; }
+
+        .check-main {
+            display: flex;
+            align-items: stretch;
+        }
+        .check-text {
+            flex: 1;
+            padding: 10px 12px;
+        }
+        .check-label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .check-detail {
+            font-size: 0.78rem;
+            color: var(--text-light);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        .check-buttons {
+            display: flex;
+            flex-shrink: 0;
+        }
+        .check-btn {
+            width: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            border-left: 1px solid #eee;
+            transition: all 0.15s;
+        }
+        .check-btn:hover { background: #eef1f5; }
+        .check-btn.pass-btn.selected { background: var(--success); color: var(--white); }
+        .check-btn.fail-btn.selected { background: var(--danger); color: var(--white); }
+        .check-btn.na-btn.selected { background: #999; color: var(--white); }
+
+        /* DEFECT PANEL (shown on Fail) */
+        .defect-panel {
+            display: none;
+            border-top: 1px solid #f0f0f0;
+            padding: 10px 12px;
+            background: #fffbfb;
+        }
+        .check-item.fail .defect-panel { display: block; }
+        .defect-panel textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #f0c0c0;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 48px;
+            background: var(--white);
+        }
+        .defect-panel textarea:focus {
+            outline: none;
+            border-color: var(--danger);
+        }
+        .defect-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--danger);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+        }
+        .photo-btn {
+            margin-top: 8px;
+            padding: 6px 12px;
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            background: var(--white);
+            font-size: 0.78rem;
+            font-family: inherit;
+            color: var(--text-light);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .photo-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .photo-preview {
+            margin-top: 6px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .photo-preview img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* SUBMIT BAR */
+        .submit-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+        }
+        .submit-status { font-size: 0.82rem; color: var(--text-light); }
+        .submit-status strong { color: var(--primary); }
+        .btn-submit {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            transition: background 0.15s;
+        }
+        .btn-submit.green { background: var(--success); }
+        .btn-submit.green:hover { background: #218838; }
+        .btn-submit.red { background: var(--danger); }
+        .btn-submit.red:hover { background: #c82333; }
+        .btn-submit.grey { background: #aaa; }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* SUCCESS OVERLAY */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay.show { display: flex; }
+        .overlay-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 32px 28px;
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .overlay-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 14px;
+        }
+        .overlay-icon.green { background: #e6f7ec; color: var(--success); }
+        .overlay-icon.red { background: #fde8ea; color: var(--danger); }
+        .overlay-card h3 { font-size: 1.15rem; color: var(--primary); margin-bottom: 6px; }
+        .overlay-card p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+        .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+        .overlay-actions button {
+            padding: 9px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+
+        @media (max-width: 600px) {
+            .fields { grid-template-columns: 1fr; }
+            .check-btn { width: 44px; font-size: 0.65rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1 id="topbar-title">Pre-Use Inspection</h1>
+    <a href="index.html">&larr; Hub</a>
+</div>
+
+<div class="form-header">
+    <div class="form-ref" id="form-ref"></div>
+    <h2 id="form-title"></h2>
+    <div class="form-desc" id="form-desc"></div>
+</div>
+
+<div class="fields">
+    <div class="field">
+        <label id="equip-label">Equipment ID / Fleet No.</label>
+        <input type="text" id="f-equip" placeholder="Enter ID">
+    </div>
+    <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date">
+    </div>
+    <div class="field">
+        <label>Inspector</label>
+        <input type="text" id="f-inspector" placeholder="Name">
+    </div>
+    <div class="field">
+        <label>Location / Project</label>
+        <input type="text" id="f-location" value="Enabling Works — Port Talbot">
+    </div>
+</div>
+
+<div class="status-banner">
+    <div class="status-bar pending" id="status-bar">
+        <span id="status-text">Complete all checks below</span>
+        <span class="status-counts" id="status-counts"></span>
+    </div>
+</div>
+
+<div class="checklist" id="checklist"></div>
+
+<!-- SUBMIT BAR -->
+<div class="submit-bar">
+    <div class="submit-status" id="submit-status">0 of 0 checked</div>
+    <button class="btn-submit grey" id="btn-submit" disabled onclick="submitInspection()">Submit</button>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-icon" id="overlay-icon"></div>
+        <h3 id="overlay-title"></h3>
+        <p id="overlay-msg"></p>
+        <div class="overlay-actions">
+            <button class="btn-outline" onclick="window.location.href='index.html'">Back to Hub</button>
+            <button class="btn-primary" onclick="location.reload()">New Inspection</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== FORM DEFINITIONS =====
+const FORMS = {
+    flt: {
+        ref: 'SF 056A — Issue 2',
+        title: 'Forklift Truck Start Up Checklist',
+        desc: 'Complete before use or at the beginning of each shift. Tick items that are OK. Cross any with faults and report to supervisor before attempting to use the truck.',
+        equipLabel: 'Truck ID / Fleet No.',
+        sections: [
+            { title: 'Structural Checks', items: [
+                { id: 'flt01', label: 'Fork Arms', detail: 'No visible damage or distortion. Evenly spaced on carriage plate with clips engaged' },
+                { id: 'flt02', label: 'Carriage Plate', detail: 'No obvious damage. End stops secure' },
+                { id: 'flt03', label: 'Back Rest', detail: 'Load backrest extension secure and not damaged or distorted' },
+                { id: 'flt04', label: 'Mast', detail: 'No damage, distortion or cracks. Inner channels/runners clean and smooth' },
+                { id: 'flt05', label: 'Lift Chain', detail: 'Free from damage or rust. All pins in place' },
+                { id: 'flt06', label: 'Wheels', detail: 'Undamaged. All nuts tight' },
+                { id: 'flt07', label: 'Tyres', detail: 'No excessive wear, cuts or foreign bodies. Pneumatic: pressure correct' },
+            ]},
+            { title: 'Hydraulics & Controls', items: [
+                { id: 'flt08', label: 'Hydraulics', detail: 'No damage or leakage from any point' },
+                { id: 'flt09', label: 'Mast Controls', detail: 'Lift/lower, tilt and side shift operating properly' },
+                { id: 'flt10', label: 'Steering', detail: 'Works properly in both directions at standstill and when moving' },
+                { id: 'flt11', label: 'Hand / Parking Brake', detail: 'Strong enough to prevent truck being driven' },
+                { id: 'flt12', label: 'Driving & Service Brake', detail: 'Work properly in both directions when tested slowly' },
+            ]},
+            { title: 'Electrical & Levels', items: [
+                { id: 'flt13', label: 'Lights / Indicators', detail: 'All functioning' },
+                { id: 'flt14', label: 'Horn / Beeper', detail: 'Clearly audible' },
+                { id: 'flt15', label: 'Fuel / Power', detail: 'Adequate for shift' },
+                { id: 'flt16', label: 'Levels', detail: 'Coolant and engine oil levels correct' },
+                { id: 'flt17', label: 'LPG', detail: 'Cylinder secure, pipes and hoses OK (N/A if electric)' },
+                { id: 'flt18', label: 'Battery', detail: 'Levels topped up with distilled water where necessary (weekly check)' },
+            ]},
+        ]
+    },
+
+    telehandler: {
+        ref: 'SF 056N — Issue 3',
+        title: 'Telehandler Inspection Checklist',
+        desc: 'Complete before use or at the beginning of each shift. Tick items that are OK. Cross any with faults and report to supervisor before using the truck.',
+        equipLabel: 'Truck ID / Make',
+        sections: [
+            { title: 'Structural Checks', items: [
+                { id: 'th01', label: 'Fork Arms', detail: 'No visible damage or distortion. Evenly spaced on carriage plate with clips engaged' },
+                { id: 'th02', label: 'Carriage Plate', detail: 'No obvious damage. End stops secure' },
+                { id: 'th03', label: 'Back Rest', detail: 'Load backrest extension secure and not damaged or distorted' },
+                { id: 'th04', label: 'Outriggers', detail: 'No visible damage, pads present and secure' },
+                { id: 'th05', label: 'Wheels', detail: 'Undamaged. All nuts tight' },
+                { id: 'th06', label: 'Tyres', detail: 'No excessive wear, cuts or foreign bodies. Pneumatic: pressure correct' },
+            ]},
+            { title: 'Hydraulics & Controls', items: [
+                { id: 'th07', label: 'Hydraulics', detail: 'No damage or leakage from any point' },
+                { id: 'th08', label: 'Boom Controls', detail: 'Lift/lower, tilt and side shift operating properly' },
+                { id: 'th09', label: 'Steering', detail: 'Works properly in both directions at standstill and when moving' },
+                { id: 'th10', label: 'Hand / Parking Brake', detail: 'Strong enough to prevent truck being driven' },
+                { id: 'th11', label: 'Driving & Service Brake', detail: 'Work properly in both directions when tested slowly' },
+            ]},
+            { title: 'Electrical, Levels & Cab', items: [
+                { id: 'th12', label: 'Lights / Indicators', detail: 'All functioning' },
+                { id: 'th13', label: 'Horn / Beeper', detail: 'Clearly audible' },
+                { id: 'th14', label: 'Fuel / Power', detail: 'Adequate for shift' },
+                { id: 'th15', label: 'Levels', detail: 'Coolant and engine oil levels correct' },
+                { id: 'th16', label: 'Battery', detail: 'Topped up with distilled water where necessary' },
+                { id: 'th17', label: 'Attachments', detail: 'Fit for purpose, within thorough examination period, compatible with truck, secured and free from damage' },
+                { id: 'th18', label: 'General Cab Condition', detail: 'Wiper blade, windscreens, door operation, key locks, cockpit controls, lights and warning sounders all working and free from damage' },
+            ]},
+        ]
+    },
+
+    oxyfuel: {
+        ref: 'SF 056AB — Issue 3',
+        title: 'Oxy-Fuel Equipment Inspection Checklist',
+        desc: 'Complete before use. If any component is missing or in questionable condition, do not proceed. Report concerns to your supervisor and obtain replacements from stores.',
+        equipLabel: 'Equipment Set ID',
+        sections: [
+            { title: 'Before Use — Equipment Condition', items: [
+                { id: 'ox01', label: 'Cylinder Identification', detail: 'Correct identification labels present. Do not use unlabelled cylinders' },
+                { id: 'ox02', label: 'Cylinder Position', detail: 'Safely positioned away from flying sparks and hot metal' },
+                { id: 'ox03', label: 'Cylinder Condition', detail: 'Looks safe to use, clean (free from oils, greases), no obvious damage' },
+                { id: 'ox04', label: 'Pressure Regulators', detail: 'Set at correct working pressures and within stated life-spans. Check next inspection/replacement dates' },
+                { id: 'ox05', label: 'Working Pressures', detail: 'Safe working pressures not exceeded. Confirm operating pressure of source, max inlet pressure of regulators, max working pressures of hoses' },
+            ]},
+            { title: 'Before Use — Leak & Damage Checks', items: [
+                { id: 'ox06', label: 'Cylinder Valve Group', detail: 'No wear, damage or leaks. Use leak-detecting spray if suspected — DO NOT use soapy water' },
+                { id: 'ox07', label: 'Non-Return Valves', detail: 'Non-return valves at blowpipe inlets checked for damage and leaks' },
+                { id: 'ox08', label: 'Flash Back Arresters', detail: 'Fitted and functional. For long hoses, fit arresters at both blowpipe and regulator ends' },
+                { id: 'ox09', label: 'Hoses', detail: 'Not longer than necessary. Red = acetylene, blue = oxygen, orange = propane. Free from damage/leaks' },
+                { id: 'ox10', label: 'Blowpipe & Nozzle', detail: 'Not blocked by dirt or spatter. Nozzle size appropriate for the job. Poorly maintained nozzles increase flashback risk' },
+            ]},
+            { title: 'Lighting-Up Procedure', items: [
+                { id: 'ox11', label: 'Hose Purge', detail: 'Hoses purged by opening gas supply to each hose for a few seconds. Purge one at a time, close valve after' },
+                { id: 'ox12', label: 'Spark Ignitor', detail: 'Using a spark ignitor to light the gas (not matches/lighter)' },
+                { id: 'ox13', label: 'Pressure Re-Check', detail: 'Pressure regulators confirmed at correct working pressures after lighting (second check)' },
+            ]},
+            { title: 'After Use', items: [
+                { id: 'ox14', label: 'Post-Use Equipment Check', detail: 'No obvious damage to equipment after use' },
+                { id: 'ox15', label: 'Valves Closed', detail: 'All valves turned off (at cylinder, blowpipes etc.)' },
+                { id: 'ox16', label: 'Hoses Vented', detail: 'Excess gas vented from hoses in well-ventilated area away from ignition sources' },
+            ]},
+        ]
+    }
+};
+
+// ===== INIT =====
+const params = new URLSearchParams(window.location.search);
+const formKey = params.get('form') || 'flt';
+const form = FORMS[formKey];
+
+if (!form) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;"><h2>Form not found</h2><p>Valid forms: ?form=flt, ?form=telehandler, ?form=oxyfuel</p><a href="index.html">Back to Hub</a></div>';
+}
+
+// Populate header
+document.title = form.title + ' — MII Engineering';
+document.getElementById('topbar-title').textContent = form.ref.split('—')[0].trim();
+document.getElementById('form-ref').textContent = form.ref;
+document.getElementById('form-title').textContent = form.title;
+document.getElementById('form-desc').textContent = form.desc;
+document.getElementById('equip-label').textContent = form.equipLabel;
+document.getElementById('f-date').valueAsDate = new Date();
+
+// Pre-fill inspector from URL
+if (params.get('inspector')) document.getElementById('f-inspector').value = params.get('inspector');
+
+// ===== STATE =====
+const itemState = {}; // id -> 'pass' | 'fail' | 'na'
+let totalItems = 0;
+
+// ===== BUILD CHECKLIST =====
+const container = document.getElementById('checklist');
+form.sections.forEach(section => {
+    const sDiv = document.createElement('div');
+    sDiv.innerHTML = `<div class="section-title">${section.title}</div>`;
+
+    section.items.forEach(item => {
+        totalItems++;
+        const el = document.createElement('div');
+        el.className = 'check-item';
+        el.id = 'item-' + item.id;
+        el.innerHTML = `
+            <div class="check-main">
+                <div class="check-text">
+                    <div class="check-label">${item.label}</div>
+                    <div class="check-detail">${item.detail}</div>
+                </div>
+                <div class="check-buttons">
+                    <button class="check-btn pass-btn" onclick="setCheck('${item.id}','pass')">PASS</button>
+                    <button class="check-btn fail-btn" onclick="setCheck('${item.id}','fail')">FAIL</button>
+                    <button class="check-btn na-btn" onclick="setCheck('${item.id}','na')">N/A</button>
+                </div>
+            </div>
+            <div class="defect-panel">
+                <div class="defect-label">Describe the defect</div>
+                <textarea placeholder="What's wrong? What action is needed?"></textarea>
+                <label class="photo-btn">
+                    <input type="file" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto(this, '${item.id}')">
+                    &#128247; Add Photo
+                </label>
+                <div class="photo-preview" id="photos-${item.id}"></div>
+            </div>
+        `;
+        sDiv.appendChild(el);
+    });
+    container.appendChild(sDiv);
+});
+
+// ===== CHECK HANDLERS =====
+function setCheck(id, status) {
+    const prev = itemState[id];
+    // Toggle off if clicking same button
+    if (prev === status) {
+        delete itemState[id];
+        updateItem(id, null);
+    } else {
+        itemState[id] = status;
+        updateItem(id, status);
+    }
+    updateSummary();
+}
+
+function updateItem(id, status) {
+    const el = document.getElementById('item-' + id);
+    el.className = 'check-item' + (status ? ' ' + status : '');
+    el.querySelectorAll('.check-btn').forEach(btn => btn.classList.remove('selected'));
+    if (status) {
+        const cls = status + '-btn';
+        el.querySelector('.' + cls)?.classList.add('selected');
+    }
+}
+
+function previewPhoto(input, id) {
+    const container = document.getElementById('photos-' + id);
+    if (input.files && input.files[0]) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(input.files[0]);
+        container.appendChild(img);
+    }
+}
+
+// ===== SUMMARY =====
+function updateSummary() {
+    const checked = Object.keys(itemState).length;
+    const passes = Object.values(itemState).filter(s => s === 'pass').length;
+    const fails = Object.values(itemState).filter(s => s === 'fail').length;
+    const nas = Object.values(itemState).filter(s => s === 'na').length;
+
+    // Submit status
+    document.getElementById('submit-status').innerHTML =
+        `<strong>${checked}</strong> of ${totalItems} checked`;
+
+    // Status bar
+    const bar = document.getElementById('status-bar');
+    const allDone = checked === totalItems;
+
+    if (!allDone) {
+        bar.className = 'status-bar pending';
+        document.getElementById('status-text').textContent = `${totalItems - checked} items remaining`;
+    } else if (fails > 0) {
+        bar.className = 'status-bar fail';
+        document.getElementById('status-text').textContent = `DEFECT FOUND — ${fails} item${fails > 1 ? 's' : ''} failed`;
+    } else {
+        bar.className = 'status-bar pass';
+        document.getElementById('status-text').textContent = 'ALL CHECKS PASSED — Cleared for use';
+    }
+    document.getElementById('status-counts').textContent =
+        `${passes} pass  /  ${fails} fail  /  ${nas} N/A`;
+
+    // Submit button
+    const btn = document.getElementById('btn-submit');
+    if (!allDone) {
+        btn.className = 'btn-submit grey';
+        btn.disabled = true;
+        btn.textContent = 'Submit';
+    } else if (fails > 0) {
+        btn.className = 'btn-submit red';
+        btn.disabled = false;
+        btn.textContent = 'Submit — Defect Found';
+    } else {
+        btn.className = 'btn-submit green';
+        btn.disabled = false;
+        btn.textContent = 'Submit — Passed';
+    }
+}
+
+// ===== SUBMIT =====
+function submitInspection() {
+    const equip = document.getElementById('f-equip').value.trim();
+    const inspector = document.getElementById('f-inspector').value.trim();
+    if (!equip) { alert('Please enter the equipment ID.'); return; }
+    if (!inspector) { alert('Please enter the inspector name.'); return; }
+
+    // Check that all fails have defect notes
+    const fails = Object.entries(itemState).filter(([,s]) => s === 'fail');
+    for (const [id] of fails) {
+        const textarea = document.querySelector('#item-' + id + ' .defect-panel textarea');
+        if (textarea && !textarea.value.trim()) {
+            alert('Please describe the defect for: ' + document.querySelector('#item-' + id + ' .check-label').textContent);
+            textarea.focus();
+            return;
+        }
+    }
+
+    const hasFails = fails.length > 0;
+
+    // Build record
+    const record = {
+        form: form.ref,
+        equipment: equip,
+        date: document.getElementById('f-date').value,
+        inspector,
+        location: document.getElementById('f-location').value,
+        result: hasFails ? 'FAIL' : 'PASS',
+        items: {},
+        defects: []
+    };
+
+    Object.entries(itemState).forEach(([id, status]) => {
+        record.items[id] = status;
+        if (status === 'fail') {
+            const notes = document.querySelector('#item-' + id + ' .defect-panel textarea')?.value || '';
+            const label = document.querySelector('#item-' + id + ' .check-label')?.textContent || id;
+            record.defects.push({ item: label, notes });
+        }
+    });
+
+    console.log('Pre-Use Inspection submitted:', record);
+
+    // Show overlay
+    const icon = document.getElementById('overlay-icon');
+    const title = document.getElementById('overlay-title');
+    const msg = document.getElementById('overlay-msg');
+
+    if (hasFails) {
+        icon.className = 'overlay-icon red';
+        icon.textContent = '!';
+        title.textContent = 'Inspection Recorded — Defect Found';
+        const defectList = record.defects.map(d => d.item).join(', ');
+        msg.textContent = `${equip} has ${fails.length} defect${fails.length > 1 ? 's' : ''}: ${defectList}. Equipment must not be used until resolved. Supervisor notified.`;
+    } else {
+        icon.className = 'overlay-icon green';
+        icon.textContent = '\u2713';
+        title.textContent = 'Inspection Passed';
+        msg.textContent = `${equip} — all checks passed. Cleared for use by ${inspector}.`;
+    }
+
+    document.getElementById('overlay').classList.add('show');
+}
+
+// Init
+updateSummary();
+</script>
+
+</body>
+</html>

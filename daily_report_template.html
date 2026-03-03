@@ -805,7 +805,7 @@
                         <div class="detail">Telehandlers, MEWPs, lifting gear, power tools</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">SSW E06/07/08<br>SF 019</td>
+                    <td class="col-forms"><a href="#" onclick="openInspection('flt',event)" style="color:var(--accent);font-weight:600;text-decoration:none;">FLT</a> / <a href="#" onclick="openInspection('telehandler',event)" style="color:var(--accent);font-weight:600;text-decoration:none;">T/H</a> / <a href="#" onclick="openInspection('oxyfuel',event)" style="color:var(--accent);font-weight:600;text-decoration:none;">Oxy</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
             </tbody>
@@ -1367,6 +1367,16 @@
         const params = new URLSearchParams();
         if (names.length) params.set('crew', names.join(','));
         window.open('training_matrix.html?' + params.toString(), '_blank');
+    }
+
+    // ===== PRE-USE INSPECTIONS: Open inspection form with inspector pre-filled =====
+    function openInspection(formType, e) {
+        e.preventDefault();
+        const supervisor = getSupervisorName();
+        const params = new URLSearchParams();
+        params.set('form', formType);
+        if (supervisor) params.set('inspector', supervisor);
+        window.open('inspection.html?' + params.toString(), '_blank');
     }
 </script>
 
