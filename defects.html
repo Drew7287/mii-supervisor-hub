@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defect Tracker — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== TABS ===== */
+        .tabs {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px 0;
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--text-light);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .stat-value.red { color: var(--danger); }
+        .stat-value.amber { color: var(--warning); }
+        .stat-value.green { color: var(--success); }
+        .stat-value.blue { color: var(--accent); }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-bar input,
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-bar input { flex: 1; min-width: 180px; }
+        .filter-bar select { min-width: 140px; }
+        .filter-bar input:focus,
+        .filter-bar select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* ===== DEFECT CARDS ===== */
+        .defect-list {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+        }
+        .defect-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            transition: box-shadow 0.15s;
+        }
+        .defect-card:hover { box-shadow: var(--shadow-hover); }
+        .defect-accent {
+            width: 5px;
+            flex-shrink: 0;
+        }
+        .defect-accent.critical { background: var(--danger); }
+        .defect-accent.moderate { background: var(--warning); }
+        .defect-accent.minor { background: var(--success); }
+
+        .defect-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .defect-header {
+            padding: 14px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .defect-header:hover { background: #fafbfc; }
+
+        .severity-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .severity-badge.critical { background: #fde8ea; color: var(--danger); }
+        .severity-badge.moderate { background: #fff6e0; color: #b07d00; }
+        .severity-badge.minor { background: #e6f7ec; color: var(--success); }
+
+        .defect-equip {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .defect-summary {
+            font-size: 0.88rem;
+            color: var(--text);
+            flex: 1;
+            min-width: 120px;
+        }
+        .defect-meta {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .status-pill {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .status-pill.open { background: #fde8ea; color: var(--danger); }
+        .status-pill.in-progress { background: #fff6e0; color: #b07d00; }
+        .status-pill.closed { background: #e6f7ec; color: var(--success); }
+
+        .expand-arrow {
+            font-size: 0.8rem;
+            color: var(--border);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .defect-card.expanded .expand-arrow { transform: rotate(180deg); }
+
+        /* EXPANDED DETAIL */
+        .defect-detail {
+            display: none;
+            border-top: 1px solid #f0f0f0;
+            padding: 16px;
+        }
+        .defect-card.expanded .defect-detail { display: block; }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .detail-item label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 2px;
+        }
+        .detail-item span {
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+
+        /* NOTES TIMELINE */
+        .notes-section h4 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .note-entry {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .note-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+        .note-dot.created { background: var(--danger); }
+        .note-dot.update { background: var(--accent); }
+        .note-dot.resolved { background: var(--success); }
+        .note-content {
+            font-size: 0.82rem;
+            color: var(--text);
+            line-height: 1.45;
+        }
+        .note-content .note-time {
+            font-size: 0.72rem;
+            color: var(--text-light);
+        }
+
+        /* ACTION PANELS */
+        .action-panel {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .action-panel label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .action-panel input,
+        .action-panel textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+            margin-bottom: 8px;
+        }
+        .action-panel textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .action-panel input:focus,
+        .action-panel textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        .btn-action {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            transition: opacity 0.15s;
+        }
+        .btn-action:hover { opacity: 0.9; }
+        .btn-action.amber { background: var(--warning); }
+        .btn-action.green { background: var(--success); }
+
+        .resolved-banner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #e6f7ec;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .resolved-banner .check { font-size: 1.1rem; color: var(--success); }
+        .resolved-banner span { font-size: 0.82rem; color: var(--success); font-weight: 600; }
+
+        /* ===== INSPECTION LOG TAB ===== */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .log-table-wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+            overflow-x: auto;
+        }
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .log-table th {
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            padding: 12px 14px;
+            border-bottom: 2px solid var(--border);
+            background: #fafbfc;
+        }
+        .log-table td {
+            font-size: 0.85rem;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            color: var(--text);
+        }
+        .log-table tr:last-child td { border-bottom: none; }
+        .log-table tr:hover td { background: #fafbfc; }
+        .result-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 3px 10px;
+            border-radius: 4px;
+        }
+        .result-badge.pass { background: #e6f7ec; color: var(--success); }
+        .result-badge.fail { background: #fde8ea; color: var(--danger); }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-light);
+        }
+        .empty-state h3 { font-size: 1rem; margin-bottom: 4px; color: var(--text); }
+        .empty-state p { font-size: 0.85rem; }
+
+        @media (max-width: 600px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; }
+            .filter-bar select { min-width: 100%; }
+            .defect-header { flex-wrap: wrap; gap: 6px; }
+            .defect-meta { width: 100%; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Defect Tracker</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('register')">Defect Register</button>
+    <button class="tab-btn" onclick="switchTab('log')">Inspection Log</button>
+</div>
+
+<!-- ===== DEFECT REGISTER TAB ===== -->
+<div class="tab-content active" id="tab-register">
+    <div class="stats-bar" id="defect-stats"></div>
+    <div class="filter-bar">
+        <input type="text" id="filter-search" placeholder="Search equipment, summary, inspector..." oninput="renderDefects()">
+        <select id="filter-status" onchange="renderDefects()">
+            <option value="">All Statuses</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Closed">Closed</option>
+        </select>
+        <select id="filter-type" onchange="renderDefects()">
+            <option value="">All Equipment</option>
+            <option value="FLT">FLT</option>
+            <option value="Telehandler">Telehandler</option>
+            <option value="Oxy-Fuel">Oxy-Fuel</option>
+        </select>
+        <select id="filter-severity" onchange="renderDefects()">
+            <option value="">All Severities</option>
+            <option value="Critical">Critical</option>
+            <option value="Moderate">Moderate</option>
+            <option value="Minor">Minor</option>
+        </select>
+    </div>
+    <div class="defect-list" id="defect-list"></div>
+</div>
+
+<!-- ===== INSPECTION LOG TAB ===== -->
+<div class="tab-content" id="tab-log">
+    <div class="stats-bar" id="log-stats"></div>
+    <div class="log-table-wrap">
+        <table class="log-table" id="log-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Equipment</th>
+                    <th>Type</th>
+                    <th>Inspector</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody id="log-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// ===== localStorage KEYS =====
+const DEFECTS_KEY = 'mii_defects';
+const INSPECTIONS_KEY = 'mii_inspections';
+const SEEDED_KEY = 'mii_data_seeded';
+
+// ===== SEED MOCK DATA =====
+function seedData() {
+    if (localStorage.getItem(SEEDED_KEY)) return;
+
+    const today = new Date();
+    const d = (offset) => {
+        const dt = new Date(today);
+        dt.setDate(dt.getDate() - offset);
+        return dt.toISOString().split('T')[0];
+    };
+
+    const defects = [
+        {
+            id: 'DEF-001',
+            equipment: 'FL-107',
+            equipmentType: 'FLT',
+            summary: 'Left fork arm bent — visible distortion at heel',
+            description: 'During pre-use inspection, left fork arm found with approx 15mm lateral bend at heel. Fork tips misaligned by ~20mm. Not safe for lifting.',
+            severity: 'Critical',
+            status: 'Open',
+            inspector: 'D. Evans',
+            date: d(0),
+            assignedTo: '',
+            notes: [
+                { type: 'created', text: 'Defect logged from pre-use inspection', author: 'D. Evans', time: d(0) + ' 06:45' }
+            ]
+        },
+        {
+            id: 'DEF-002',
+            equipment: 'FL-103',
+            equipmentType: 'FLT',
+            summary: 'Hydraulic leak at tilt cylinder base',
+            description: 'Oil weeping from tilt cylinder base seal. Small puddle forming under parked truck. Mast tilt noticeably slower than normal.',
+            severity: 'Critical',
+            status: 'In Progress',
+            inspector: 'M. Jones',
+            date: d(2),
+            assignedTo: 'Workshop — S. Price',
+            notes: [
+                { type: 'created', text: 'Defect logged from pre-use inspection', author: 'M. Jones', time: d(2) + ' 07:10' },
+                { type: 'update', text: 'Assigned to Workshop. Seal kit ordered, ETA tomorrow.', author: 'S. Price', time: d(1) + ' 09:30' }
+            ]
+        },
+        {
+            id: 'DEF-003',
+            equipment: 'TH-202',
+            equipmentType: 'Telehandler',
+            summary: 'Nearside rear tyre — deep cut in sidewall',
+            description: 'Cut approximately 40mm long and 8mm deep in nearside rear tyre sidewall. Cord not yet exposed but at risk if further loaded.',
+            severity: 'Moderate',
+            status: 'Open',
+            inspector: 'R. Thomas',
+            date: d(1),
+            assignedTo: '',
+            notes: [
+                { type: 'created', text: 'Defect logged from pre-use inspection', author: 'R. Thomas', time: d(1) + ' 06:30' }
+            ]
+        },
+        {
+            id: 'DEF-004',
+            equipment: 'TH-205',
+            equipmentType: 'Telehandler',
+            summary: 'Boom extension jerky — possible hydraulic issue',
+            description: 'Boom extend/retract operation is jerky and inconsistent. Suspect air in hydraulic system or spool valve issue.',
+            severity: 'Moderate',
+            status: 'In Progress',
+            inspector: 'D. Evans',
+            date: d(3),
+            assignedTo: 'Workshop — K. Williams',
+            notes: [
+                { type: 'created', text: 'Defect logged from pre-use inspection', author: 'D. Evans', time: d(3) + ' 07:00' },
+                { type: 'update', text: 'Bled hydraulic system — still jerky. Checking spool valve next.', author: 'K. Williams', time: d(2) + ' 14:00' }
+            ]
+        },
+        {
+            id: 'DEF-005',
+            equipment: 'OX-008',
+            equipmentType: 'Oxy-Fuel',
+            summary: 'Flash back arrester overdue for inspection',
+            description: 'Oxygen-side flashback arrester past its stamped inspection date by 2 weeks. Equipment cannot be used until replaced or recertified.',
+            severity: 'Critical',
+            status: 'Closed',
+            inspector: 'P. Morgan',
+            date: d(5),
+            assignedTo: 'Stores — J. Lewis',
+            resolvedDate: d(3),
+            resolutionNotes: 'Replaced with new certified unit from stores. Old unit sent for recertification.',
+            notes: [
+                { type: 'created', text: 'Defect logged from pre-use inspection', author: 'P. Morgan', time: d(5) + ' 06:50' },
+                { type: 'update', text: 'Replacement arrester collected from stores.', author: 'J. Lewis', time: d(4) + ' 10:00' },
+                { type: 'resolved', text: 'New arrester fitted and tested. Equipment cleared for use.', author: 'J. Lewis', time: d(3) + ' 08:15' }
+            ]
+        },
+        {
+            id: 'DEF-006',
+            equipment: 'FL-109',
+            equipmentType: 'FLT',
+            summary: 'Horn intermittent — works only when pressed hard',
+            description: 'Horn button requires excessive force to activate. Intermittent contact. Safety concern in busy warehouse area.',
+            severity: 'Minor',
+            status: 'Closed',
+            inspector: 'M. Jones',
+            date: d(6),
+            assignedTo: 'Workshop — S. Price',
+            resolvedDate: d(4),
+            resolutionNotes: 'Horn switch replaced. Tested OK — consistent activation with normal pressure.',
+            notes: [
+                { type: 'created', text: 'Defect logged from pre-use inspection', author: 'M. Jones', time: d(6) + ' 07:30' },
+                { type: 'update', text: 'Ordered replacement horn switch.', author: 'S. Price', time: d(5) + ' 11:00' },
+                { type: 'resolved', text: 'Switch replaced and tested. Working correctly.', author: 'S. Price', time: d(4) + ' 09:00' }
+            ]
+        },
+        {
+            id: 'DEF-007',
+            equipment: 'OX-012',
+            equipmentType: 'Oxy-Fuel',
+            summary: 'Acetylene hose — minor surface cracking near coupling',
+            description: 'Surface cracking visible on acetylene (red) hose approximately 150mm from blowpipe coupling. No gas leak detected but hose showing age.',
+            severity: 'Minor',
+            status: 'Open',
+            inspector: 'R. Thomas',
+            date: d(0),
+            assignedTo: '',
+            notes: [
+                { type: 'created', text: 'Defect logged from pre-use inspection', author: 'R. Thomas', time: d(0) + ' 07:15' }
+            ]
+        }
+    ];
+
+    const inspections = [
+        { id: 'INS-001', equipment: 'FL-107', equipmentType: 'FLT', inspector: 'D. Evans', date: d(0), result: 'FAIL', defectsFound: 1 },
+        { id: 'INS-002', equipment: 'FL-103', equipmentType: 'FLT', inspector: 'M. Jones', date: d(0), result: 'PASS', defectsFound: 0 },
+        { id: 'INS-003', equipment: 'TH-202', equipmentType: 'Telehandler', inspector: 'R. Thomas', date: d(0), result: 'FAIL', defectsFound: 1 },
+        { id: 'INS-004', equipment: 'TH-205', equipmentType: 'Telehandler', inspector: 'D. Evans', date: d(1), result: 'PASS', defectsFound: 0 },
+        { id: 'INS-005', equipment: 'OX-008', equipmentType: 'Oxy-Fuel', inspector: 'P. Morgan', date: d(1), result: 'PASS', defectsFound: 0 },
+        { id: 'INS-006', equipment: 'FL-109', equipmentType: 'FLT', inspector: 'M. Jones', date: d(2), result: 'PASS', defectsFound: 0 },
+        { id: 'INS-007', equipment: 'OX-012', equipmentType: 'Oxy-Fuel', inspector: 'R. Thomas', date: d(0), result: 'FAIL', defectsFound: 1 }
+    ];
+
+    localStorage.setItem(DEFECTS_KEY, JSON.stringify(defects));
+    localStorage.setItem(INSPECTIONS_KEY, JSON.stringify(inspections));
+    localStorage.setItem(SEEDED_KEY, 'true');
+}
+
+seedData();
+
+// ===== DATA ACCESS =====
+function getDefects() {
+    return JSON.parse(localStorage.getItem(DEFECTS_KEY) || '[]');
+}
+function saveDefects(defects) {
+    localStorage.setItem(DEFECTS_KEY, JSON.stringify(defects));
+}
+function getInspections() {
+    return JSON.parse(localStorage.getItem(INSPECTIONS_KEY) || '[]');
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', (tab === 'register' && i === 0) || (tab === 'log' && i === 1));
+    });
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+    document.getElementById('tab-log').classList.toggle('active', tab === 'log');
+    if (tab === 'register') renderDefects();
+    else renderLog();
+}
+
+// ===== DEFECT REGISTER =====
+function renderDefectStats() {
+    const defects = getDefects();
+    const open = defects.filter(d => d.status === 'Open').length;
+    const inProgress = defects.filter(d => d.status === 'In Progress').length;
+
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const closedThisWeek = defects.filter(d => d.status === 'Closed' && d.resolvedDate && new Date(d.resolvedDate) >= weekAgo).length;
+
+    // Avg resolution time (days) for closed defects
+    const closedDefects = defects.filter(d => d.status === 'Closed' && d.resolvedDate);
+    let avgDays = '—';
+    if (closedDefects.length > 0) {
+        const totalDays = closedDefects.reduce((sum, d) => {
+            return sum + Math.ceil((new Date(d.resolvedDate) - new Date(d.date)) / (1000 * 60 * 60 * 24));
+        }, 0);
+        avgDays = (totalDays / closedDefects.length).toFixed(1) + 'd';
+    }
+
+    document.getElementById('defect-stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value red">${open}</div><div class="stat-label">Open</div></div>
+        <div class="stat-card"><div class="stat-value amber">${inProgress}</div><div class="stat-label">In Progress</div></div>
+        <div class="stat-card"><div class="stat-value green">${closedThisWeek}</div><div class="stat-label">Closed This Week</div></div>
+        <div class="stat-card"><div class="stat-value blue">${avgDays}</div><div class="stat-label">Avg Resolution</div></div>
+    `;
+}
+
+function renderDefects() {
+    renderDefectStats();
+    const defects = getDefects();
+
+    const search = document.getElementById('filter-search').value.toLowerCase();
+    const status = document.getElementById('filter-status').value;
+    const type = document.getElementById('filter-type').value;
+    const severity = document.getElementById('filter-severity').value;
+
+    const filtered = defects.filter(d => {
+        if (status && d.status !== status) return false;
+        if (type && d.equipmentType !== type) return false;
+        if (severity && d.severity !== severity) return false;
+        if (search) {
+            const hay = (d.equipment + ' ' + d.summary + ' ' + d.inspector + ' ' + d.id).toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    // Sort: Open first, then In Progress, then Closed; within group by date desc
+    const statusOrder = { 'Open': 0, 'In Progress': 1, 'Closed': 2 };
+    filtered.sort((a, b) => {
+        const so = statusOrder[a.status] - statusOrder[b.status];
+        if (so !== 0) return so;
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    const list = document.getElementById('defect-list');
+    if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state"><h3>No defects found</h3><p>Try adjusting your filters</p></div>';
+        return;
+    }
+
+    list.innerHTML = filtered.map(d => {
+        const sevClass = d.severity.toLowerCase();
+        const statusClass = d.status === 'In Progress' ? 'in-progress' : d.status.toLowerCase();
+        return `
+        <div class="defect-card" id="card-${d.id}">
+            <div class="defect-accent ${sevClass}"></div>
+            <div class="defect-body">
+                <div class="defect-header" onclick="toggleCard('${d.id}')">
+                    <span class="severity-badge ${sevClass}">${d.severity}</span>
+                    <span class="defect-equip">${d.equipment}</span>
+                    <span class="defect-summary">${d.summary}</span>
+                    <span class="defect-meta">
+                        <span>${d.date}</span>
+                        <span>${d.inspector}</span>
+                    </span>
+                    <span class="status-pill ${statusClass}">${d.status}</span>
+                    <span class="expand-arrow">&#9660;</span>
+                </div>
+                <div class="defect-detail">
+                    <div class="detail-grid">
+                        <div class="detail-item"><label>Defect ID</label><span>${d.id}</span></div>
+                        <div class="detail-item"><label>Equipment Type</label><span>${d.equipmentType}</span></div>
+                        <div class="detail-item"><label>Reported By</label><span>${d.inspector}</span></div>
+                        <div class="detail-item"><label>Assigned To</label><span>${d.assignedTo || '— Unassigned —'}</span></div>
+                    </div>
+                    <p style="font-size:0.85rem;color:var(--text);margin-bottom:14px;line-height:1.5">${d.description}</p>
+
+                    <div class="notes-section">
+                        <h4>Activity</h4>
+                        ${d.notes.map(n => `
+                            <div class="note-entry">
+                                <div class="note-dot ${n.type}"></div>
+                                <div class="note-content">
+                                    <strong>${n.author}</strong> — ${n.text}<br>
+                                    <span class="note-time">${n.time}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    ${renderActionPanel(d)}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderActionPanel(d) {
+    if (d.status === 'Open') {
+        return `
+        <div class="action-panel">
+            <label>Assign To</label>
+            <input type="text" id="assign-${d.id}" placeholder="e.g. Workshop — S. Price">
+            <button class="btn-action amber" onclick="startWork('${d.id}')">Start Work</button>
+        </div>`;
+    }
+    if (d.status === 'In Progress') {
+        return `
+        <div class="action-panel">
+            <label>Resolution Notes</label>
+            <textarea id="resolve-${d.id}" placeholder="Describe what was done to resolve the defect..."></textarea>
+            <button class="btn-action green" onclick="markResolved('${d.id}')">Mark Resolved</button>
+        </div>`;
+    }
+    // Closed
+    return `
+    <div class="resolved-banner">
+        <span class="check">&#10003;</span>
+        <span>Resolved ${d.resolvedDate || ''} ${d.assignedTo ? 'by ' + d.assignedTo : ''}</span>
+    </div>
+    ${d.resolutionNotes ? '<p style="font-size:0.82rem;color:var(--text-light);margin-top:8px;line-height:1.45">' + d.resolutionNotes + '</p>' : ''}`;
+}
+
+function toggleCard(id) {
+    document.getElementById('card-' + id).classList.toggle('expanded');
+}
+
+function startWork(id) {
+    const assignInput = document.getElementById('assign-' + id);
+    const assignee = assignInput ? assignInput.value.trim() : '';
+    if (!assignee) { alert('Please enter who this is assigned to.'); return; }
+
+    const defects = getDefects();
+    const d = defects.find(x => x.id === id);
+    if (!d) return;
+
+    d.status = 'In Progress';
+    d.assignedTo = assignee;
+    const now = new Date();
+    d.notes.push({
+        type: 'update',
+        text: 'Assigned to ' + assignee + '. Work started.',
+        author: assignee.split('—').pop().trim() || assignee,
+        time: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0,5)
+    });
+
+    saveDefects(defects);
+    renderDefects();
+}
+
+function markResolved(id) {
+    const textarea = document.getElementById('resolve-' + id);
+    const notes = textarea ? textarea.value.trim() : '';
+    if (!notes) { alert('Please describe the resolution.'); return; }
+
+    const defects = getDefects();
+    const d = defects.find(x => x.id === id);
+    if (!d) return;
+
+    const now = new Date();
+    d.status = 'Closed';
+    d.resolvedDate = now.toISOString().split('T')[0];
+    d.resolutionNotes = notes;
+    d.notes.push({
+        type: 'resolved',
+        text: notes,
+        author: d.assignedTo.split('—').pop().trim() || d.assignedTo,
+        time: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0,5)
+    });
+
+    saveDefects(defects);
+    renderDefects();
+}
+
+// ===== INSPECTION LOG =====
+function renderLogStats() {
+    const inspections = getInspections();
+    const today = new Date().toISOString().split('T')[0];
+    const todayInspections = inspections.filter(i => i.date === today);
+    const total = inspections.length;
+    const passes = inspections.filter(i => i.result === 'PASS').length;
+    const passRate = total > 0 ? Math.round((passes / total) * 100) : 0;
+    const defectsFound = inspections.reduce((sum, i) => sum + (i.defectsFound || 0), 0);
+    const types = new Set(inspections.map(i => i.equipmentType)).size;
+
+    document.getElementById('log-stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value blue">${todayInspections.length}</div><div class="stat-label">Inspected Today</div></div>
+        <div class="stat-card"><div class="stat-value green">${passRate}%</div><div class="stat-label">Pass Rate</div></div>
+        <div class="stat-card"><div class="stat-value red">${defectsFound}</div><div class="stat-label">Defects Found</div></div>
+        <div class="stat-card"><div class="stat-value">${types}</div><div class="stat-label">Equipment Types</div></div>
+    `;
+}
+
+function renderLog() {
+    renderLogStats();
+    const inspections = getInspections();
+    const sorted = [...inspections].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const tbody = document.getElementById('log-body');
+    if (sorted.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light);padding:32px">No inspections logged yet</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = sorted.map(i => `
+        <tr>
+            <td>${i.date}</td>
+            <td>${i.equipment}</td>
+            <td>${i.equipmentType}</td>
+            <td>${i.inspector}</td>
+            <td><span class="result-badge ${i.result.toLowerCase()}">${i.result}</span></td>
+        </tr>
+    `).join('');
+}
+
+// ===== INIT =====
+renderDefects();
+</script>
+
+</body>
+</html>

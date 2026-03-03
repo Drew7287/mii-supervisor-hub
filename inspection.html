@@ -340,6 +340,146 @@
         .btn-primary { background: var(--primary); color: var(--white); }
         .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
 
+        /* DEFECT REPORT OVERLAY */
+        .report-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 16px;
+            overflow-y: auto;
+        }
+        .report-overlay.show { display: flex; }
+        .report-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 28px 24px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .report-card h3 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        .report-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-light);
+            margin-bottom: 16px;
+        }
+
+        .report-defect-list {
+            margin-bottom: 16px;
+        }
+        .report-defect-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #fffbfb;
+            border: 1px solid #f0c0c0;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+        .report-defect-item .rdot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--danger);
+            flex-shrink: 0;
+        }
+
+        .report-section {
+            margin-bottom: 14px;
+        }
+        .report-section label.section-label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            margin-bottom: 6px;
+        }
+
+        .severity-options {
+            display: flex;
+            gap: 6px;
+        }
+        .sev-btn {
+            flex: 1;
+            padding: 8px 6px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            background: var(--white);
+            font-size: 0.78rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+        }
+        .sev-btn:hover { border-color: #999; }
+        .sev-btn.selected.critical { border-color: var(--danger); background: #fde8ea; color: var(--danger); }
+        .sev-btn.selected.moderate { border-color: var(--warning); background: #fff6e0; color: #b07d00; }
+        .sev-btn.selected.minor { border-color: var(--success); background: #e6f7ec; color: var(--success); }
+
+        .recipient-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .recipient-list label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text);
+            cursor: pointer;
+        }
+        .recipient-list input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+        }
+
+        .report-email {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        .report-email:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 18px;
+        }
+        .report-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-send { background: var(--danger); color: var(--white); flex: 1; }
+        .btn-send:hover { background: #c82333; }
+        .btn-cancel { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+
         @media (max-width: 600px) {
             .fields { grid-template-columns: 1fr; }
             .check-btn { width: 44px; font-size: 0.65rem; }
@@ -393,7 +533,7 @@
     <button class="btn-submit grey" id="btn-submit" disabled onclick="submitInspection()">Submit</button>
 </div>
 
-<!-- RESULT OVERLAY -->
+<!-- RESULT OVERLAY (pass inspections) -->
 <div class="overlay" id="overlay">
     <div class="overlay-card">
         <div class="overlay-icon" id="overlay-icon"></div>
@@ -401,6 +541,58 @@
         <p id="overlay-msg"></p>
         <div class="overlay-actions">
             <button class="btn-outline" onclick="window.location.href='index.html'">Back to Hub</button>
+            <button class="btn-primary" onclick="location.reload()">New Inspection</button>
+        </div>
+    </div>
+</div>
+
+<!-- DEFECT REPORT OVERLAY (fail inspections) -->
+<div class="report-overlay" id="report-overlay">
+    <div class="report-card">
+        <h3>Defect Report</h3>
+        <p class="report-subtitle" id="report-subtitle"></p>
+
+        <div class="report-defect-list" id="report-defect-list"></div>
+
+        <div class="report-section">
+            <label class="section-label">Severity</label>
+            <div class="severity-options">
+                <button class="sev-btn critical" onclick="selectSeverity('Critical', this)">Critical</button>
+                <button class="sev-btn moderate" onclick="selectSeverity('Moderate', this)">Moderate</button>
+                <button class="sev-btn minor" onclick="selectSeverity('Minor', this)">Minor</button>
+            </div>
+        </div>
+
+        <div class="report-section">
+            <label class="section-label">Notify</label>
+            <div class="recipient-list">
+                <label><input type="checkbox" value="Plant Manager" checked> Plant Manager</label>
+                <label><input type="checkbox" value="Workshop Supervisor" checked> Workshop Supervisor</label>
+                <label><input type="checkbox" value="Site Agent"> Site Agent</label>
+                <label><input type="checkbox" value="Safety Officer"> Safety Officer</label>
+            </div>
+        </div>
+
+        <div class="report-section">
+            <label class="section-label">Additional Email (optional)</label>
+            <input type="email" class="report-email" id="report-extra-email" placeholder="name@example.com">
+        </div>
+
+        <div class="report-actions">
+            <button class="btn-cancel" onclick="closeReport()">Cancel</button>
+            <button class="btn-send" onclick="sendReport()">Send Report &amp; Log Defect</button>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRMATION OVERLAY (after sending defect report) -->
+<div class="overlay" id="confirm-overlay">
+    <div class="overlay-card">
+        <div class="overlay-icon green" style="background:#e6f7ec;color:var(--success)">&#10003;</div>
+        <h3>Defect Logged &amp; Report Sent</h3>
+        <p id="confirm-msg"></p>
+        <div class="overlay-actions">
+            <button class="btn-outline" onclick="window.location.href='defects.html'">View Defect Tracker</button>
             <button class="btn-primary" onclick="location.reload()">New Inspection</button>
         </div>
     </div>
@@ -650,6 +842,22 @@ function updateSummary() {
     }
 }
 
+// ===== LOCALSTORAGE KEYS =====
+const DEFECTS_KEY = 'mii_defects';
+const INSPECTIONS_KEY = 'mii_inspections';
+
+// ===== EQUIPMENT TYPE FROM FORM KEY =====
+function getEquipmentType() {
+    if (formKey === 'flt') return 'FLT';
+    if (formKey === 'telehandler') return 'Telehandler';
+    if (formKey === 'oxyfuel') return 'Oxy-Fuel';
+    return 'Other';
+}
+
+// Holds the built record between submit and send
+let pendingRecord = null;
+let selectedSeverity = 'Moderate';
+
 // ===== SUBMIT =====
 function submitInspection() {
     const equip = document.getElementById('f-equip').value.trim();
@@ -674,6 +882,7 @@ function submitInspection() {
     const record = {
         form: form.ref,
         equipment: equip,
+        equipmentType: getEquipmentType(),
         date: document.getElementById('f-date').value,
         inspector,
         location: document.getElementById('f-location').value,
@@ -693,25 +902,120 @@ function submitInspection() {
 
     console.log('Pre-Use Inspection submitted:', record);
 
-    // Show overlay
-    const icon = document.getElementById('overlay-icon');
-    const title = document.getElementById('overlay-title');
-    const msg = document.getElementById('overlay-msg');
-
     if (hasFails) {
-        icon.className = 'overlay-icon red';
-        icon.textContent = '!';
-        title.textContent = 'Inspection Recorded — Defect Found';
-        const defectList = record.defects.map(d => d.item).join(', ');
-        msg.textContent = `${equip} has ${fails.length} defect${fails.length > 1 ? 's' : ''}: ${defectList}. Equipment must not be used until resolved. Supervisor notified.`;
+        // Show defect report overlay
+        pendingRecord = record;
+        selectedSeverity = 'Moderate';
+        showReportOverlay(record);
     } else {
+        // PASS — log inspection and show simple overlay
+        logInspection(record);
+
+        const icon = document.getElementById('overlay-icon');
+        const title = document.getElementById('overlay-title');
+        const msg = document.getElementById('overlay-msg');
         icon.className = 'overlay-icon green';
         icon.textContent = '\u2713';
         title.textContent = 'Inspection Passed';
         msg.textContent = `${equip} — all checks passed. Cleared for use by ${inspector}.`;
+        document.getElementById('overlay').classList.add('show');
     }
+}
 
-    document.getElementById('overlay').classList.add('show');
+// ===== DEFECT REPORT OVERLAY =====
+function showReportOverlay(record) {
+    document.getElementById('report-subtitle').textContent =
+        `${record.equipment} — ${record.defects.length} defect${record.defects.length > 1 ? 's' : ''} found during pre-use inspection`;
+
+    const listEl = document.getElementById('report-defect-list');
+    listEl.innerHTML = record.defects.map(d =>
+        `<div class="report-defect-item"><span class="rdot"></span><strong>${d.item}</strong>: ${d.notes}</div>`
+    ).join('');
+
+    // Reset severity selection to Moderate
+    document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelector('.sev-btn.moderate').classList.add('selected');
+    selectedSeverity = 'Moderate';
+
+    document.getElementById('report-overlay').classList.add('show');
+}
+
+function selectSeverity(level, btn) {
+    selectedSeverity = level;
+    document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function closeReport() {
+    document.getElementById('report-overlay').classList.remove('show');
+}
+
+function sendReport() {
+    if (!pendingRecord) return;
+
+    const record = pendingRecord;
+    const recipients = [];
+    document.querySelectorAll('.recipient-list input[type="checkbox"]:checked').forEach(cb => {
+        recipients.push(cb.value);
+    });
+    const extraEmail = document.getElementById('report-extra-email').value.trim();
+
+    // Log inspection to localStorage
+    logInspection(record);
+
+    // Log each defect to localStorage
+    const defects = JSON.parse(localStorage.getItem(DEFECTS_KEY) || '[]');
+    const now = new Date();
+    const timeStr = now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0,5);
+
+    record.defects.forEach((d, i) => {
+        const defId = 'DEF-' + String(Date.now()).slice(-6) + String(i);
+        defects.push({
+            id: defId,
+            equipment: record.equipment,
+            equipmentType: record.equipmentType,
+            summary: d.item + ' — ' + d.notes.substring(0, 80),
+            description: d.notes,
+            severity: selectedSeverity,
+            status: 'Open',
+            inspector: record.inspector,
+            date: record.date,
+            assignedTo: '',
+            recipients: recipients,
+            extraEmail: extraEmail || '',
+            notes: [
+                { type: 'created', text: 'Defect logged from pre-use inspection (' + record.form + ')', author: record.inspector, time: timeStr }
+            ]
+        });
+    });
+
+    localStorage.setItem(DEFECTS_KEY, JSON.stringify(defects));
+
+    console.log('Defect report sent to:', recipients, extraEmail ? '+ ' + extraEmail : '');
+
+    // Hide report overlay, show confirmation
+    document.getElementById('report-overlay').classList.remove('show');
+    document.getElementById('confirm-msg').textContent =
+        `${record.defects.length} defect${record.defects.length > 1 ? 's' : ''} logged for ${record.equipment}. ` +
+        `Notifications sent to ${recipients.join(', ')}${extraEmail ? ', ' + extraEmail : ''}.`;
+    document.getElementById('confirm-overlay').classList.add('show');
+
+    pendingRecord = null;
+}
+
+// ===== LOG INSPECTION TO localStorage =====
+function logInspection(record) {
+    const inspections = JSON.parse(localStorage.getItem(INSPECTIONS_KEY) || '[]');
+    inspections.push({
+        id: 'INS-' + String(Date.now()).slice(-6),
+        equipment: record.equipment,
+        equipmentType: record.equipmentType,
+        inspector: record.inspector,
+        date: record.date,
+        result: record.result,
+        defectsFound: record.defects.length
+    });
+    localStorage.setItem(INSPECTIONS_KEY, JSON.stringify(inspections));
 }
 
 // Init
