@@ -973,7 +973,7 @@
                         <div class="detail">Topic & attendance recorded</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="toolbox_sign.html" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 012B</a></td>
+                    <td class="col-forms"><a href="#" onclick="openSignOff(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 012B</a></td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Topic:" /></td>
                 </tr>
                 <tr>
@@ -1505,6 +1505,38 @@
 
     // Calculate totals on page load for demo data
     updateManningTotals();
+
+    // ===== SF 012B: Collect crew from manning tracker and open sign-off form =====
+    function openSignOff(e) {
+        e.preventDefault();
+        // Gather names from manning tracker where actual >= 1
+        const names = [];
+        document.querySelectorAll('#manning-body tr').forEach(row => {
+            const actual = parseInt(row.querySelector('.manning-actual')?.value) || 0;
+            if (actual < 1) return;
+            const sel = row.querySelector('.name-select');
+            let name = '';
+            if (sel) {
+                name = sel.value === '_other' ? '' : sel.options[sel.selectedIndex]?.text || '';
+            }
+            // Fallback: check if it's been replaced with a text input (the "Other..." flow)
+            if (!name) {
+                const inp = row.querySelector('td:first-child input[type="text"]');
+                if (inp) name = inp.value;
+            }
+            if (name && name !== '— Select —') names.push(name.trim());
+        });
+
+        // Also grab the supervisor name from the info grid
+        const supInput = document.querySelector('.info-cell input[value*="Evans"], .info-cell input');
+        const supervisor = supInput ? supInput.value.trim() : '';
+
+        // Build URL with crew names
+        const params = new URLSearchParams();
+        if (names.length) params.set('crew', names.join(','));
+        if (supervisor) params.set('presenter', supervisor);
+        window.open('toolbox_sign.html?' + params.toString(), '_blank');
+    }
 </script>
 
 </body>

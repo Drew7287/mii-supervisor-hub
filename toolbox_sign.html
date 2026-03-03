@@ -440,14 +440,27 @@
     // ===== INIT =====
     document.getElementById('f-date').valueAsDate = new Date();
 
-    // Pre-fill from URL params (so SSW library can link here with ?ref=SSW001&title=Abrasive+Wheels)
+    // Pre-fill from URL params
     const params = new URLSearchParams(window.location.search);
     if (params.get('ref') && params.get('title')) {
         document.getElementById('f-ssw').value = params.get('ref') + ' — ' + params.get('title');
     }
+    if (params.get('presenter')) {
+        document.getElementById('f-presenter').value = params.get('presenter');
+    }
 
-    // Start with 6 blank rows
-    for (let i = 0; i < 6; i++) addRow();
+    // Pre-populate attendee rows from crew list (passed from daily report manning tracker)
+    const crewParam = params.get('crew');
+    if (crewParam) {
+        const crewNames = crewParam.split(',').map(n => n.trim()).filter(Boolean);
+        crewNames.forEach(name => addRow(name));
+        // Add a couple of blank rows for extras
+        addRow();
+        addRow();
+    } else {
+        // No crew passed — start with 6 blank rows
+        for (let i = 0; i < 6; i++) addRow();
+    }
 
     // ===== ADD ATTENDEE ROW =====
     function addRow(name) {
