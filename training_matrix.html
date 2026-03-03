@@ -595,6 +595,70 @@ function goPage(p) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ===== CREW FILTER (from Daily Report manning tracker) =====
+const urlParams = new URLSearchParams(window.location.search);
+const crewParam = urlParams.get('crew');
+let crewFilter = null;
+
+if (crewParam) {
+    crewFilter = crewParam.split(',').map(n => n.trim().toLowerCase());
+
+    // Add banner showing we're filtered to today's crew
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#e8f2fc;border:1.5px solid #0078d4;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;';
+    banner.innerHTML = `
+        <div>
+            <strong style="color:#003366;">Today's Crew</strong>
+            <span style="color:#667085;font-size:0.85rem;margin-left:8px;">Showing ${crewFilter.length} people from your manning tracker</span>
+        </div>
+        <a href="training_matrix.html" style="color:#0078d4;font-size:0.85rem;text-decoration:none;font-weight:600;">Show All &rarr;</a>
+    `;
+    document.querySelector('.controls').before(banner);
+}
+
+// Override applyFilters to include crew filter
+const _origApplyFilters = applyFilters;
+applyFilters = function() {
+    if (!crewFilter) { _origApplyFilters(); return; }
+
+    const q = document.getElementById('search').value.toLowerCase().trim();
+    const cat = document.getElementById('cat-filter').value;
+    const typeId = document.getElementById('type-filter').value;
+
+    filteredEmps = DATA.employees.filter(e => {
+        // Crew name match (fuzzy — match on full name)
+        if (!crewFilter.some(cn => e.name.toLowerCase() === cn)) return false;
+
+        if (q) {
+            const hay = (e.name + ' ' + e.num + ' ' + e.trade).toLowerCase();
+            if (!q.split(/\s+/).every(t => hay.includes(t))) return false;
+        }
+        const recs = empTraining[e.id] || [];
+        if (recs.length === 0) return false;
+        if (statusFilter) {
+            if (!recs.some(r => r.status === statusFilter)) return false;
+        }
+        if (cat) {
+            if (!recs.some(r => { const t = typeById[r.tid]; return t && t.cat === cat; })) return false;
+        }
+        if (typeId) {
+            if (!recs.some(r => r.tid === typeId)) return false;
+        }
+        return true;
+    });
+
+    currentPage = 1;
+    render();
+
+    // Auto-expand all crew members when filtered (small list)
+    if (filteredEmps.length <= 15) {
+        filteredEmps.forEach(e => {
+            const card = document.getElementById('emp-' + e.id);
+            if (card && !card.classList.contains('open')) toggleEmp(e.id);
+        });
+    }
+};
+
 // Initial render
 applyFilters();
 </script>
