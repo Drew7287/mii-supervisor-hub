@@ -162,6 +162,24 @@
         }
         .ssw-item:hover .ssw-open { opacity: 1; }
 
+        .ssw-sign-btn {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #e6f7ec;
+            color: var(--success);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .ssw-sign-btn:hover {
+            background: var(--success);
+            color: var(--white);
+        }
+
         /* ===== LETTER NAV ===== */
         .letter-nav {
             display: flex;
@@ -221,7 +239,7 @@
 
     <div class="topbar">
         <h1>Safe Systems of Work — Toolbox Talks</h1>
-        <a href="index.html">&larr; Back to Hub</a>
+        <a href="hub.html">&larr; Back to Hub</a>
     </div>
 
     <div class="content">
@@ -232,8 +250,8 @@
         <div class="tbt-link">
             <span style="font-size:1.2rem;">&#128203;</span>
             <div>
-                <a href="https://miiengineering.sharepoint.com/sites/IMS/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FIMS%2FShared%20Documents%2FSafe%20Systems%20of%20Work%20%28Toolbox%20Talks%29&viewid=67c8993b%2D6667%2D448b%2D9e58%2D34d65a2d7e80" target="_blank">SF 012B — Toolbox Talk Acknowledgement Form</a>
-                <br><span>Use this form to record attendance after delivering a toolbox talk</span>
+                <a href="toolbox_sign.html">SF 012B — Toolbox Talk Acknowledgement (Digital)</a>
+                <br><span>Record attendance with digital signatures on iPad — select a toolbox talk below then tap "Sign Off"</span>
             </div>
         </div>
 
@@ -412,18 +430,14 @@
 
             groups[letter].forEach(([ref, title, rev, filename]) => {
                 const li = document.createElement('li');
-                const a = document.createElement('a');
-                a.className = 'ssw-item';
-                a.href = buildURL(filename);
-                a.target = '_blank';
-                a.innerHTML = `
+                li.className = 'ssw-item';
+                li.innerHTML = `
                     <span class="ssw-ref">${ref}</span>
-                    <span class="ssw-title">${title}</span>
+                    <a class="ssw-title" href="${buildURL(filename)}" target="_blank" style="flex:1;text-decoration:none;color:inherit;font-size:0.92rem;font-weight:500;">${title}</a>
                     <span class="ssw-rev">${rev}</span>
-                    <span class="ssw-icon">&#128196;</span>
-                    <span class="ssw-open">Open on SharePoint &rarr;</span>
+                    <a class="ssw-sign-btn" href="toolbox_sign.html?ref=SSW+${encodeURIComponent(ref)}&title=${encodeURIComponent(title)}">Sign Off</a>
+                    <a class="ssw-icon" href="${buildURL(filename)}" target="_blank" style="text-decoration:none;font-size:1rem;color:var(--danger);opacity:0.6;">&#128196;</a>
                 `;
-                li.appendChild(a);
                 ul.appendChild(li);
             });
 

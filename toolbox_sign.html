@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SF 012B — Toolbox Talk Acknowledgement</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar h1 { font-size: 1.1rem; font-weight: 700; }
+        .topbar .back-link {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 0.85rem;
+            opacity: 0.85;
+        }
+        .topbar .back-link:hover { opacity: 1; }
+
+        /* ===== FORM HEADER ===== */
+        .form-header {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px 20px 0;
+        }
+        .form-ref {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+        .form-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        /* ===== FIELD GROUP ===== */
+        .fields {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .fields.full { grid-template-columns: 1fr; }
+        .field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .field input, .field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.15);
+        }
+
+        /* ===== ATTENDEE TABLE ===== */
+        .attendee-section {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 8px 20px;
+        }
+        .section-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            margin-bottom: 12px;
+            padding-top: 16px;
+            border-top: 2px solid var(--primary);
+        }
+
+        .attendee-row {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .attendee-row.signed {
+            border-color: var(--success);
+        }
+        .attendee-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+        }
+        .attendee-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-light);
+            flex-shrink: 0;
+        }
+        .attendee-row.signed .attendee-num {
+            background: #e6f7ec;
+            color: var(--success);
+        }
+        .attendee-name {
+            flex: 1;
+            border: none;
+            font-size: 0.95rem;
+            font-family: inherit;
+            padding: 6px 0;
+            outline: none;
+            background: transparent;
+        }
+        .attendee-name::placeholder { color: #c0c4cc; }
+        .attendee-date {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            white-space: nowrap;
+        }
+        .btn-remove {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: none;
+            color: #ccc;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-remove:hover { color: var(--danger); background: #fde8ea; }
+
+        /* Signature canvas area */
+        .sig-area {
+            border-top: 1px solid #f0f0f0;
+            padding: 8px 14px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sig-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            font-weight: 600;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+        .sig-canvas-wrap {
+            flex: 1;
+            position: relative;
+            background: #fafbfc;
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .attendee-row.signed .sig-canvas-wrap {
+            border-style: solid;
+            border-color: var(--success);
+            background: #f8fdf9;
+        }
+        .sig-canvas {
+            display: block;
+            width: 100%;
+            height: 80px;
+            touch-action: none;
+            cursor: crosshair;
+        }
+        .sig-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+            color: #ccc;
+            pointer-events: none;
+        }
+        .attendee-row.signed .sig-placeholder { display: none; }
+
+        .btn-clear-sig {
+            border: none;
+            background: none;
+            color: #ccc;
+            font-size: 0.7rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .btn-clear-sig:hover { color: var(--danger); background: #fde8ea; }
+
+        /* ===== ADD ROW BUTTON ===== */
+        .btn-add-row {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: block;
+        }
+        .btn-add-row button {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-add-row button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: #f0f7ff;
+        }
+
+        /* ===== SUBMIT BAR ===== */
+        .submit-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+        }
+        .submit-count {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        .submit-count strong {
+            color: var(--success);
+        }
+        .btn-submit {
+            padding: 10px 28px;
+            background: var(--success);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn-submit:hover { background: #218838; }
+        .btn-submit:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* ===== SUCCESS OVERLAY ===== */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay.show { display: flex; }
+        .overlay-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 40px 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .overlay-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #e6f7ec;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 16px;
+        }
+        .overlay-card h3 {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .overlay-card p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .overlay-card button {
+            padding: 10px 28px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .fields { grid-template-columns: 1fr; }
+            .topbar h1 { font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <h1>SF 012B — Toolbox Talk Acknowledgement</h1>
+        <a class="back-link" href="ssw.html">&#8592; SSW Library</a>
+    </div>
+
+    <!-- FORM HEADER -->
+    <div class="form-header">
+        <div class="form-ref">SF 012B &bull; Issue 2 &bull; IMSP 008</div>
+        <h2>Toolbox Talk Acknowledgement</h2>
+    </div>
+
+    <!-- TALK DETAILS -->
+    <div class="fields">
+        <div class="field">
+            <label>Project / Site</label>
+            <input type="text" id="f-project" value="Enabling Works — Port Talbot">
+        </div>
+        <div class="field">
+            <label>Date</label>
+            <input type="date" id="f-date">
+        </div>
+        <div class="field">
+            <label>SSW Reference &amp; Title</label>
+            <input type="text" id="f-ssw" placeholder="e.g. SSW 001 — Abrasive Wheels">
+        </div>
+        <div class="field">
+            <label>Presented By</label>
+            <input type="text" id="f-presenter" placeholder="Supervisor name">
+        </div>
+    </div>
+
+    <!-- ATTENDEE SIGNATURES -->
+    <div class="attendee-section">
+        <div class="section-label">Attendee Signatures</div>
+        <div id="attendee-list"></div>
+    </div>
+
+    <!-- ADD ROW -->
+    <div class="btn-add-row">
+        <button onclick="addRow()">+ Add Attendee</button>
+    </div>
+
+    <!-- SUBMIT BAR -->
+    <div class="submit-bar">
+        <div class="submit-count" id="sig-count">0 of 0 signed</div>
+        <button class="btn-submit" id="btn-submit" onclick="submitForm()">Submit</button>
+    </div>
+
+    <!-- SUCCESS OVERLAY -->
+    <div class="overlay" id="success-overlay">
+        <div class="overlay-card">
+            <div class="overlay-icon">&#10003;</div>
+            <h3>Acknowledgement Recorded</h3>
+            <p id="overlay-msg">4 attendees acknowledged SSW 001 — Abrasive Wheels.</p>
+            <button onclick="window.location.href='ssw.html'">Back to SSW Library</button>
+        </div>
+    </div>
+
+<script>
+    // ===== STATE =====
+    let rowCount = 0;
+    const canvasMap = new Map(); // rowId -> { canvas, ctx, drawing, signed, points }
+
+    // ===== INIT =====
+    document.getElementById('f-date').valueAsDate = new Date();
+
+    // Pre-fill from URL params (so SSW library can link here with ?ref=SSW001&title=Abrasive+Wheels)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('ref') && params.get('title')) {
+        document.getElementById('f-ssw').value = params.get('ref') + ' — ' + params.get('title');
+    }
+
+    // Start with 6 blank rows
+    for (let i = 0; i < 6; i++) addRow();
+
+    // ===== ADD ATTENDEE ROW =====
+    function addRow(name) {
+        rowCount++;
+        const id = 'row-' + rowCount;
+        const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+        const div = document.createElement('div');
+        div.className = 'attendee-row';
+        div.id = id;
+        div.innerHTML = `
+            <div class="attendee-top">
+                <div class="attendee-num">${rowCount}</div>
+                <input class="attendee-name" type="text" placeholder="Full name" value="${name || ''}" data-row="${id}">
+                <span class="attendee-date">${today}</span>
+                <button class="btn-remove" onclick="removeRow('${id}')" title="Remove">&#215;</button>
+            </div>
+            <div class="sig-area">
+                <div class="sig-label">SIGN</div>
+                <div class="sig-canvas-wrap">
+                    <canvas class="sig-canvas" id="canvas-${id}"></canvas>
+                    <div class="sig-placeholder">Tap or draw to sign</div>
+                </div>
+                <button class="btn-clear-sig" onclick="clearSig('${id}')">Clear</button>
+            </div>
+        `;
+        document.getElementById('attendee-list').appendChild(div);
+        initCanvas(id);
+        updateCount();
+    }
+
+    // ===== REMOVE ROW =====
+    function removeRow(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.remove();
+            canvasMap.delete(id);
+            updateCount();
+        }
+    }
+
+    // ===== CANVAS SIGNATURE =====
+    function initCanvas(rowId) {
+        const canvas = document.getElementById('canvas-' + rowId);
+        const ctx = canvas.getContext('2d');
+        const state = { canvas, ctx, drawing: false, signed: false, hasStrokes: false };
+        canvasMap.set(rowId, state);
+
+        // Size canvas to container
+        function resize() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = 80;
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+        resize();
+        // Resize on orientation change (iPad)
+        window.addEventListener('resize', resize);
+
+        // Drawing handlers (touch + mouse)
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches) {
+                return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+            }
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        function startDraw(e) {
+            e.preventDefault();
+            state.drawing = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!state.drawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            state.hasStrokes = true;
+        }
+
+        function endDraw(e) {
+            if (state.drawing) {
+                state.drawing = false;
+                if (state.hasStrokes) {
+                    state.signed = true;
+                    document.getElementById(rowId).classList.add('signed');
+                    updateCount();
+                }
+            }
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', endDraw);
+        canvas.addEventListener('mouseleave', endDraw);
+
+        // Touch events
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', endDraw);
+        canvas.addEventListener('touchcancel', endDraw);
+    }
+
+    // ===== CLEAR SIGNATURE =====
+    function clearSig(rowId) {
+        const state = canvasMap.get(rowId);
+        if (!state) return;
+        state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+        state.signed = false;
+        state.hasStrokes = false;
+        document.getElementById(rowId).classList.remove('signed');
+        updateCount();
+    }
+
+    // ===== UPDATE COUNT =====
+    function updateCount() {
+        const rows = document.querySelectorAll('.attendee-row');
+        let total = 0;
+        let signed = 0;
+        rows.forEach(row => {
+            const nameInput = row.querySelector('.attendee-name');
+            if (nameInput && nameInput.value.trim()) {
+                total++;
+                const state = canvasMap.get(row.id);
+                if (state && state.signed) signed++;
+            }
+        });
+        // Also count rows with signatures but maybe no name typed yet
+        const allSigned = [...canvasMap.values()].filter(s => s.signed).length;
+        const allRows = rows.length;
+
+        document.getElementById('sig-count').innerHTML =
+            `<strong>${allSigned}</strong> of ${allRows} signed`;
+    }
+
+    // Listen for name input changes to update count
+    document.addEventListener('input', (e) => {
+        if (e.target.classList.contains('attendee-name')) updateCount();
+    });
+
+    // ===== SUBMIT =====
+    function submitForm() {
+        const project = document.getElementById('f-project').value.trim();
+        const date = document.getElementById('f-date').value;
+        const ssw = document.getElementById('f-ssw').value.trim();
+        const presenter = document.getElementById('f-presenter').value.trim();
+
+        if (!ssw) { alert('Please enter the SSW reference and title.'); return; }
+        if (!presenter) { alert('Please enter the presenter name.'); return; }
+
+        // Collect signed attendees
+        const attendees = [];
+        document.querySelectorAll('.attendee-row').forEach(row => {
+            const name = row.querySelector('.attendee-name').value.trim();
+            const state = canvasMap.get(row.id);
+            if (name && state && state.signed) {
+                attendees.push({
+                    name,
+                    signature: state.canvas.toDataURL('image/png'),
+                    date: row.querySelector('.attendee-date').textContent
+                });
+            }
+        });
+
+        if (attendees.length === 0) {
+            alert('At least one attendee must sign before submitting.');
+            return;
+        }
+
+        // Build record (in production this would POST to an API / SharePoint list)
+        const record = { project, date, ssw, presenter, attendees, submittedAt: new Date().toISOString() };
+        console.log('Toolbox Talk Acknowledgement submitted:', record);
+
+        // Show success overlay
+        document.getElementById('overlay-msg').textContent =
+            `${attendees.length} attendee${attendees.length > 1 ? 's' : ''} acknowledged ${ssw}. Record saved.`;
+        document.getElementById('success-overlay').classList.add('show');
+    }
+</script>
+
+</body>
+</html>
