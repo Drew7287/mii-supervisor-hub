@@ -6,7 +6,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-OAK-A",
+    "employee_number": "AGY0001",
     "name": "A Oak",
     "trade": "",
     "is_active": true
@@ -24,7 +24,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILLIAMS-AARON",
+    "employee_number": "AGY0002",
     "name": "Aaron Williams",
     "trade": "",
     "is_active": true
@@ -36,7 +36,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-JAPP-ADAM",
+    "employee_number": "AGY0003",
     "name": "Adam Japp",
     "trade": "",
     "is_active": true
@@ -48,13 +48,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-DOWNES-ADRIAN",
+    "employee_number": "AGY0004",
     "name": "Adrian Downes",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-BELL-ALAN",
+    "employee_number": "AGY0005",
     "name": "Alan Bell",
     "trade": "",
     "is_active": true
@@ -66,25 +66,25 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-RICHARDS-ALAN",
+    "employee_number": "AGY0006",
     "name": "Alan Richards",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-JENKINS-ALEX",
+    "employee_number": "AGY0007",
     "name": "Alex Jenkins",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MERCHER-ALEX",
+    "employee_number": "AGY0008",
     "name": "Alex Mercher",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WRIGHT-ALEX",
+    "employee_number": "AGY0009",
     "name": "Alex Wright",
     "trade": "",
     "is_active": true
@@ -93,6 +93,12 @@
     "employee_number": "M349",
     "name": "Alun Wigley",
     "trade": "Mech Fitter",
+    "is_active": true
+  },
+  {
+    "employee_number": "L927",
+    "name": "Andew Hathaway",
+    "trade": "",
     "is_active": true
   },
   {
@@ -132,13 +138,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MORGAN-ANDREW",
+    "employee_number": "AGY0011",
     "name": "Andrew Morgan",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-STEWART-ANDREW",
+    "employee_number": "AGY0012",
     "name": "Andrew Stewart",
     "trade": "",
     "is_active": true
@@ -168,13 +174,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-RICHARDS-ANTHONY",
+    "employee_number": "AGY0013",
     "name": "Anthony Richards",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-BREEZE-ASHLEY",
+    "employee_number": "AGY0014",
     "name": "Ashley Breeze",
     "trade": "Mech Fitter",
     "is_active": true
@@ -186,19 +192,25 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-JAMIE-BARRY",
+    "employee_number": "AGY0015",
     "name": "Barry Jamie",
     "trade": "Store man",
     "is_active": true
   },
   {
-    "employee_number": "AGY-EDWARDS-BEN",
+    "employee_number": "AGY0016",
+    "name": "Barry Watkins",
+    "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0017",
     "name": "Ben Edwards",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HARVEY-BEN",
+    "employee_number": "AGY0018",
     "name": "Ben Harvey",
     "trade": "",
     "is_active": true
@@ -210,7 +222,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-JENNINGS-BEN",
+    "employee_number": "AGY0019",
     "name": "Ben Jennings",
     "trade": "",
     "is_active": true
@@ -234,7 +246,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-REYNOLDS-BEN",
+    "employee_number": "AGY0020",
     "name": "Ben Reynolds",
     "trade": "",
     "is_active": true
@@ -246,13 +258,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-DAVIES-BILLY",
+    "employee_number": "AGY0021",
     "name": "Billy Davies",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HUGHES-BRANDON",
+    "employee_number": "AGY0022",
     "name": "Brandon Hughes",
     "trade": "",
     "is_active": true
@@ -264,13 +276,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-ABDIE-BRIAN",
+    "employee_number": "AGY0023",
     "name": "Brian Abdie",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ARNESEN-BRIAN",
+    "employee_number": "AGY0024",
     "name": "Brian Arnesen",
     "trade": "Managing Director",
     "is_active": true
@@ -282,7 +294,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-CORISH-BRIAN",
+    "employee_number": "AGY0025",
     "name": "Brian Corish",
     "trade": "",
     "is_active": true
@@ -294,7 +306,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-CULLEN-BRIAN",
+    "employee_number": "AGY0026",
     "name": "Brian Cullen",
     "trade": "",
     "is_active": true
@@ -312,13 +324,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MANLEY-CALLUM",
+    "employee_number": "AGY0027",
     "name": "Callum Manley",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-OGLESBY-CALLUM",
+    "employee_number": "AGY0028",
     "name": "Callum Oglesby",
     "trade": "",
     "is_active": true
@@ -384,7 +396,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-PHILLIPS-CHRIS",
+    "employee_number": "AGY0029",
     "name": "Chris Phillips",
     "trade": "Mech Fitter",
     "is_active": true
@@ -396,19 +408,25 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-SCOTT-CHRIS",
+    "employee_number": "AGY0030",
     "name": "Chris Scott",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-STOKES-CHRIS",
+    "employee_number": "AGY0031",
     "name": "Chris Stokes",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILSON-CHRIS",
+    "employee_number": "L398",
+    "name": "Chris Thomas",
+    "trade": "Mech Fitter",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0032",
     "name": "Chris Wilson",
     "trade": "",
     "is_active": true
@@ -420,7 +438,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-COLE-CHRISTOPHE",
+    "employee_number": "AGY0033",
     "name": "Christopher Cole",
     "trade": "",
     "is_active": true
@@ -444,13 +462,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-HAMMOND-COLIN",
+    "employee_number": "AGY0034",
     "name": "Colin Hammond",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-NEALE-COLIN",
+    "employee_number": "AGY0035",
     "name": "Colin Neale",
     "trade": "",
     "is_active": true
@@ -480,13 +498,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-JAMIE-COULTON",
+    "employee_number": "AGY0036",
     "name": "Coulton Jamie",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DAUNTER-CRAIG",
+    "employee_number": "AGY0037",
     "name": "Craig Daunter",
     "trade": "",
     "is_active": true
@@ -498,7 +516,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-JONES-CRAIG",
+    "employee_number": "AGY0038",
     "name": "Craig Jones",
     "trade": "",
     "is_active": true
@@ -510,7 +528,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MOULTON-CRAIG",
+    "employee_number": "AGY0039",
     "name": "Craig Moulton",
     "trade": "Welder",
     "is_active": true
@@ -534,7 +552,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-BELLEW-CURTIS",
+    "employee_number": "AGY0040",
     "name": "Curtis Bellew",
     "trade": "",
     "is_active": true
@@ -546,7 +564,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-REES-DAI",
+    "employee_number": "AGY0041",
     "name": "Dai Rees",
     "trade": "",
     "is_active": true
@@ -558,7 +576,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-CARUANA-DALE",
+    "employee_number": "AGY0042",
     "name": "Dale Caruana",
     "trade": "",
     "is_active": true
@@ -570,13 +588,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LEGG-DALE",
+    "employee_number": "AGY0043",
     "name": "Dale Legg",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ROBINSON-DALE",
+    "employee_number": "AGY0044",
     "name": "Dale Robinson",
     "trade": "Rigger",
     "is_active": true
@@ -594,19 +612,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-EATON-DANIEL",
+    "employee_number": "AGY0045",
     "name": "Daniel Eaton",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-OGLESBY-DANIEL",
+    "employee_number": "AGY0046",
     "name": "Daniel Oglesby",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-BESLIJA-DARIO",
+    "employee_number": "AGY0047",
     "name": "Dario Beslija",
     "trade": "",
     "is_active": true
@@ -618,13 +636,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-JACKSON-DAVE",
+    "employee_number": "AGY0048",
     "name": "Dave Jackson",
     "trade": "Manager",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MAZEY-DAVE",
+    "employee_number": "AGY0049",
     "name": "Dave Mazey",
     "trade": "",
     "is_active": true
@@ -648,49 +666,55 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LLOYD-DAVIDC",
+    "employee_number": "AGY0051",
     "name": "David C Lloyd",
     "trade": "Mech Fitter",
     "is_active": true
   },
   {
-    "employee_number": "AGY-GOODING-DAVID",
+    "employee_number": "AGY0052",
+    "name": "David Evans",
+    "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0053",
     "name": "David Gooding",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-JOHN-DAVID",
+    "employee_number": "AGY0054",
     "name": "David John",
     "trade": "Mech Fitter",
     "is_active": true
   },
   {
-    "employee_number": "AGY-KNEE-DAVID",
+    "employee_number": "AGY0055",
     "name": "David Knee",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MANLEY-DAVID",
+    "employee_number": "AGY0056",
     "name": "David Manley",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MILLER-DAVID",
+    "employee_number": "AGY0057",
     "name": "David Miller",
     "trade": "Welder",
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-DAVID-2",
+    "employee_number": "AGY0058",
     "name": "David Thomas",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-DAVID",
+    "employee_number": "AGY0059",
     "name": "David Thomas",
     "trade": "",
     "is_active": true
@@ -708,7 +732,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-HURLEY-DEAN",
+    "employee_number": "AGY0060",
     "name": "Dean Hurley",
     "trade": "",
     "is_active": true
@@ -720,19 +744,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-DEAN",
+    "employee_number": "AGY0061",
     "name": "Dean Thomas",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-DEON",
+    "employee_number": "AGY0062",
     "name": "Deon Thomas",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MILES-DEREK",
+    "employee_number": "AGY0063",
     "name": "Derek Miles",
     "trade": "",
     "is_active": true
@@ -744,7 +768,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-CHAPMAN-DILLON",
+    "employee_number": "AGY0064",
     "name": "Dillon Chapman",
     "trade": "",
     "is_active": true
@@ -756,9 +780,15 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-HUNTER-DION",
+    "employee_number": "AGY0065",
     "name": "Dion Hunter",
     "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0066",
+    "name": "Doug Jones",
+    "trade": "Fitter",
     "is_active": true
   },
   {
@@ -768,7 +798,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-CHANNING-ELLIS",
+    "employee_number": "AGY0067",
     "name": "Ellis Channing",
     "trade": "",
     "is_active": true
@@ -780,55 +810,61 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-SIMPSON-ETHEN",
+    "employee_number": "AGY0068",
     "name": "Ethen Simpson",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-LEWIS-FLYNN",
+    "employee_number": "AGY0069",
     "name": "Flynn Lewis",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ROWE-G",
+    "employee_number": "AGY0070",
     "name": "G Rowe",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-EDWARDS-GARETH",
+    "employee_number": "AGY0071",
     "name": "Gareth Edwards",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MANLEY-GARETH",
+    "employee_number": "AGY0072",
     "name": "Gareth Manley",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WALTERS-GARETH",
+    "employee_number": "AGY0073",
     "name": "Gareth Walters",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WATKINS-GARETH",
+    "employee_number": "AGY0074",
     "name": "Gareth Watkins",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DAWSON-GARY",
+    "employee_number": "AGY0075",
     "name": "Gary Dawson",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-JOURNEAUX-GARY",
+    "employee_number": "AGY0076",
+    "name": "Gary Devonald",
+    "trade": "Fitter",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0077",
     "name": "Gary Journeaux",
     "trade": "",
     "is_active": true
@@ -840,13 +876,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-GARY",
+    "employee_number": "AGY0078",
     "name": "Gary Thomas",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ONEILL-GAVIN",
+    "employee_number": "AGY0079",
     "name": "Gavin O'Neill",
     "trade": "",
     "is_active": true
@@ -858,7 +894,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-DEERE-GERRY",
+    "employee_number": "AGY0080",
     "name": "Gerry Deere",
     "trade": "",
     "is_active": true
@@ -888,7 +924,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-YEATES-GORDON",
+    "employee_number": "AGY0081",
     "name": "Gordon Yeates",
     "trade": "",
     "is_active": true
@@ -906,7 +942,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-CLANCY-GREG",
+    "employee_number": "AGY0082",
     "name": "Greg Clancy",
     "trade": "",
     "is_active": true
@@ -918,31 +954,31 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MEYRICK-GREG",
+    "employee_number": "AGY0083",
     "name": "Greg Meyrick",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-JONES-GWYNDAF",
+    "employee_number": "AGY0084",
     "name": "Gwyndaf Jones",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-VAUX-HARRY",
+    "employee_number": "AGY0085",
     "name": "Harry Vaux",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DABBS-HAYLEY",
+    "employee_number": "AGY0086",
     "name": "Hayley Dabbs",
     "trade": "Sales Ledger",
     "is_active": true
   },
   {
-    "employee_number": "AGY-NIMROD-HUDSON",
+    "employee_number": "AGY0087",
     "name": "Hudson Nimrod",
     "trade": "",
     "is_active": true
@@ -954,13 +990,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LEE-HYWEL",
+    "employee_number": "AGY0088",
     "name": "Hywel Lee",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-CABRAL-IAN",
+    "employee_number": "AGY0089",
     "name": "Ian Cabral",
     "trade": "",
     "is_active": true
@@ -972,13 +1008,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GEORGE-IAN",
+    "employee_number": "AGY0090",
     "name": "Ian George",
     "trade": "Electrician",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HILL-IAN",
+    "employee_number": "AGY0091",
     "name": "Ian Hill",
     "trade": "",
     "is_active": true
@@ -990,7 +1026,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MARSH-IAN",
+    "employee_number": "AGY0092",
     "name": "Ian Marsh",
     "trade": "",
     "is_active": true
@@ -1020,25 +1056,25 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-PHILLIPS-IWAN",
+    "employee_number": "AGY0093",
     "name": "Iwan Phillips",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-PARKER-JAC",
+    "employee_number": "AGY0094",
     "name": "Jac Parker",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DACEY-JACK",
+    "employee_number": "AGY0095",
     "name": "Jack Dacey",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-RAWLINGS-JACK",
+    "employee_number": "AGY0096",
     "name": "Jack Rawlings",
     "trade": "",
     "is_active": true
@@ -1056,13 +1092,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MINTON-JAMES",
+    "employee_number": "AGY0097",
     "name": "James Minton",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-STACEY-JAMES",
+    "employee_number": "AGY0098",
     "name": "James Stacey",
     "trade": "Designer",
     "is_active": true
@@ -1074,7 +1110,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LOCKE-JAMIE",
+    "employee_number": "AGY0099",
     "name": "Jamie Locke",
     "trade": "",
     "is_active": true
@@ -1086,7 +1122,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-RYAN-JAMIE",
+    "employee_number": "AGY0100",
     "name": "Jamie Ryan",
     "trade": "",
     "is_active": true
@@ -1098,31 +1134,31 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-HUGHES-JASON",
+    "employee_number": "AGY0101",
     "name": "Jason Hughes",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MCCORMACK-JASON",
+    "employee_number": "AGY0102",
     "name": "Jason McCormack",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ROBERTS-JAY",
+    "employee_number": "AGY0103",
     "name": "Jay Roberts",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-JEDHAMER",
+    "employee_number": "AGY0104",
     "name": "Jed Hamer Thomas",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HAMERTHOMAS-JED",
+    "employee_number": "AGY0105",
     "name": "Jed Hamer-Thomas",
     "trade": "",
     "is_active": true
@@ -1140,7 +1176,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-STAPLES-JEFF",
+    "employee_number": "AGY0106",
     "name": "Jeff Staples",
     "trade": "",
     "is_active": true
@@ -1170,7 +1206,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-BHAMBRA-JOHN",
+    "employee_number": "AGY0107",
     "name": "John Bhambra",
     "trade": "",
     "is_active": true
@@ -1182,33 +1218,45 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-COLLINS-JOHN",
+    "employee_number": "AGY0108",
     "name": "John Collins",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DAVID-JOHN",
+    "employee_number": "AGY0109",
     "name": "John David",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-GORE-JOHN",
+    "employee_number": "AGY0110",
+    "name": "John Evans",
+    "trade": "HSE Advisor",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0111",
     "name": "John Gore",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-LAKE-JOHN",
+    "employee_number": "AGY0112",
     "name": "John Lake",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MELI-JOHNPAUL",
+    "employee_number": "AGY0113",
     "name": "John Paul Meli",
     "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0114",
+    "name": "John Piontecki",
+    "trade": "Chargehand",
     "is_active": true
   },
   {
@@ -1224,13 +1272,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-SIMS-JONJO",
+    "employee_number": "AGY0115",
     "name": "Jon Jo Sims",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MORTIMER-JORDAN",
+    "employee_number": "M689",
+    "name": "Jordan David",
+    "trade": "Apprentice",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0116",
     "name": "Jordan Mortimer",
     "trade": "",
     "is_active": true
@@ -1242,7 +1296,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-JORDAN",
+    "employee_number": "AGY0117",
     "name": "Jordan Thomas",
     "trade": "",
     "is_active": true
@@ -1254,7 +1308,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-COLES-JOSH",
+    "employee_number": "AGY0118",
     "name": "Josh Coles",
     "trade": "Quality Eng",
     "is_active": true
@@ -1266,7 +1320,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-HARRIS-JOSH",
+    "employee_number": "AGY0119",
     "name": "Josh Harris",
     "trade": "",
     "is_active": true
@@ -1296,7 +1350,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-HENNEY-JOSHUA",
+    "employee_number": "AGY0120",
     "name": "Joshua Henney",
     "trade": "",
     "is_active": true
@@ -1314,7 +1368,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MALIPHANT-JUSTIN",
+    "employee_number": "AGY0121",
     "name": "Justin Maliphant",
     "trade": "",
     "is_active": true
@@ -1326,7 +1380,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MATTOCKS-KEIRAN",
+    "employee_number": "AGY0122",
     "name": "Keiran Mattocks",
     "trade": "",
     "is_active": true
@@ -1338,19 +1392,25 @@
     "is_active": true
   },
   {
+    "employee_number": "AGY0123",
+    "name": "Keith Williams",
+    "trade": "Supervisor",
+    "is_active": true
+  },
+  {
     "employee_number": "K883",
     "name": "Kelvin Williams",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-YOUNG-KEN",
+    "employee_number": "AGY0124",
     "name": "Ken Young",
     "trade": "Fitter",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MURPHY-KERRY",
+    "employee_number": "AGY0125",
     "name": "Kerry Murphy",
     "trade": "",
     "is_active": true
@@ -1392,7 +1452,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GOODFELLOW-KYLE",
+    "employee_number": "AGY0126",
     "name": "Kyle Goodfellow",
     "trade": "Welder",
     "is_active": true
@@ -1416,25 +1476,25 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-BEACH-LEE",
+    "employee_number": "AGY0127",
     "name": "Lee Beach",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-EVANS-LEE",
+    "employee_number": "AGY0128",
     "name": "Lee Evans",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-FENTONLEATH-LEE",
+    "employee_number": "AGY0129",
     "name": "Lee Fenton-Leath",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HASTINGS-LEE",
+    "employee_number": "AGY0130",
     "name": "Lee Hastings",
     "trade": "",
     "is_active": true
@@ -1476,7 +1536,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-RICHARDS-LEE",
+    "employee_number": "AGY0131",
     "name": "Lee Richards",
     "trade": "",
     "is_active": true
@@ -1506,7 +1566,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-NEW-LESLIEJOHN",
+    "employee_number": "AGY0132",
     "name": "Leslie John New",
     "trade": "",
     "is_active": true
@@ -1530,7 +1590,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GRAHAM-LEWIS",
+    "employee_number": "AGY0133",
     "name": "Lewis Graham",
     "trade": "",
     "is_active": true
@@ -1548,13 +1608,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-WRIDE-LEWIS",
+    "employee_number": "AGY0134",
     "name": "Lewis Wride",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ASTON-LIAM",
+    "employee_number": "AGY0135",
     "name": "Liam Aston",
     "trade": "Welder",
     "is_active": true
@@ -1566,49 +1626,49 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-DIAZ-LIAM",
+    "employee_number": "AGY0136",
     "name": "Liam Diaz",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DOUGHTY-LIAM",
+    "employee_number": "AGY0137",
     "name": "Liam Doughty",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HUGHES-LIAM",
+    "employee_number": "AGY0138",
     "name": "Liam Hughes",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-SMITH-LIAM",
+    "employee_number": "AGY0139",
     "name": "Liam Smith",
     "trade": "Welder/Fab",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILLIAMS-LLOYD",
+    "employee_number": "AGY0140",
     "name": "Lloyd Williams",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-RICHARDS-LOGAN",
+    "employee_number": "AGY0141",
     "name": "Logan Richards",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ROUSSELLE-LUCIEN",
+    "employee_number": "AGY0142",
     "name": "Lucien Rousselle",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-BAKER-LUKE",
+    "employee_number": "AGY0143",
     "name": "Luke Baker",
     "trade": "",
     "is_active": true
@@ -1626,13 +1686,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LEWIS-LUKE",
+    "employee_number": "AGY0145",
     "name": "Luke Lewis",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WHITTINGTON-LUKE",
+    "employee_number": "AGY0146",
     "name": "Luke Whittington",
     "trade": "",
     "is_active": true
@@ -1644,13 +1704,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-JOHNS-M",
+    "employee_number": "AGY0147",
     "name": "M Johns",
     "trade": "Electrician",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MASON-M",
+    "employee_number": "AGY0148",
     "name": "M Mason",
     "trade": "",
     "is_active": true
@@ -1662,9 +1722,15 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-BARLOW-MALCOM",
+    "employee_number": "AGY0149",
     "name": "Malcom Barlow",
     "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0150",
+    "name": "Manolis Nikitaras",
+    "trade": "Fitters Mate",
     "is_active": true
   },
   {
@@ -1674,7 +1740,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GOODWOOD-MARCUS",
+    "employee_number": "AGY0151",
     "name": "Marcus Goodwood",
     "trade": "",
     "is_active": true
@@ -1686,25 +1752,37 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-BERRY-MARK",
+    "employee_number": "AGY0152",
     "name": "Mark Berry",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-BEVAN-MARK",
+    "employee_number": "AGY0153",
     "name": "Mark Bevan",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-BLACKWELL-MARK",
+    "employee_number": "AGY0154",
     "name": "Mark Blackwell",
     "trade": "Mech Fitter",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DIAZ-MARK",
+    "employee_number": "AGY0155",
+    "name": "Mark Burnham",
+    "trade": "Welder",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0156",
+    "name": "Mark Deane",
+    "trade": "Fitter",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0157",
     "name": "Mark Diaz",
     "trade": "",
     "is_active": true
@@ -1716,13 +1794,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GIBBY-MARK",
+    "employee_number": "AGY0158",
     "name": "Mark Gibby",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-GODWOOD-MARK",
+    "employee_number": "AGY0159",
     "name": "Mark Godwood",
     "trade": "",
     "is_active": true
@@ -1734,13 +1812,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-NEWMAN-MARK",
+    "employee_number": "AGY0160",
     "name": "Mark Newman",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-PRICE-MARK",
+    "employee_number": "AGY0161",
     "name": "Mark Price",
     "trade": "",
     "is_active": true
@@ -1758,7 +1836,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-BENNETT-MARTIN",
+    "employee_number": "AGY0162",
     "name": "Martin Bennett",
     "trade": "",
     "is_active": true
@@ -1788,7 +1866,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-ROBB-MATHEW",
+    "employee_number": "AGY0163",
     "name": "Mathew Robb",
     "trade": "",
     "is_active": true
@@ -1800,13 +1878,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-EVANS-MATTHEW",
+    "employee_number": "AGY0165",
     "name": "Matthew Evans",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-FERRANT-MATTHEW",
+    "employee_number": "AGY0166",
     "name": "Matthew Ferrant",
     "trade": "",
     "is_active": true
@@ -1818,7 +1896,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-PARFITT-MATTHEW",
+    "employee_number": "AGY0167",
     "name": "Matthew Parfitt",
     "trade": "",
     "is_active": true
@@ -1830,7 +1908,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-MATTHEW",
+    "employee_number": "AGY0168",
     "name": "Matthew Thomas",
     "trade": "",
     "is_active": true
@@ -1842,13 +1920,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-MEIRION",
+    "employee_number": "AGY0169",
     "name": "Meirion Thomas",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-CAPPER-MICHAEL",
+    "employee_number": "AGY0170",
     "name": "Michael Capper",
     "trade": "",
     "is_active": true
@@ -1860,13 +1938,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MANGAN-MICHAEL",
+    "employee_number": "AGY0171",
     "name": "Michael Mangan",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-SILLITOE-MICHAEL",
+    "employee_number": "AGY0172",
     "name": "Michael Sillitoe",
     "trade": "",
     "is_active": true
@@ -1878,13 +1956,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-BOLCH-MIKE",
+    "employee_number": "AGY0173",
     "name": "Mike Bolch",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DAVIES-MIKE",
+    "employee_number": "AGY0174",
     "name": "Mike Davies",
     "trade": "",
     "is_active": true
@@ -1908,7 +1986,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-OSBORN-MIKE",
+    "employee_number": "AGY0175",
     "name": "Mike Osborn",
     "trade": "",
     "is_active": true
@@ -1920,9 +1998,15 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-RAVEN-MIKE",
+    "employee_number": "AGY0176",
     "name": "Mike Raven",
     "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0177",
+    "name": "Mike Silitoe",
+    "trade": "Craftsman",
     "is_active": true
   },
   {
@@ -1932,19 +2016,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-STACEY-MIKE",
+    "employee_number": "AGY0178",
     "name": "Mike Stacey",
     "trade": "Supervisor",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HOLTHAM-MORGAN",
+    "employee_number": "AGY0179",
     "name": "Morgan Holtham",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-JONES-MORGAN",
+    "employee_number": "AGY0180",
     "name": "Morgan Jones",
     "trade": "",
     "is_active": true
@@ -1956,7 +2040,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-ROGERS-MORGAN",
+    "employee_number": "AGY0181",
     "name": "Morgan Rogers",
     "trade": "",
     "is_active": true
@@ -1968,31 +2052,31 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-THOMAS-MORRIS",
+    "employee_number": "AGY0182",
     "name": "Morris Thomas",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ALLWOOD-NATHAN",
+    "employee_number": "AGY0183",
     "name": "Nathan Allwood",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DAVIES-NATHAN",
+    "employee_number": "AGY0184",
     "name": "Nathan Davies",
     "trade": "Welder",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MURPHY-NATHAN",
+    "employee_number": "AGY0185",
     "name": "Nathan Murphy",
     "trade": "App. Welder",
     "is_active": true
   },
   {
-    "employee_number": "AGY-REES-NATHAN",
+    "employee_number": "AGY0186",
     "name": "Nathan Rees",
     "trade": "",
     "is_active": true
@@ -2004,19 +2088,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-SMITH-NATHAN",
+    "employee_number": "AGY0187",
     "name": "Nathan Smith",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILLIAMS-NATHAN",
+    "employee_number": "AGY0188",
     "name": "Nathan Williams",
     "trade": "Mate",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ANTILL-NEIL",
+    "employee_number": "AGY0189",
     "name": "Neil Antill",
     "trade": "",
     "is_active": true
@@ -2034,19 +2118,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-KEHOE-NICHOLAS",
+    "employee_number": "AGY0191",
     "name": "Nicholas Kehoe",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-CARUANA-NICK",
+    "employee_number": "AGY0192",
     "name": "Nick Caruana",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-ELSON-NICK",
+    "employee_number": "AGY0193",
     "name": "Nick Elson",
     "trade": "",
     "is_active": true
@@ -2058,7 +2142,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LEVI-NICK",
+    "employee_number": "AGY0194",
     "name": "Nick Levi",
     "trade": "",
     "is_active": true
@@ -2070,13 +2154,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MEYRICK-NIGEL",
+    "employee_number": "AGY0195",
     "name": "Nigel Meyrick",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILLIAMS-NIGEL",
+    "employee_number": "AGY0196",
     "name": "Nigel Williams",
     "trade": "",
     "is_active": true
@@ -2088,13 +2172,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-PRITCHARD-OWAIN",
+    "employee_number": "AGY0197",
     "name": "Owain Pritchard",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-DAVIES-OWEN",
+    "employee_number": "AGY0198",
     "name": "Owen Davies",
     "trade": "",
     "is_active": true
@@ -2136,7 +2220,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GIBBON-PAUL",
+    "employee_number": "AGY0199",
     "name": "Paul Gibbon",
     "trade": "",
     "is_active": true
@@ -2154,19 +2238,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-KELLY-PAUL",
+    "employee_number": "AGY0200",
     "name": "Paul Kelly",
     "trade": "Stores",
     "is_active": true
   },
   {
-    "employee_number": "AGY-KENYON-PAUL",
+    "employee_number": "AGY0201",
     "name": "Paul Kenyon",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-LAWRENCE-PAUL",
+    "employee_number": "AGY0202",
     "name": "Paul Lawrence",
     "trade": "",
     "is_active": true
@@ -2178,7 +2262,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LUMIHI-PAUL",
+    "employee_number": "AGY0203",
     "name": "Paul Lumihi",
     "trade": "",
     "is_active": true
@@ -2208,7 +2292,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GREY-PETER",
+    "employee_number": "AGY0204",
     "name": "Peter Grey",
     "trade": "",
     "is_active": true
@@ -2220,7 +2304,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-DOHERTY-PHIL",
+    "employee_number": "AGY0205",
     "name": "Phil Doherty",
     "trade": "",
     "is_active": true
@@ -2232,13 +2316,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LONG-PHIL",
+    "employee_number": "AGY0206",
     "name": "Phil Long",
     "trade": "Mech Fitter",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MERCER-PHIL",
+    "employee_number": "AGY0207",
     "name": "Phil Mercer",
     "trade": "",
     "is_active": true
@@ -2256,13 +2340,19 @@
     "is_active": true
   },
   {
+    "employee_number": "L944",
+    "name": "Phil Williams",
+    "trade": "",
+    "is_active": true
+  },
+  {
     "employee_number": "M122",
     "name": "R Harrison",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WATKIN-R",
+    "employee_number": "AGY0208",
     "name": "R Watkin",
     "trade": "Electrician",
     "is_active": true
@@ -2274,9 +2364,15 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-SHELDON-RAY",
+    "employee_number": "AGY0209",
     "name": "Ray Sheldon",
     "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0210",
+    "name": "Rhys Arnold",
+    "trade": "Welder",
     "is_active": true
   },
   {
@@ -2298,7 +2394,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-REED-RHYS",
+    "employee_number": "AGY0211",
     "name": "Rhys Reed",
     "trade": "",
     "is_active": true
@@ -2322,13 +2418,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-JONES-RICHARD",
+    "employee_number": "AGY0212",
     "name": "Richard Jones",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MILLS-RICHARD",
+    "employee_number": "AGY0213",
     "name": "Richard Mills",
     "trade": "",
     "is_active": true
@@ -2340,7 +2436,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-PASSMORE-RICHARD",
+    "employee_number": "AGY0214",
     "name": "Richard Passmore",
     "trade": "Project Manager",
     "is_active": true
@@ -2352,19 +2448,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-ROWE-RICHARD",
+    "employee_number": "AGY0215",
     "name": "Richard Rowe",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-SMITH-RICHARD",
+    "employee_number": "AGY0216",
     "name": "Richard Smith",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILLIAMS-RICHARD",
+    "employee_number": "AGY0217",
     "name": "Richard Williams",
     "trade": "",
     "is_active": true
@@ -2376,19 +2472,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MOLYNEUX-RICKY",
+    "employee_number": "AGY0218",
     "name": "Ricky Molyneux",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-SPENCE-RICKY",
+    "employee_number": "AGY0219",
     "name": "Ricky Spence",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HOPKINS-RIKKI",
+    "employee_number": "AGY0220",
     "name": "Rikki Hopkins",
     "trade": "",
     "is_active": true
@@ -2412,13 +2508,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-LOUGHRAN-ROB",
+    "employee_number": "AGY0221",
     "name": "Rob Loughran",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-MORGAN-ROB",
+    "employee_number": "AGY0222",
     "name": "Rob Morgan",
     "trade": "",
     "is_active": true
@@ -2442,7 +2538,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-COLES-ROBERT",
+    "employee_number": "AGY0223",
     "name": "Robert Coles",
     "trade": "Welder",
     "is_active": true
@@ -2454,7 +2550,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-HEYWOOD-ROBERT",
+    "employee_number": "AGY0224",
     "name": "Robert Heywood",
     "trade": "",
     "is_active": true
@@ -2466,7 +2562,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MANNING-ROBERT",
+    "employee_number": "AGY0225",
     "name": "Robert Manning",
     "trade": "",
     "is_active": true
@@ -2478,7 +2574,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-NORMAN-ROBERT",
+    "employee_number": "AGY0226",
     "name": "Robert Norman",
     "trade": "",
     "is_active": true
@@ -2490,7 +2586,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-REES-ROBIN",
+    "employee_number": "AGY0227",
     "name": "Robin Rees",
     "trade": "",
     "is_active": true
@@ -2502,7 +2598,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-REES-ROWUN",
+    "employee_number": "AGY0228",
     "name": "Rowun Rees",
     "trade": "",
     "is_active": true
@@ -2514,13 +2610,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-HARRIS-RYAN",
+    "employee_number": "AGY0229",
     "name": "Ryan Harris",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-PHILLIPS-RYAN",
+    "employee_number": "AGY0230",
     "name": "Ryan Phillips",
     "trade": "",
     "is_active": true
@@ -2532,7 +2628,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-SHAW-RYAN",
+    "employee_number": "AGY0231",
     "name": "Ryan Shaw",
     "trade": "",
     "is_active": true
@@ -2550,25 +2646,25 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILLIAMS-S",
+    "employee_number": "AGY0232",
     "name": "S Williams",
     "trade": "Fabricator Welder",
     "is_active": true
   },
   {
-    "employee_number": "AGY-JONES-SAM",
+    "employee_number": "AGY0233",
     "name": "Sam Jones",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILLIS-SAM",
+    "employee_number": "AGY0234",
     "name": "Sam Willis",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-LEWIS-SCOTT",
+    "employee_number": "AGY0235",
     "name": "Scott Lewis",
     "trade": "",
     "is_active": true
@@ -2586,7 +2682,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-ONEILL-SEAN",
+    "employee_number": "AGY0236",
     "name": "Sean O'Neill",
     "trade": "",
     "is_active": true
@@ -2598,9 +2694,21 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-OKEEFE-SHANE",
+    "employee_number": "AGY0237",
+    "name": "Shane Evans",
+    "trade": "Welder",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0238",
     "name": "Shane O'Keefe",
     "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0239",
+    "name": "Shane Scannell",
+    "trade": "Fitters Mate",
     "is_active": true
   },
   {
@@ -2622,31 +2730,31 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-DALLING-SIMON",
+    "employee_number": "AGY0240",
     "name": "Simon Dalling",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-GALAGHER-SIMON",
+    "employee_number": "AGY0241",
     "name": "Simon Galagher",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-JENKINS-SIMON",
+    "employee_number": "AGY0242",
     "name": "Simon Jenkins",
     "trade": "Mech Fitter",
     "is_active": true
   },
   {
-    "employee_number": "AGY-NEALE-SIMON",
+    "employee_number": "AGY0243",
     "name": "Simon Neale",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-EVANS-STEPHEN",
+    "employee_number": "AGY0244",
     "name": "Stephen Evans",
     "trade": "",
     "is_active": true
@@ -2658,13 +2766,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MCCOLLUM-STEPHEN",
+    "employee_number": "AGY0245",
     "name": "Stephen McCollum",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-OKEEFE-STEPHEN",
+    "employee_number": "AGY0246",
     "name": "Stephen O'Keefe",
     "trade": "",
     "is_active": true
@@ -2676,13 +2784,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-BEAN-STEVE",
+    "employee_number": "AGY0247",
     "name": "Steve Bean",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-FOSTER-STEVE",
+    "employee_number": "AGY0248",
     "name": "Steve Foster",
     "trade": "",
     "is_active": true
@@ -2706,13 +2814,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GILMOUR-STEVE",
+    "employee_number": "AGY0249",
     "name": "Steve Gilmour",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-HEWITSON-STEVE",
+    "employee_number": "AGY0250",
     "name": "Steve Hewitson",
     "trade": "",
     "is_active": true
@@ -2724,13 +2832,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-KENNY-STEVE",
+    "employee_number": "AGY0251",
     "name": "Steve Kenny",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-LANE-STEVE",
+    "employee_number": "AGY0252",
     "name": "Steve Lane",
     "trade": "",
     "is_active": true
@@ -2748,7 +2856,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-OWEN-STEVE",
+    "employee_number": "AGY0253",
     "name": "Steve Owen",
     "trade": "",
     "is_active": true
@@ -2778,19 +2886,19 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-WATKINS-STEVEN",
+    "employee_number": "AGY0254",
     "name": "Steven Watkins",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-STRAW-STEWART",
+    "employee_number": "AGY0255",
     "name": "Stewart Straw",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-BAUGH-STUART",
+    "employee_number": "AGY0256",
     "name": "Stuart Baugh",
     "trade": "",
     "is_active": true
@@ -2808,7 +2916,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MORRIS-TERRY",
+    "employee_number": "AGY0257",
+    "name": "Terence John Gormon",
+    "trade": "Fitter",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0258",
     "name": "Terry Morris",
     "trade": "",
     "is_active": true
@@ -2832,25 +2946,25 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-WEAVING-TIM",
+    "employee_number": "AGY0259",
     "name": "Tim Weaving",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-FORD-TOBIAS",
+    "employee_number": "AGY0260",
     "name": "Tobias Ford",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-LANCE-TOBIAS",
+    "employee_number": "AGY0261",
     "name": "Tobias Lance",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-LODGE-TOBY",
+    "employee_number": "AGY0262",
     "name": "Toby Lodge",
     "trade": "",
     "is_active": true
@@ -2880,7 +2994,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-PRICE-TOMAS",
+    "employee_number": "AGY0263",
     "name": "Tomas Price",
     "trade": "",
     "is_active": true
@@ -2892,13 +3006,13 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-GEE-VINCENT",
+    "employee_number": "AGY0264",
     "name": "Vincent Gee",
     "trade": "",
     "is_active": true
   },
   {
-    "employee_number": "AGY-WILLIAMS-VIV",
+    "employee_number": "AGY0265",
     "name": "Viv Williams",
     "trade": "",
     "is_active": true
@@ -2910,7 +3024,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-ADAMS-WAYNE",
+    "employee_number": "AGY0266",
     "name": "Wayne Adams",
     "trade": "",
     "is_active": true
@@ -2928,7 +3042,7 @@
     "is_active": true
   },
   {
-    "employee_number": "AGY-MURPHY-WAYNE",
+    "employee_number": "AGY0267",
     "name": "Wayne Murphy",
     "trade": "",
     "is_active": true
