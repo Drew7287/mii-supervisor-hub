@@ -598,7 +598,15 @@
     </div>
 </div>
 
+<script src="mii-db.js"></script>
 <script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
 // ===== FORM DEFINITIONS =====
 const FORMS = {
     flt: {
@@ -696,6 +704,209 @@ const FORMS = {
                 { id: 'ox14', label: 'Post-Use Equipment Check', detail: 'No obvious damage to equipment after use' },
                 { id: 'ox15', label: 'Valves Closed', detail: 'All valves turned off (at cylinder, blowpipes etc.)' },
                 { id: 'ox16', label: 'Hoses Vented', detail: 'Excess gas vented from hoses in well-ventilated area away from ignition sources' },
+            ]},
+        ]
+    },
+
+    mewp: {
+        ref: 'SF 056AF — Issue 3',
+        title: 'MEWP / Cherry Picker Pre-Use Checklist',
+        desc: 'Complete before use. If any item fails, do not use the machine. Report to supervisor immediately.',
+        equipLabel: 'Machine ID / Make & Model',
+        sections: [
+            { title: 'Ground Controls', items: [
+                { id: 'mw01', label: 'Control ID Labels', detail: 'All control identification labels present and legible' },
+                { id: 'mw02', label: 'Emergency Stop', detail: 'Ground-level emergency stop button functions correctly' },
+                { id: 'mw03', label: 'Operator Manual', detail: 'Operator manual present in storage compartment' },
+                { id: 'mw04', label: 'Enable Switch', detail: 'Enable/dead-man switch functions correctly at ground controls' },
+                { id: 'mw05', label: 'Ground Start Up', detail: 'Machine starts normally from ground controls, no unusual noises' },
+            ]},
+            { title: 'Visual & Structural Checks', items: [
+                { id: 'mw06', label: 'Boom / Scissor Arms', detail: 'No visible damage, cracks or distortion to boom or scissor mechanism' },
+                { id: 'mw07', label: 'Tyres / Wheels', detail: 'No excessive wear, cuts, cracks or missing rubber. All wheel nuts tight' },
+                { id: 'mw08', label: 'Hydraulic System', detail: 'No visible leaks from hoses, rams, connections or reservoir' },
+                { id: 'mw09', label: 'Guardrails & Gate', detail: 'Platform guardrails, mid-rails and toe boards intact. Gate closes and latches' },
+                { id: 'mw10', label: 'Platform Deck', detail: 'Platform deck and extension (if fitted) in good condition, no holes or damage' },
+                { id: 'mw11', label: 'Lanyard Anchor Points', detail: 'Anchor points present and secure for harness attachment' },
+            ]},
+            { title: 'Platform Controls & Function', items: [
+                { id: 'mw12', label: 'Platform Emergency Stop', detail: 'Emergency stop at platform level functions correctly' },
+                { id: 'mw13', label: 'Platform Enable Switch', detail: 'Enable/dead-man switch at platform functions correctly' },
+                { id: 'mw14', label: 'Lift & Lower', detail: 'Platform raises and lowers smoothly from platform controls' },
+                { id: 'mw15', label: 'Drive & Steering', detail: 'Drive and steering functions work correctly from platform' },
+                { id: 'mw16', label: 'Horn', detail: 'Horn/audible warning clearly audible from platform' },
+                { id: 'mw17', label: 'Emergency Lowering', detail: 'Emergency lowering system accessible and functions correctly' },
+            ]},
+            { title: 'Levels & Site Conditions', items: [
+                { id: 'mw18', label: 'Fuel / Battery', detail: 'Adequate fuel or battery charge for planned work' },
+                { id: 'mw19', label: 'Hydraulic Fluid', detail: 'Hydraulic reservoir level within acceptable range' },
+                { id: 'mw20', label: 'Lights & Alarms', detail: 'Warning lights, beacons and travel alarms functioning' },
+                { id: 'mw21', label: 'Ground Conditions', detail: 'Ground is firm, level and capable of supporting machine weight' },
+                { id: 'mw22', label: 'Overhead Obstructions', detail: 'Work area checked for overhead power lines, structures and obstructions' },
+            ]},
+        ]
+    },
+
+    scissorlift: {
+        ref: 'SF 056U — Issue 1',
+        title: 'Scissor Lift Pre-Use Checklist',
+        desc: 'Complete before use. If any item fails, do not use the machine. Report to supervisor and tag out of service.',
+        equipLabel: 'Machine ID / Make & Model',
+        sections: [
+            { title: 'Ground Controls', items: [
+                { id: 'sl01', label: 'Control ID Labels', detail: 'All control identification labels present and legible' },
+                { id: 'sl02', label: 'Emergency Stop', detail: 'Ground-level emergency stop button functions correctly' },
+                { id: 'sl03', label: 'Operator Manual', detail: 'Operator manual present in storage compartment' },
+                { id: 'sl04', label: 'Enable Switch', detail: 'Enable/dead-man switch functions correctly at ground controls' },
+                { id: 'sl05', label: 'Ground Start Up', detail: 'Machine starts normally from ground controls' },
+            ]},
+            { title: 'Visual & Structural Checks', items: [
+                { id: 'sl06', label: 'Scissor Assembly', detail: 'No visible damage, cracks or distortion to scissor mechanism and pins' },
+                { id: 'sl07', label: 'Tyres', detail: 'No excessive wear, cuts, cracks or missing rubber' },
+                { id: 'sl08', label: 'Hydraulic System', detail: 'No visible leaks from hoses, rams or reservoir' },
+                { id: 'sl09', label: 'Guardrails & Gate', detail: 'Handrails, guardrails, mid-rails and gate intact and secure' },
+                { id: 'sl10', label: 'Platform Deck & Toe Boards', detail: 'Deck and extension platform in good condition. Toe boards secure' },
+                { id: 'sl11', label: 'Lanyard Anchor Points', detail: 'Anchor points present and secure for harness attachment' },
+                { id: 'sl12', label: 'Bumpers', detail: 'Bumper rails on scissor assembly not damaged or missing' },
+            ]},
+            { title: 'Platform Controls & Function', items: [
+                { id: 'sl13', label: 'Platform Emergency Stop', detail: 'Emergency stop at platform level functions correctly' },
+                { id: 'sl14', label: 'Platform Enable Switch', detail: 'Enable/dead-man switch functions correctly at platform' },
+                { id: 'sl15', label: 'Lift & Lower', detail: 'Platform raises and lowers smoothly from platform controls' },
+                { id: 'sl16', label: 'Drive & Steering', detail: 'Drive and steering work correctly, brakes hold on slope' },
+                { id: 'sl17', label: 'Horn', detail: 'Horn/audible warning clearly audible' },
+                { id: 'sl18', label: 'Emergency Lowering', detail: 'Emergency lowering system accessible and tested' },
+                { id: 'sl19', label: 'Pot Hole Protection', detail: 'Pot hole guards deploy and retract correctly' },
+                { id: 'sl20', label: 'Tilt Sensor', detail: 'Tilt sensor/alarm functions — platform stops on excess tilt' },
+            ]},
+            { title: 'Levels & Site Conditions', items: [
+                { id: 'sl21', label: 'Fuel / Battery', detail: 'Adequate fuel or battery charge for planned work' },
+                { id: 'sl22', label: 'Hydraulic Fluid', detail: 'Hydraulic reservoir level within acceptable range' },
+                { id: 'sl23', label: 'Lights & Alarms', detail: 'Warning lights, beacons and travel alarms functioning' },
+                { id: 'sl24', label: 'Ground Conditions', detail: 'Ground is firm, level and suitable for scissor lift operation' },
+                { id: 'sl25', label: 'Overhead Obstructions', detail: 'Work area clear of overhead power lines, pipes and obstructions' },
+            ]},
+        ]
+    },
+
+    welder: {
+        ref: 'SF 056X — Issue 2',
+        title: 'Welding Machine Checklist',
+        desc: 'Complete before use at the beginning of each shift. If any item fails, tag the machine out of service and report to supervisor.',
+        equipLabel: 'Machine ID / Asset No.',
+        sections: [
+            { title: 'General Condition', items: [
+                { id: 'wm01', label: 'Machine Casing', detail: 'No visible damage, cracks or holes in casing. Panels secure' },
+                { id: 'wm02', label: 'Rating Plate', detail: 'Rating plate present, legible and matches asset records' },
+                { id: 'wm03', label: 'PAT Test Label', detail: 'PAT test sticker present and within date' },
+                { id: 'wm04', label: 'Wheels / Trolley', detail: 'Wheels and trolley frame in good condition (if applicable)' },
+                { id: 'wm05', label: 'Ventilation', detail: 'Cooling fan and ventilation slots clear of debris and obstructions' },
+            ]},
+            { title: 'Electrical Connections', items: [
+                { id: 'wm06', label: 'Mains Lead', detail: 'Supply cable free from damage, cuts, abrasion. No exposed conductors' },
+                { id: 'wm07', label: 'Mains Plug', detail: 'Plug undamaged, pins secure, cable grip effective' },
+                { id: 'wm08', label: 'Welding Leads', detail: 'Welding cables free from damage, cuts or exposed copper. Insulation intact' },
+                { id: 'wm09', label: 'Electrode Holder / Torch', detail: 'Electrode holder or MIG/TIG torch undamaged, jaws/tip in good condition' },
+                { id: 'wm10', label: 'Earth Clamp & Lead', detail: 'Earth return clamp undamaged, spring tension good, cable intact' },
+                { id: 'wm11', label: 'Connections', detail: 'All plug/socket connections (dinse etc.) tight, undamaged and correct polarity' },
+            ]},
+            { title: 'Controls & Function', items: [
+                { id: 'wm12', label: 'On/Off Switch', detail: 'Power switch operates correctly and positively' },
+                { id: 'wm13', label: 'Current / Voltage Controls', detail: 'Adjustment controls move freely and hold position' },
+                { id: 'wm14', label: 'Wire Feed', detail: 'Wire feeder operates smoothly, tension correct (MIG only — N/A for MMA)' },
+                { id: 'wm15', label: 'Gas Flow', detail: 'Shielding gas flows at correct rate, no leaks in hose or regulator (MIG/TIG — N/A for MMA)' },
+                { id: 'wm16', label: 'Function Test', detail: 'Strike a test arc — machine delivers stable arc at set parameters' },
+            ]},
+        ]
+    },
+
+    ladder: {
+        ref: 'SF 056R — Issue 2',
+        title: 'Ladder Inspection Checklist',
+        desc: 'Inspect before each use. Damaged ladders must be taken out of service immediately, tagged and reported to supervisor.',
+        equipLabel: 'Ladder ID / Tag No.',
+        sections: [
+            { title: 'General Condition', items: [
+                { id: 'ld01', label: 'Stiles', detail: 'Stiles (side rails) straight, no cracks, splits, corrosion, dents or distortion' },
+                { id: 'ld02', label: 'Rungs / Treads', detail: 'All rungs/treads present, secure, evenly spaced. No cracks, bends or excessive wear' },
+                { id: 'ld03', label: 'Feet / Base', detail: 'Rubber or pivoting feet present on both stiles. Not worn smooth or missing' },
+                { id: 'ld04', label: 'Locking Mechanism', detail: 'Spreader bars, locking catches or braces function correctly (stepladders). Extension locks engage (extending ladders)' },
+                { id: 'ld05', label: 'Tie Bars / Braces', detail: 'All tie bars, hinges and brace struts intact and secure' },
+            ]},
+            { title: 'Labels & Compliance', items: [
+                { id: 'ld06', label: 'Identification', detail: 'Unique identification tag/label present and legible' },
+                { id: 'ld07', label: 'Duty Rating', detail: 'Duty rating label present — ladder rated for industrial use (Class 1 or EN 131)' },
+                { id: 'ld08', label: 'Safety Labels', detail: 'Warning and instruction labels present and legible' },
+                { id: 'ld09', label: 'Inspection Date', detail: 'Last formal inspection date recorded and within period' },
+            ]},
+            { title: 'Set-Up & Use', items: [
+                { id: 'ld10', label: 'Ground Conditions', detail: 'Firm, level base — not on loose or unstable material' },
+                { id: 'ld11', label: 'Angle', detail: 'Leaning ladders set at 75° (1 out for every 4 up). Stepladders fully open and locked' },
+                { id: 'ld12', label: 'Securing', detail: 'Ladder secured at top, bottom or both — or footed by second person' },
+                { id: 'ld13', label: 'Overshoot', detail: 'Ladder extends at least 1m (3 rungs) above landing point for access ladders' },
+                { id: 'ld14', label: 'Three Points of Contact', detail: 'User maintains three points of contact at all times during use' },
+            ]},
+        ]
+    },
+
+    scaffold: {
+        ref: 'SF 056Y — Issue 1',
+        title: 'Tower Scaffold Inspection Checklist',
+        desc: 'Inspect before each use and after any event that could affect stability. Only use scaffolds erected by competent persons with a valid scaffold tag.',
+        equipLabel: 'Scaffold Tag / Location',
+        sections: [
+            { title: 'Structure & Stability', items: [
+                { id: 'ts01', label: 'Base Plates & Castors', detail: 'All base plates or castors present, on firm level ground. Castors locked when in use' },
+                { id: 'ts02', label: 'Frames & Braces', detail: 'All frames vertical, braces fitted and locked. No damaged or missing components' },
+                { id: 'ts03', label: 'Outriggers / Stabilisers', detail: 'Stabilisers fitted where required per manufacturer guidance. Correctly positioned' },
+                { id: 'ts04', label: 'Height-to-Base Ratio', detail: 'Tower within maximum height ratio for base size (typically 3.5:1 outdoor, 3:1 with stabilisers)' },
+                { id: 'ts05', label: 'Scaffold Tag', detail: 'Scaffold tag present showing erected by, date, next inspection. Status is green (safe to use)' },
+            ]},
+            { title: 'Platform & Edge Protection', items: [
+                { id: 'ts06', label: 'Working Platform', detail: 'Full platform deck fitted, no gaps >25mm. Trapdoor closes flush' },
+                { id: 'ts07', label: 'Guardrails', detail: 'Top guardrails fitted on all open sides at minimum 950mm height' },
+                { id: 'ts08', label: 'Mid-Rails', detail: 'Mid-rails fitted between guardrail and toe board on all sides' },
+                { id: 'ts09', label: 'Toe Boards', detail: 'Toe boards fitted on all sides, minimum 150mm high' },
+                { id: 'ts10', label: 'Internal Ladder', detail: 'Internal ladder or built-in access in good condition, securely fitted' },
+            ]},
+            { title: 'Site Conditions', items: [
+                { id: 'ts11', label: 'Ground Conditions', detail: 'Ground surface firm and level. No risk of subsidence' },
+                { id: 'ts12', label: 'Overhead Hazards', detail: 'Adequate clearance from power lines, overhead structures' },
+                { id: 'ts13', label: 'Weather', detail: 'Wind speed acceptable for tower scaffold use. Not used in high winds (>17mph for mobile towers)' },
+                { id: 'ts14', label: 'Exclusion Zone', detail: 'Area below scaffold clear of personnel during assembly and use. Barriers if needed' },
+            ]},
+        ]
+    },
+
+    electrical: {
+        ref: 'SF 056W — Issue 1',
+        title: 'Inspection of 415V Electrical Leads',
+        desc: 'Inspect all 415V extension leads and power tool cables before use. Defective leads must be immediately removed from service and destroyed or returned to stores.',
+        equipLabel: 'Lead ID / Tag No.',
+        sections: [
+            { title: 'Cable Condition', items: [
+                { id: 'el01', label: 'Outer Sheath', detail: 'Cable outer sheath intact — no cuts, abrasion, crushing or exposed inner cores' },
+                { id: 'el02', label: 'Cable Flexibility', detail: 'Cable is flexible, not stiff or perished. No signs of heat damage or discolouration' },
+                { id: 'el03', label: 'Cable Joints', detail: 'No taped joints, splices or repairs in cable run' },
+                { id: 'el04', label: 'Cable Length', detail: 'Not excessively long — no more cable than needed for the job' },
+            ]},
+            { title: 'Plugs & Sockets', items: [
+                { id: 'el05', label: 'Plug Condition', detail: 'Plug body undamaged, pins straight, no burns or discolouration' },
+                { id: 'el06', label: 'Cable Entry', detail: 'Cable grip at plug and socket is effective — cable cannot be pulled out' },
+                { id: 'el07', label: 'Socket / Coupler', detail: 'Socket or coupler body intact, shutters present, contacts not damaged' },
+                { id: 'el08', label: 'IP Rating', detail: 'Plug and socket are industrial type (IP44 minimum) — no domestic 13A equipment' },
+            ]},
+            { title: 'Protection & Labels', items: [
+                { id: 'el09', label: 'PAT Test Label', detail: 'PAT test sticker or tag present and within date' },
+                { id: 'el10', label: 'Identification', detail: 'Unique identification number or tag attached and legible' },
+                { id: 'el11', label: 'RCD Protection', detail: 'Lead is connected via 30mA RCD — test button trips correctly' },
+                { id: 'el12', label: 'Earth Continuity', detail: 'Earth pin present in plug and socket. No signs of overheating at connections' },
+            ]},
+            { title: 'Routing & Use', items: [
+                { id: 'el13', label: 'Cable Routing', detail: 'Cable routed to avoid trip hazards, vehicle crossing, sharp edges and heat sources' },
+                { id: 'el14', label: 'Fully Unwound', detail: 'Drum extension leads fully unwound before use to prevent overheating' },
+                { id: 'el15', label: 'Connections Dry', detail: 'Plugs, sockets and connections kept clear of standing water and wet conditions' },
+                { id: 'el16', label: 'Load Rating', detail: 'Cable and connectors rated for the equipment being supplied' },
             ]},
         ]
     }
@@ -990,6 +1201,7 @@ function sendReport() {
     });
 
     localStorage.setItem(DEFECTS_KEY, JSON.stringify(defects));
+    MiiDB.saveAll('defects', defects);
 
     console.log('Defect report sent to:', recipients, extraEmail ? '+ ' + extraEmail : '');
 
@@ -1016,6 +1228,7 @@ function logInspection(record) {
         defectsFound: record.defects.length
     });
     localStorage.setItem(INSPECTIONS_KEY, JSON.stringify(inspections));
+    MiiDB.save('inspections', inspections[inspections.length - 1]);
 }
 
 // Init

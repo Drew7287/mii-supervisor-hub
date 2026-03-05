@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stores Management — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== TABS ===== */
+        .tabs {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px 0;
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--text-light);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .stat-value.red { color: var(--danger); }
+        .stat-value.amber { color: var(--warning); }
+        .stat-value.green { color: var(--success); }
+        .stat-value.blue { color: var(--accent); }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-bar input,
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-bar input { flex: 1; min-width: 180px; }
+        .filter-bar select { min-width: 140px; }
+        .filter-bar input:focus,
+        .filter-bar select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* ===== CARD LIST ===== */
+        .card-list {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+        }
+        .s-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            transition: box-shadow 0.15s;
+        }
+        .s-card:hover { box-shadow: var(--shadow-hover); }
+        .s-accent {
+            width: 5px;
+            flex-shrink: 0;
+        }
+        .s-accent.pending { background: var(--warning); }
+        .s-accent.authorised { background: var(--accent); }
+        .s-accent.issued { background: var(--success); }
+        .s-accent.rejected { background: var(--danger); }
+        .s-accent.out { background: var(--warning); }
+        .s-accent.returned { background: var(--success); }
+        .s-accent.accepted { background: var(--success); }
+        .s-accent.partial { background: var(--warning); }
+
+        .s-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .s-header {
+            padding: 14px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .s-header:hover { background: #fafbfc; }
+
+        .status-pill {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .status-pill.pending { background: #fff6e0; color: #b07d00; }
+        .status-pill.authorised { background: #e8f2fc; color: var(--accent); }
+        .status-pill.issued { background: #e6f7ec; color: var(--success); }
+        .status-pill.rejected { background: #fde8ea; color: var(--danger); }
+        .status-pill.out { background: #fff6e0; color: #b07d00; }
+        .status-pill.returned { background: #e6f7ec; color: var(--success); }
+        .status-pill.accepted { background: #e6f7ec; color: var(--success); }
+        .status-pill.partial { background: #fff6e0; color: #b07d00; }
+
+        .s-id {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .s-title {
+            font-size: 0.88rem;
+            color: var(--text);
+            flex: 1;
+            min-width: 120px;
+        }
+        .s-meta {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .expand-arrow {
+            font-size: 0.8rem;
+            color: var(--border);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .s-card.expanded .expand-arrow { transform: rotate(180deg); }
+
+        /* EXPANDED DETAIL */
+        .s-detail {
+            display: none;
+            border-top: 1px solid #f0f0f0;
+            padding: 16px;
+        }
+        .s-card.expanded .s-detail { display: block; }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .detail-item label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 2px;
+        }
+        .detail-item span {
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+
+        /* LINE ITEMS TABLE */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+            font-size: 0.82rem;
+        }
+        .items-table th {
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            padding: 8px 10px;
+            border-bottom: 2px solid var(--border);
+            background: #fafbfc;
+        }
+        .items-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            color: var(--text);
+        }
+        .items-table tr:last-child td { border-bottom: none; }
+        .items-table input[type="number"] {
+            width: 60px;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            text-align: center;
+        }
+        .items-table input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* NOTES TIMELINE */
+        .notes-section h4 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .note-entry {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .note-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+        .note-dot.created { background: var(--warning); }
+        .note-dot.authorised { background: var(--accent); }
+        .note-dot.issued { background: var(--success); }
+        .note-dot.rejected { background: var(--danger); }
+        .note-dot.update { background: var(--accent); }
+        .note-content {
+            font-size: 0.82rem;
+            color: var(--text);
+            line-height: 1.45;
+        }
+        .note-content .note-time {
+            font-size: 0.72rem;
+            color: var(--text-light);
+        }
+
+        /* ACTION PANELS */
+        .action-panel {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .action-panel label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .action-panel input,
+        .action-panel textarea,
+        .action-panel select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+            margin-bottom: 8px;
+        }
+        .action-panel textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .action-panel input:focus,
+        .action-panel textarea:focus,
+        .action-panel select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            transition: opacity 0.15s;
+        }
+        .btn-action:hover { opacity: 0.9; }
+        .btn-action.blue { background: var(--accent); }
+        .btn-action.green { background: var(--success); }
+        .btn-action.red { background: var(--danger); }
+        .btn-action.amber { background: var(--warning); }
+
+        .resolved-banner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #e6f7ec;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .resolved-banner.rejected-banner { background: #fde8ea; }
+        .resolved-banner .check { font-size: 1.1rem; color: var(--success); }
+        .resolved-banner.rejected-banner .check { color: var(--danger); }
+        .resolved-banner span { font-size: 0.82rem; font-weight: 600; }
+        .resolved-banner span.res-text { color: var(--success); }
+        .resolved-banner.rejected-banner span.res-text { color: var(--danger); }
+
+        /* ===== INLINE FORM PANEL ===== */
+        .inline-form {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 16px;
+        }
+        .inline-form-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            border-left: 5px solid var(--accent);
+        }
+        .inline-form-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .form-grid.three-col { grid-template-columns: 1fr 1fr 1fr; }
+        .form-field label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 3px;
+        }
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .form-field textarea { min-height: 50px; resize: vertical; }
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+        .form-field.full { grid-column: 1 / -1; }
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .btn-cancel {
+            padding: 8px 18px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--white);
+            color: var(--text);
+        }
+
+        /* ===== GIR LINE ITEMS ===== */
+        .gir-items { margin-bottom: 12px; }
+        .gir-item {
+            background: #fafbfc;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 6px;
+        }
+        .gir-item-row {
+            display: grid;
+            grid-template-columns: 2fr 80px 100px 100px 80px;
+            gap: 8px;
+            align-items: end;
+        }
+        .gir-item-row input,
+        .gir-item-row select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: inherit;
+        }
+        .gir-item-row input:focus,
+        .gir-item-row select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .gir-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 2px;
+        }
+        .btn-add-gir {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border: 1.5px dashed var(--border);
+            border-radius: 6px;
+            background: var(--white);
+            font-size: 0.78rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--accent);
+            cursor: pointer;
+        }
+        .btn-add-gir:hover { border-color: var(--accent); }
+
+        /* ===== ADD BUTTON BAR ===== */
+        .add-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 12px;
+        }
+        .btn-new {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            background: var(--accent);
+            transition: opacity 0.15s;
+        }
+        .btn-new:hover { opacity: 0.9; }
+
+        /* ===== TAB CONTENT ===== */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-light);
+        }
+        .empty-state h3 { font-size: 1rem; margin-bottom: 4px; color: var(--text); }
+        .empty-state p { font-size: 0.85rem; }
+
+        @media (max-width: 600px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; }
+            .filter-bar select { min-width: 100%; }
+            .s-header { flex-wrap: wrap; gap: 6px; }
+            .s-meta { width: 100%; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-grid.three-col { grid-template-columns: 1fr; }
+            .gir-item-row { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Stores Management</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('requisitions')">Requisitions</button>
+    <button class="tab-btn" onclick="switchTab('booking')">Booking In/Out</button>
+    <button class="tab-btn" onclick="switchTab('goods')">Goods Inward</button>
+</div>
+
+<!-- ===== TAB 1: REQUISITIONS ===== -->
+<div class="tab-content active" id="tab-requisitions">
+    <div class="stats-bar" id="req-stats"></div>
+    <div class="filter-bar">
+        <input type="text" id="req-search" placeholder="Search requisitions..." oninput="renderRequisitions()">
+        <select id="req-status" onchange="renderRequisitions()">
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Authorised">Authorised</option>
+            <option value="Issued">Issued</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+        <select id="req-dept" onchange="renderRequisitions()">
+            <option value="">All Departments</option>
+            <option value="Fabrication">Fabrication</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Scaffolding">Scaffolding</option>
+            <option value="Painting">Painting</option>
+            <option value="General">General</option>
+        </select>
+    </div>
+    <div class="card-list" id="req-list"></div>
+</div>
+
+<!-- ===== TAB 2: BOOKING IN/OUT ===== -->
+<div class="tab-content" id="tab-booking">
+    <div class="stats-bar" id="booking-stats"></div>
+    <div class="filter-bar">
+        <input type="text" id="booking-search" placeholder="Search bookings..." oninput="renderBookings()">
+        <select id="booking-status" onchange="renderBookings()">
+            <option value="">All Statuses</option>
+            <option value="Out">Out</option>
+            <option value="Returned">Returned</option>
+        </select>
+        <button class="btn-new" onclick="toggleBookOutForm()">+ Book Out Item</button>
+    </div>
+    <div class="inline-form" id="bookout-form" style="display:none">
+        <div class="inline-form-card">
+            <h3>Book Out Item</h3>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label>Description</label>
+                    <input type="text" id="bo-desc" placeholder="e.g. Mag Drill">
+                </div>
+                <div class="form-field">
+                    <label>Identity No.</label>
+                    <input type="text" id="bo-identity" placeholder="e.g. MD-005">
+                </div>
+                <div class="form-field">
+                    <label>Booked To</label>
+                    <input type="text" id="bo-bookedTo" placeholder="Person or department">
+                </div>
+                <div class="form-field">
+                    <label>Inspected By</label>
+                    <input type="text" id="bo-inspector" placeholder="Your name">
+                </div>
+                <div class="form-field full">
+                    <label>Remarks</label>
+                    <input type="text" id="bo-remarks" placeholder="Optional remarks">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-cancel" onclick="toggleBookOutForm()">Cancel</button>
+                <button class="btn-action blue" onclick="confirmBookOut()">Confirm Book Out</button>
+            </div>
+        </div>
+    </div>
+    <div class="card-list" id="booking-list"></div>
+</div>
+
+<!-- ===== TAB 3: GOODS INWARD ===== -->
+<div class="tab-content" id="tab-goods">
+    <div class="stats-bar" id="goods-stats"></div>
+    <div class="add-bar">
+        <button class="btn-new" onclick="toggleGirForm()">+ New Inspection</button>
+    </div>
+    <div class="inline-form" id="gir-form" style="display:none">
+        <div class="inline-form-card">
+            <h3>Goods Inward Report &mdash; SF 019K</h3>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label>Supplier Name</label>
+                    <input type="text" id="gir-supplier" placeholder="e.g. BOC Gases">
+                </div>
+                <div class="form-field">
+                    <label>Job No.</label>
+                    <input type="text" id="gir-jobNo" placeholder="e.g. J-2026-045">
+                </div>
+                <div class="form-field">
+                    <label>PO Number</label>
+                    <input type="text" id="gir-poNo" placeholder="e.g. PO-4521">
+                </div>
+                <div class="form-field">
+                    <label>PO Date</label>
+                    <input type="date" id="gir-poDate">
+                </div>
+                <div class="form-field">
+                    <label>Date Received</label>
+                    <input type="date" id="gir-dateReceived">
+                </div>
+                <div class="form-field">
+                    <label>Delivery Note No.</label>
+                    <input type="text" id="gir-deliveryNote" placeholder="e.g. DN-78901">
+                </div>
+            </div>
+            <div class="gir-label" style="margin-bottom:6px;margin-top:4px">Line Items</div>
+            <div class="gir-items" id="gir-items-list"></div>
+            <button class="btn-add-gir" onclick="addGirItem()">+ Add Item</button>
+            <div class="form-grid" style="margin-top:12px">
+                <div class="form-field">
+                    <label>PO Complete?</label>
+                    <select id="gir-poComplete">
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Inspector Name</label>
+                    <input type="text" id="gir-inspector" placeholder="Your name">
+                </div>
+                <div class="form-field full">
+                    <label>Comments</label>
+                    <textarea id="gir-comments" placeholder="Any additional comments..."></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-cancel" onclick="toggleGirForm()">Cancel</button>
+                <button class="btn-action green" onclick="submitGir()">Submit Report</button>
+            </div>
+        </div>
+    </div>
+    <div class="card-list" id="goods-list"></div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+// ===== localStorage KEYS =====
+const REQUISITIONS_KEY = 'mii_requisitions';
+const BOOKINGS_KEY = 'mii_bookings';
+const GOODS_KEY = 'mii_goods_inward';
+const STORES_SEEDED_KEY = 'mii_stores_seeded';
+
+// ===== DATE HELPERS =====
+const today = new Date();
+const d = (offset) => {
+    const dt = new Date(today);
+    dt.setDate(dt.getDate() - offset);
+    return dt.toISOString().split('T')[0];
+};
+const timeStr = (offset) => d(offset) + ' ' + ('0' + (7 + Math.floor(Math.random() * 3))).slice(-2) + ':' + ('0' + Math.floor(Math.random() * 60)).slice(-2);
+
+// ===== SEED MOCK DATA =====
+function seedStoresData() {
+    if (localStorage.getItem(STORES_SEEDED_KEY)) return;
+
+    // --- 5 Requisitions ---
+    const requisitions = [
+        {
+            id: 'REQ-001',
+            department: 'Fabrication',
+            requestedBy: 'D. Evans',
+            date: d(0),
+            jobNo: 'J-2026-045',
+            status: 'Pending',
+            items: [
+                { description: '10mm Steel Plate 2440x1220', qtyRequested: 4, qtyAuthorised: 0, qtyInStock: 0 },
+                { description: 'Welding Electrodes 7018 3.2mm (5kg)', qtyRequested: 3, qtyAuthorised: 0, qtyInStock: 0 }
+            ],
+            notes: [
+                { type: 'created', text: 'Requisition submitted', author: 'D. Evans', time: timeStr(0) }
+            ]
+        },
+        {
+            id: 'REQ-002',
+            department: 'Scaffolding',
+            requestedBy: 'R. Thomas',
+            date: d(1),
+            jobNo: 'J-2026-038',
+            status: 'Pending',
+            items: [
+                { description: 'Scaffolding Clips (bag of 50)', qtyRequested: 2, qtyAuthorised: 0, qtyInStock: 0 },
+                { description: 'Scaffold Boards 3.9m', qtyRequested: 10, qtyAuthorised: 0, qtyInStock: 0 },
+                { description: 'Base Plates (pack of 4)', qtyRequested: 3, qtyAuthorised: 0, qtyInStock: 0 }
+            ],
+            notes: [
+                { type: 'created', text: 'Requisition submitted', author: 'R. Thomas', time: timeStr(1) }
+            ]
+        },
+        {
+            id: 'REQ-003',
+            department: 'Mechanical',
+            requestedBy: 'M. Jones',
+            date: d(2),
+            jobNo: 'J-2026-041',
+            status: 'Authorised',
+            items: [
+                { description: 'Hydraulic Hose 1/2" x 3m', qtyRequested: 2, qtyAuthorised: 2, qtyInStock: 5 },
+                { description: 'Hydraulic Fittings BSP 1/2"', qtyRequested: 4, qtyAuthorised: 4, qtyInStock: 12 }
+            ],
+            notes: [
+                { type: 'created', text: 'Requisition submitted', author: 'M. Jones', time: timeStr(2) },
+                { type: 'authorised', text: 'All items authorised. Stock available.', author: 'J. Lewis', time: timeStr(1) }
+            ]
+        },
+        {
+            id: 'REQ-004',
+            department: 'General',
+            requestedBy: 'P. Morgan',
+            date: d(5),
+            jobNo: 'J-2026-032',
+            status: 'Issued',
+            items: [
+                { description: 'Safety Glasses (box of 12)', qtyRequested: 2, qtyAuthorised: 2, qtyInStock: 8 },
+                { description: 'Nitrile Gloves XL (box of 100)', qtyRequested: 3, qtyAuthorised: 3, qtyInStock: 15 },
+                { description: 'Ear Defenders (pair)', qtyRequested: 6, qtyAuthorised: 6, qtyInStock: 20 }
+            ],
+            notes: [
+                { type: 'created', text: 'Requisition submitted', author: 'P. Morgan', time: timeStr(5) },
+                { type: 'authorised', text: 'All items authorised.', author: 'J. Lewis', time: timeStr(4) },
+                { type: 'issued', text: 'All items issued and collected.', author: 'J. Lewis', time: timeStr(3) }
+            ],
+            issuedDate: d(3)
+        },
+        {
+            id: 'REQ-005',
+            department: 'Electrical',
+            requestedBy: 'K. Williams',
+            date: d(3),
+            jobNo: 'J-2026-039',
+            status: 'Rejected',
+            items: [
+                { description: 'SWA Cable 4-core 6mm (100m drum)', qtyRequested: 1, qtyAuthorised: 0, qtyInStock: 0 }
+            ],
+            notes: [
+                { type: 'created', text: 'Requisition submitted', author: 'K. Williams', time: timeStr(3) },
+                { type: 'rejected', text: 'Rejected — not held in stores. Order via procurement.', author: 'J. Lewis', time: timeStr(2) }
+            ],
+            rejectedReason: 'Item not held in stores. Must be ordered via procurement — contact office.'
+        }
+    ];
+
+    // --- 6 Bookings ---
+    const bookings = [
+        {
+            id: 'BK-001',
+            description: 'Mag Drill',
+            identityNo: 'MD-003',
+            bookedTo: 'D. Evans — Fabrication',
+            inspectedBy: 'J. Lewis',
+            dateOut: d(10),
+            status: 'Out',
+            remarks: 'For steelwork drilling — Bay 3'
+        },
+        {
+            id: 'BK-002',
+            description: 'Torque Wrench 1/2"',
+            identityNo: 'TW-015',
+            bookedTo: 'M. Jones — Mechanical',
+            inspectedBy: 'J. Lewis',
+            dateOut: d(3),
+            status: 'Out',
+            remarks: 'Flange bolt-up works'
+        },
+        {
+            id: 'BK-003',
+            description: 'Chain Block 2T',
+            identityNo: 'CB-008',
+            bookedTo: 'R. Thomas — Scaffolding',
+            inspectedBy: 'J. Lewis',
+            dateOut: d(0),
+            status: 'Out',
+            remarks: 'Material hoist for scaffold erection'
+        },
+        {
+            id: 'BK-004',
+            description: 'Laser Level',
+            identityNo: 'LL-002',
+            bookedTo: 'P. Morgan — General',
+            inspectedBy: 'J. Lewis',
+            dateOut: d(5),
+            dateIn: d(3),
+            status: 'Returned',
+            remarks: 'Setting out works',
+            returnRemarks: 'Returned in good condition. Battery low — placed on charge.'
+        },
+        {
+            id: 'BK-005',
+            description: 'Oxy-Fuel Cutting Set',
+            identityNo: 'OX-014',
+            bookedTo: 'D. Evans — Fabrication',
+            inspectedBy: 'J. Lewis',
+            dateOut: d(4),
+            dateIn: d(2),
+            status: 'Returned',
+            remarks: 'Plate cutting works',
+            returnRemarks: 'All hoses and fittings checked. Flashback arresters OK.'
+        },
+        {
+            id: 'BK-006',
+            description: 'Portable Drill Press',
+            identityNo: 'DP-007',
+            bookedTo: 'K. Williams — Electrical',
+            inspectedBy: 'J. Lewis',
+            dateOut: d(1),
+            status: 'Out',
+            remarks: 'Cable tray installation'
+        }
+    ];
+
+    // --- 3 Goods Inward Reports ---
+    const goodsInward = [
+        {
+            id: 'GIR-001',
+            supplier: 'BOC Industrial Gases',
+            jobNo: 'J-2026-045',
+            poNo: 'PO-4521',
+            poDate: d(10),
+            dateReceived: d(2),
+            deliveryNoteNo: 'DN-78901',
+            items: [
+                { description: 'Welding Electrodes 7018 3.2mm (5kg)', qtyCorrect: 'Yes', condition: 'Good', heatNo: 'H-445521', accept: 'Accept' },
+                { description: 'Welding Electrodes 7018 4.0mm (5kg)', qtyCorrect: 'Yes', condition: 'Good', heatNo: 'H-445522', accept: 'Accept' },
+                { description: 'MIG Wire 1.2mm (15kg spool)', qtyCorrect: 'Yes', condition: 'Good', heatNo: 'H-660134', accept: 'Accept' }
+            ],
+            poComplete: 'Yes',
+            comments: 'All items received in good condition. Certs provided.',
+            inspector: 'J. Lewis',
+            status: 'Accepted'
+        },
+        {
+            id: 'GIR-002',
+            supplier: 'Steel Supplies Wales',
+            jobNo: 'J-2026-045',
+            poNo: 'PO-4518',
+            poDate: d(14),
+            dateReceived: d(4),
+            deliveryNoteNo: 'DN-55420',
+            items: [
+                { description: '10mm Steel Plate 2440x1220', qtyCorrect: 'Yes', condition: 'Good', heatNo: 'C-991023', accept: 'Accept' },
+                { description: '6mm Steel Plate 2440x1220', qtyCorrect: 'Yes', condition: 'Good', heatNo: 'C-991024', accept: 'Accept' }
+            ],
+            poComplete: 'Yes',
+            comments: 'MTCs received and filed. All plates labelled with heat numbers.',
+            inspector: 'J. Lewis',
+            status: 'Accepted'
+        },
+        {
+            id: 'GIR-003',
+            supplier: 'SafetyPro Supplies',
+            jobNo: 'J-2026-032',
+            poNo: 'PO-4530',
+            poDate: d(8),
+            dateReceived: d(1),
+            deliveryNoteNo: 'DN-33105',
+            items: [
+                { description: 'Safety Glasses (box of 12)', qtyCorrect: 'Yes', condition: 'Good', heatNo: 'N/A', accept: 'Accept' },
+                { description: 'Nitrile Gloves XL (box of 100)', qtyCorrect: 'No', condition: 'Damaged packaging — 1 box split', heatNo: 'N/A', accept: 'Reject' },
+                { description: 'Hard Hats (white)', qtyCorrect: 'Yes', condition: 'Good', heatNo: 'N/A', accept: 'Accept' }
+            ],
+            poComplete: 'No',
+            comments: '1 box of gloves rejected due to split packaging. Supplier to replace. Remaining items accepted.',
+            inspector: 'J. Lewis',
+            status: 'Partial Reject'
+        }
+    ];
+
+    localStorage.setItem(REQUISITIONS_KEY, JSON.stringify(requisitions));
+    localStorage.setItem(BOOKINGS_KEY, JSON.stringify(bookings));
+    localStorage.setItem(GOODS_KEY, JSON.stringify(goodsInward));
+    localStorage.setItem(STORES_SEEDED_KEY, 'true');
+}
+
+seedStoresData();
+
+// ===== DATA ACCESS =====
+function getRequisitions() { return JSON.parse(localStorage.getItem(REQUISITIONS_KEY) || '[]'); }
+function saveRequisitions(data) { localStorage.setItem(REQUISITIONS_KEY, JSON.stringify(data)); MiiDB.saveAll('requisitions', data); }
+function getBookings() { return JSON.parse(localStorage.getItem(BOOKINGS_KEY) || '[]'); }
+function saveBookings(data) { localStorage.setItem(BOOKINGS_KEY, JSON.stringify(data)); MiiDB.saveAll('bookings', data); }
+function getGoods() { return JSON.parse(localStorage.getItem(GOODS_KEY) || '[]'); }
+function saveGoods(data) { localStorage.setItem(GOODS_KEY, JSON.stringify(data)); MiiDB.saveAll('goods_inward', data); }
+
+// ===== TAB SWITCHING =====
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active',
+            (tab === 'requisitions' && i === 0) ||
+            (tab === 'booking' && i === 1) ||
+            (tab === 'goods' && i === 2)
+        );
+    });
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+
+    if (tab === 'requisitions') renderRequisitions();
+    else if (tab === 'booking') renderBookings();
+    else renderGoods();
+}
+
+// =====================================================================
+// TAB 1: REQUISITIONS
+// =====================================================================
+function renderReqStats() {
+    const reqs = getRequisitions();
+    const pending = reqs.filter(r => r.status === 'Pending').length;
+    const authorised = reqs.filter(r => r.status === 'Authorised').length;
+
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const issuedThisWeek = reqs.filter(r => r.status === 'Issued' && r.issuedDate && new Date(r.issuedDate) >= weekAgo).length;
+
+    const totalItems = reqs.reduce((sum, r) => sum + r.items.length, 0);
+
+    document.getElementById('req-stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value amber">${pending}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-value blue">${authorised}</div><div class="stat-label">Authorised</div></div>
+        <div class="stat-card"><div class="stat-value green">${issuedThisWeek}</div><div class="stat-label">Issued This Week</div></div>
+        <div class="stat-card"><div class="stat-value">${totalItems}</div><div class="stat-label">Total Items</div></div>
+    `;
+}
+
+function renderRequisitions() {
+    renderReqStats();
+    const reqs = getRequisitions();
+
+    const search = document.getElementById('req-search').value.toLowerCase();
+    const status = document.getElementById('req-status').value;
+    const dept = document.getElementById('req-dept').value;
+
+    const filtered = reqs.filter(r => {
+        if (status && r.status !== status) return false;
+        if (dept && r.department !== dept) return false;
+        if (search) {
+            const hay = (r.id + ' ' + r.department + ' ' + r.requestedBy + ' ' + r.jobNo + ' ' + r.items.map(i => i.description).join(' ')).toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    const statusOrder = { 'Pending': 0, 'Authorised': 1, 'Issued': 2, 'Rejected': 3 };
+    filtered.sort((a, b) => {
+        const so = statusOrder[a.status] - statusOrder[b.status];
+        if (so !== 0) return so;
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    const list = document.getElementById('req-list');
+    if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state"><h3>No requisitions found</h3><p>Try adjusting your filters</p></div>';
+        return;
+    }
+
+    list.innerHTML = filtered.map(r => {
+        const accentClass = r.status.toLowerCase();
+        const pillClass = r.status.toLowerCase();
+        return `
+        <div class="s-card" id="req-${r.id}">
+            <div class="s-accent ${accentClass}"></div>
+            <div class="s-body">
+                <div class="s-header" onclick="toggleCard('req-${r.id}')">
+                    <span class="status-pill ${pillClass}">${r.status}</span>
+                    <span class="s-id">${r.id}</span>
+                    <span class="s-title">${r.department}</span>
+                    <span class="s-meta">
+                        <span>${r.requestedBy}</span>
+                        <span>${r.date}</span>
+                    </span>
+                    <span class="expand-arrow">&#9660;</span>
+                </div>
+                <div class="s-detail">
+                    <div class="detail-grid">
+                        <div class="detail-item"><label>Requisition ID</label><span>${r.id}</span></div>
+                        <div class="detail-item"><label>Job No.</label><span>${r.jobNo}</span></div>
+                        <div class="detail-item"><label>Requested By</label><span>${r.requestedBy}</span></div>
+                        <div class="detail-item"><label>Department</label><span>${r.department}</span></div>
+                    </div>
+
+                    ${renderReqItemsTable(r)}
+
+                    <div class="notes-section">
+                        <h4>Activity</h4>
+                        ${r.notes.map(n => `
+                            <div class="note-entry">
+                                <div class="note-dot ${n.type}"></div>
+                                <div class="note-content">
+                                    <strong>${n.author}</strong> &mdash; ${n.text}<br>
+                                    <span class="note-time">${n.time}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    ${renderReqActions(r)}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderReqItemsTable(r) {
+    if (r.status === 'Pending') {
+        return `
+        <table class="items-table">
+            <thead><tr><th>#</th><th>Description</th><th>Qty Req.</th><th>Qty Auth.</th><th>In Stock</th></tr></thead>
+            <tbody>
+                ${r.items.map((item, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${item.description}</td>
+                        <td>${item.qtyRequested}</td>
+                        <td><input type="number" min="0" value="${item.qtyAuthorised}" id="auth-${r.id}-${i}"></td>
+                        <td><input type="number" min="0" value="${item.qtyInStock}" id="stock-${r.id}-${i}"></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>`;
+    }
+    return `
+    <table class="items-table">
+        <thead><tr><th>#</th><th>Description</th><th>Qty Req.</th><th>Qty Auth.</th><th>In Stock</th></tr></thead>
+        <tbody>
+            ${r.items.map((item, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${item.description}</td>
+                    <td>${item.qtyRequested}</td>
+                    <td>${item.qtyAuthorised}</td>
+                    <td>${item.qtyInStock}</td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table>`;
+}
+
+function renderReqActions(r) {
+    if (r.status === 'Pending') {
+        return `
+        <div class="action-panel">
+            <div class="action-buttons">
+                <button class="btn-action blue" onclick="authoriseReq('${r.id}')">Authorise</button>
+                <button class="btn-action red" onclick="rejectReq('${r.id}')">Reject</button>
+            </div>
+        </div>`;
+    }
+    if (r.status === 'Authorised') {
+        return `
+        <div class="action-panel">
+            <button class="btn-action green" onclick="issueReq('${r.id}')">Mark as Issued</button>
+        </div>`;
+    }
+    if (r.status === 'Issued') {
+        return `
+        <div class="resolved-banner">
+            <span class="check">&#10003;</span>
+            <span class="res-text">Issued ${r.issuedDate || ''}</span>
+        </div>`;
+    }
+    if (r.status === 'Rejected') {
+        return `
+        <div class="resolved-banner rejected-banner">
+            <span class="check">&#10007;</span>
+            <span class="res-text">Rejected</span>
+        </div>
+        ${r.rejectedReason ? '<p style="font-size:0.82rem;color:var(--text-light);margin-top:8px;line-height:1.45">' + r.rejectedReason + '</p>' : ''}`;
+    }
+    return '';
+}
+
+function authoriseReq(id) {
+    const reqs = getRequisitions();
+    const r = reqs.find(x => x.id === id);
+    if (!r) return;
+
+    // Read qty authorised and stock from inputs
+    r.items.forEach((item, i) => {
+        const authInput = document.getElementById('auth-' + id + '-' + i);
+        const stockInput = document.getElementById('stock-' + id + '-' + i);
+        if (authInput) item.qtyAuthorised = parseInt(authInput.value) || 0;
+        if (stockInput) item.qtyInStock = parseInt(stockInput.value) || 0;
+    });
+
+    r.status = 'Authorised';
+    const now = new Date();
+    r.notes.push({
+        type: 'authorised',
+        text: 'All items reviewed and authorised.',
+        author: 'J. Lewis',
+        time: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0, 5)
+    });
+
+    saveRequisitions(reqs);
+    renderRequisitions();
+}
+
+function rejectReq(id) {
+    const reason = prompt('Reason for rejection:');
+    if (reason === null) return;
+
+    const reqs = getRequisitions();
+    const r = reqs.find(x => x.id === id);
+    if (!r) return;
+
+    r.status = 'Rejected';
+    r.rejectedReason = reason || 'Rejected by storeman.';
+    const now = new Date();
+    r.notes.push({
+        type: 'rejected',
+        text: 'Rejected — ' + (reason || 'No reason provided.'),
+        author: 'J. Lewis',
+        time: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0, 5)
+    });
+
+    saveRequisitions(reqs);
+    renderRequisitions();
+}
+
+function issueReq(id) {
+    const reqs = getRequisitions();
+    const r = reqs.find(x => x.id === id);
+    if (!r) return;
+
+    r.status = 'Issued';
+    r.issuedDate = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    r.notes.push({
+        type: 'issued',
+        text: 'All items issued and collected.',
+        author: 'J. Lewis',
+        time: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0, 5)
+    });
+
+    saveRequisitions(reqs);
+    renderRequisitions();
+}
+
+// =====================================================================
+// TAB 2: BOOKING IN/OUT
+// =====================================================================
+function renderBookingStats() {
+    const bookings = getBookings();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const outItems = bookings.filter(b => b.status === 'Out');
+    const outToday = bookings.filter(b => b.status === 'Out' && b.dateOut === todayStr);
+    const returnedToday = bookings.filter(b => b.status === 'Returned' && b.dateIn === todayStr);
+
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const overdue = outItems.filter(b => new Date(b.dateOut) < sevenDaysAgo);
+
+    document.getElementById('booking-stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value amber">${outItems.length}</div><div class="stat-label">Currently Out</div></div>
+        <div class="stat-card"><div class="stat-value blue">${outToday.length}</div><div class="stat-label">Booked Out Today</div></div>
+        <div class="stat-card"><div class="stat-value green">${returnedToday.length}</div><div class="stat-label">Returned Today</div></div>
+        <div class="stat-card"><div class="stat-value red">${overdue.length}</div><div class="stat-label">Overdue >7d</div></div>
+    `;
+}
+
+function renderBookings() {
+    renderBookingStats();
+    const bookings = getBookings();
+
+    const search = document.getElementById('booking-search').value.toLowerCase();
+    const status = document.getElementById('booking-status').value;
+
+    const filtered = bookings.filter(b => {
+        if (status && b.status !== status) return false;
+        if (search) {
+            const hay = (b.id + ' ' + b.description + ' ' + b.identityNo + ' ' + b.bookedTo + ' ' + b.inspectedBy).toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    // Out first, then Returned; within each by date desc
+    filtered.sort((a, b) => {
+        const so = (a.status === 'Out' ? 0 : 1) - (b.status === 'Out' ? 0 : 1);
+        if (so !== 0) return so;
+        return new Date(b.dateOut) - new Date(a.dateOut);
+    });
+
+    const list = document.getElementById('booking-list');
+    if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state"><h3>No bookings found</h3><p>Try adjusting your filters</p></div>';
+        return;
+    }
+
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    list.innerHTML = filtered.map(b => {
+        const accentClass = b.status.toLowerCase();
+        const pillClass = b.status.toLowerCase();
+        const isOverdue = b.status === 'Out' && new Date(b.dateOut) < sevenDaysAgo;
+        return `
+        <div class="s-card" id="bk-${b.id}">
+            <div class="s-accent ${accentClass}"></div>
+            <div class="s-body">
+                <div class="s-header" onclick="toggleCard('bk-${b.id}')">
+                    <span class="status-pill ${pillClass}">${b.status}${isOverdue ? ' — OVERDUE' : ''}</span>
+                    <span class="s-id">${b.identityNo}</span>
+                    <span class="s-title">${b.description}</span>
+                    <span class="s-meta">
+                        <span>${b.bookedTo}</span>
+                        <span>${b.dateOut}</span>
+                    </span>
+                    <span class="expand-arrow">&#9660;</span>
+                </div>
+                <div class="s-detail">
+                    <div class="detail-grid">
+                        <div class="detail-item"><label>Booking ID</label><span>${b.id}</span></div>
+                        <div class="detail-item"><label>Identity No.</label><span>${b.identityNo}</span></div>
+                        <div class="detail-item"><label>Booked To</label><span>${b.bookedTo}</span></div>
+                        <div class="detail-item"><label>Inspected By</label><span>${b.inspectedBy}</span></div>
+                        <div class="detail-item"><label>Date Out</label><span>${b.dateOut}</span></div>
+                        <div class="detail-item"><label>Remarks</label><span>${b.remarks || '—'}</span></div>
+                    </div>
+                    ${renderBookingActions(b)}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderBookingActions(b) {
+    if (b.status === 'Out') {
+        return `
+        <div class="action-panel">
+            <label>Return Remarks</label>
+            <textarea id="return-${b.id}" placeholder="Condition on return, any issues..."></textarea>
+            <button class="btn-action green" onclick="bookIn('${b.id}')">Book Back In</button>
+        </div>`;
+    }
+    return `
+    <div class="resolved-banner">
+        <span class="check">&#10003;</span>
+        <span class="res-text">Returned ${b.dateIn || ''}</span>
+    </div>
+    ${b.returnRemarks ? '<p style="font-size:0.82rem;color:var(--text-light);margin-top:8px;line-height:1.45">' + b.returnRemarks + '</p>' : ''}`;
+}
+
+function toggleBookOutForm() {
+    const form = document.getElementById('bookout-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function confirmBookOut() {
+    const desc = document.getElementById('bo-desc').value.trim();
+    const identity = document.getElementById('bo-identity').value.trim();
+    const bookedTo = document.getElementById('bo-bookedTo').value.trim();
+    const inspector = document.getElementById('bo-inspector').value.trim();
+    const remarks = document.getElementById('bo-remarks').value.trim();
+
+    if (!desc) { alert('Please enter a description.'); return; }
+    if (!identity) { alert('Please enter an Identity No.'); return; }
+    if (!bookedTo) { alert('Please enter who this is booked to.'); return; }
+    if (!inspector) { alert('Please enter inspector name.'); return; }
+
+    const bookings = getBookings();
+    bookings.push({
+        id: 'BK-' + String(Date.now()).slice(-6),
+        description: desc,
+        identityNo: identity,
+        bookedTo: bookedTo,
+        inspectedBy: inspector,
+        dateOut: new Date().toISOString().split('T')[0],
+        status: 'Out',
+        remarks: remarks
+    });
+    saveBookings(bookings);
+
+    // Reset form
+    document.getElementById('bo-desc').value = '';
+    document.getElementById('bo-identity').value = '';
+    document.getElementById('bo-bookedTo').value = '';
+    document.getElementById('bo-inspector').value = '';
+    document.getElementById('bo-remarks').value = '';
+    document.getElementById('bookout-form').style.display = 'none';
+
+    renderBookings();
+}
+
+function bookIn(id) {
+    const textarea = document.getElementById('return-' + id);
+    const remarks = textarea ? textarea.value.trim() : '';
+
+    const bookings = getBookings();
+    const b = bookings.find(x => x.id === id);
+    if (!b) return;
+
+    b.status = 'Returned';
+    b.dateIn = new Date().toISOString().split('T')[0];
+    b.returnRemarks = remarks || 'Returned — no issues noted.';
+
+    saveBookings(bookings);
+    renderBookings();
+}
+
+// =====================================================================
+// TAB 3: GOODS INWARD
+// =====================================================================
+function renderGoodsStats() {
+    const goods = getGoods();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const thisWeek = goods.filter(g => new Date(g.dateReceived) >= weekAgo);
+    const accepted = goods.filter(g => g.status === 'Accepted').length;
+    const partial = goods.filter(g => g.status === 'Partial Reject').length;
+    const rejected = goods.filter(g => g.status === 'Rejected').length;
+
+    document.getElementById('goods-stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value blue">${thisWeek.length}</div><div class="stat-label">Received This Week</div></div>
+        <div class="stat-card"><div class="stat-value green">${accepted}</div><div class="stat-label">Accepted</div></div>
+        <div class="stat-card"><div class="stat-value amber">${partial}</div><div class="stat-label">Partial Reject</div></div>
+        <div class="stat-card"><div class="stat-value red">${rejected}</div><div class="stat-label">Rejected</div></div>
+    `;
+}
+
+function renderGoods() {
+    renderGoodsStats();
+    const goods = getGoods();
+
+    const sorted = [...goods].sort((a, b) => new Date(b.dateReceived) - new Date(a.dateReceived));
+
+    const list = document.getElementById('goods-list');
+    if (sorted.length === 0) {
+        list.innerHTML = '<div class="empty-state"><h3>No goods inward reports</h3><p>Click "+ New Inspection" to add one</p></div>';
+        return;
+    }
+
+    list.innerHTML = sorted.map(g => {
+        const accentClass = g.status === 'Accepted' ? 'accepted' : g.status === 'Partial Reject' ? 'partial' : 'rejected';
+        const pillClass = accentClass;
+        return `
+        <div class="s-card" id="gir-${g.id}">
+            <div class="s-accent ${accentClass}"></div>
+            <div class="s-body">
+                <div class="s-header" onclick="toggleCard('gir-${g.id}')">
+                    <span class="status-pill ${pillClass}">${g.status}</span>
+                    <span class="s-id">${g.id}</span>
+                    <span class="s-title">${g.supplier}</span>
+                    <span class="s-meta">
+                        <span>PO: ${g.poNo}</span>
+                        <span>${g.dateReceived}</span>
+                    </span>
+                    <span class="expand-arrow">&#9660;</span>
+                </div>
+                <div class="s-detail">
+                    <div class="detail-grid">
+                        <div class="detail-item"><label>Report ID</label><span>${g.id}</span></div>
+                        <div class="detail-item"><label>Supplier</label><span>${g.supplier}</span></div>
+                        <div class="detail-item"><label>Job No.</label><span>${g.jobNo}</span></div>
+                        <div class="detail-item"><label>PO Number</label><span>${g.poNo}</span></div>
+                        <div class="detail-item"><label>PO Date</label><span>${g.poDate}</span></div>
+                        <div class="detail-item"><label>Date Received</label><span>${g.dateReceived}</span></div>
+                        <div class="detail-item"><label>Delivery Note</label><span>${g.deliveryNoteNo}</span></div>
+                        <div class="detail-item"><label>PO Complete</label><span>${g.poComplete}</span></div>
+                    </div>
+
+                    <table class="items-table">
+                        <thead><tr><th>Description</th><th>Qty OK</th><th>Condition</th><th>Heat No.</th><th>Result</th></tr></thead>
+                        <tbody>
+                            ${g.items.map(item => `
+                                <tr>
+                                    <td>${item.description}</td>
+                                    <td>${item.qtyCorrect}</td>
+                                    <td>${item.condition}</td>
+                                    <td>${item.heatNo}</td>
+                                    <td><span class="status-pill ${item.accept === 'Accept' ? 'accepted' : 'rejected'}">${item.accept}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <p style="font-size:0.85rem;color:var(--text);margin-bottom:8px;line-height:1.5">${g.comments || ''}</p>
+                    <p style="font-size:0.78rem;color:var(--text-light)">Inspected by: <strong>${g.inspector}</strong></p>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ===== GIR FORM =====
+let girItemCount = 0;
+
+function toggleGirForm() {
+    const form = document.getElementById('gir-form');
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        document.getElementById('gir-dateReceived').valueAsDate = new Date();
+        if (girItemCount === 0) addGirItem();
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+function addGirItem() {
+    girItemCount++;
+    const list = document.getElementById('gir-items-list');
+    const div = document.createElement('div');
+    div.className = 'gir-item';
+    div.id = 'gir-line-' + girItemCount;
+    div.innerHTML = `
+        <div class="gir-item-row">
+            <div><div class="gir-label">Description</div><input type="text" data-field="desc" placeholder="Item description"></div>
+            <div><div class="gir-label">Qty OK?</div><select data-field="qtyOk"><option value="Yes">Yes</option><option value="No">No</option></select></div>
+            <div><div class="gir-label">Condition</div><input type="text" data-field="condition" placeholder="Good"></div>
+            <div><div class="gir-label">Heat No.</div><input type="text" data-field="heatNo" placeholder="N/A"></div>
+            <div><div class="gir-label">Result</div><select data-field="result"><option value="Accept">Accept</option><option value="Reject">Reject</option></select></div>
+        </div>
+    `;
+    list.appendChild(div);
+}
+
+function submitGir() {
+    const supplier = document.getElementById('gir-supplier').value.trim();
+    const jobNo = document.getElementById('gir-jobNo').value.trim();
+    const poNo = document.getElementById('gir-poNo').value.trim();
+    const poDate = document.getElementById('gir-poDate').value;
+    const dateReceived = document.getElementById('gir-dateReceived').value;
+    const deliveryNote = document.getElementById('gir-deliveryNote').value.trim();
+    const poComplete = document.getElementById('gir-poComplete').value;
+    const inspector = document.getElementById('gir-inspector').value.trim();
+    const comments = document.getElementById('gir-comments').value.trim();
+
+    if (!supplier) { alert('Please enter supplier name.'); return; }
+    if (!poNo) { alert('Please enter PO number.'); return; }
+    if (!inspector) { alert('Please enter inspector name.'); return; }
+
+    const items = [];
+    const rows = document.querySelectorAll('#gir-items-list .gir-item');
+    if (rows.length === 0) { alert('Please add at least one item.'); return; }
+
+    for (const row of rows) {
+        const desc = row.querySelector('[data-field="desc"]').value.trim();
+        if (!desc) { alert('Please enter a description for all items.'); return; }
+        items.push({
+            description: desc,
+            qtyCorrect: row.querySelector('[data-field="qtyOk"]').value,
+            condition: row.querySelector('[data-field="condition"]').value.trim() || 'Good',
+            heatNo: row.querySelector('[data-field="heatNo"]').value.trim() || 'N/A',
+            accept: row.querySelector('[data-field="result"]').value
+        });
+    }
+
+    const hasReject = items.some(i => i.accept === 'Reject');
+    const allReject = items.every(i => i.accept === 'Reject');
+    let status = 'Accepted';
+    if (allReject) status = 'Rejected';
+    else if (hasReject) status = 'Partial Reject';
+
+    const goods = getGoods();
+    goods.push({
+        id: 'GIR-' + String(Date.now()).slice(-6),
+        supplier,
+        jobNo,
+        poNo,
+        poDate,
+        dateReceived,
+        deliveryNoteNo: deliveryNote,
+        items,
+        poComplete,
+        comments,
+        inspector,
+        status
+    });
+    saveGoods(goods);
+
+    // Reset form
+    document.getElementById('gir-supplier').value = '';
+    document.getElementById('gir-jobNo').value = '';
+    document.getElementById('gir-poNo').value = '';
+    document.getElementById('gir-poDate').value = '';
+    document.getElementById('gir-deliveryNote').value = '';
+    document.getElementById('gir-inspector').value = '';
+    document.getElementById('gir-comments').value = '';
+    document.getElementById('gir-items-list').innerHTML = '';
+    girItemCount = 0;
+    document.getElementById('gir-form').style.display = 'none';
+
+    renderGoods();
+}
+
+// ===== SHARED =====
+function toggleCard(id) {
+    document.getElementById(id).classList.toggle('expanded');
+}
+
+// ===== INIT =====
+renderRequisitions();
+</script>
+
+</body>
+</html>

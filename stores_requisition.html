@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stores Requisition — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+            padding-bottom: 90px;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* FORM HEADER */
+        .form-header {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px 20px 0;
+        }
+        .form-ref {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--accent);
+        }
+        .form-header h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 2px 0 6px;
+        }
+        .form-desc {
+            font-size: 0.82rem;
+            color: var(--text-light);
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        /* FIELDS */
+        .fields {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 12px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .field label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            margin-bottom: 3px;
+        }
+        .field input, .field select {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* LINE ITEMS */
+        .line-items {
+            max-width: 700px;
+            margin: 12px auto 0;
+            padding: 0 20px;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            padding: 14px 0 8px;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .line-item {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: border-color 0.2s;
+        }
+        .line-item:focus-within { border-color: var(--accent); }
+        .line-item .line-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-light);
+            flex-shrink: 0;
+        }
+        .line-item input[type="text"] {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .line-item input[type="number"] {
+            width: 70px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            background: var(--white);
+            text-align: center;
+        }
+        .line-item input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+        .btn-remove {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: color 0.15s, background 0.15s;
+        }
+        .btn-remove:hover { color: var(--danger); background: #fde8ea; }
+
+        .btn-add-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: 1.5px dashed var(--border);
+            border-radius: 6px;
+            background: var(--white);
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--accent);
+            cursor: pointer;
+            margin-top: 4px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .btn-add-item:hover { border-color: var(--accent); background: #f0f7ff; }
+
+        /* SUBMIT BAR */
+        .submit-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+        }
+        .submit-status { font-size: 0.82rem; color: var(--text-light); }
+        .submit-status strong { color: var(--primary); }
+        .btn-submit {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            background: var(--warning);
+            transition: opacity 0.15s;
+        }
+        .btn-submit:hover { opacity: 0.9; }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* SUCCESS OVERLAY */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay.show { display: flex; }
+        .overlay-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 32px 28px;
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .overlay-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 14px;
+        }
+        .overlay-icon.green { background: #e6f7ec; color: var(--success); }
+        .overlay-icon.amber { background: #fff6e0; color: var(--warning); }
+        .overlay-card h3 { font-size: 1.15rem; color: var(--primary); margin-bottom: 6px; }
+        .overlay-card p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+        .overlay-card .req-id {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+        .overlay-actions button {
+            padding: 9px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+
+        @media (max-width: 600px) {
+            .fields { grid-template-columns: 1fr; }
+            .line-item { flex-wrap: wrap; }
+            .line-item input[type="text"] { min-width: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Stores Requisition</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<div class="form-header">
+    <div class="form-ref">SF 017B &mdash; Stores Requisition</div>
+    <h2>Material / Consumables Requisition</h2>
+    <div class="form-desc">Request materials or consumables from stores. Complete all fields and add line items. The storeman will review and authorise your request.</div>
+</div>
+
+<div class="fields">
+    <div class="field">
+        <label>Department</label>
+        <select id="f-dept">
+            <option value="">Select department...</option>
+            <option value="Fabrication">Fabrication</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Scaffolding">Scaffolding</option>
+            <option value="Painting">Painting</option>
+            <option value="General">General</option>
+        </select>
+    </div>
+    <div class="field">
+        <label>Requested By</label>
+        <input type="text" id="f-requestedBy" placeholder="Your name">
+    </div>
+    <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date">
+    </div>
+    <div class="field">
+        <label>Job No.</label>
+        <input type="text" id="f-jobNo" placeholder="e.g. J-2026-045">
+    </div>
+</div>
+
+<div class="line-items">
+    <div class="section-title">Items Required</div>
+    <div id="items-list"></div>
+    <button class="btn-add-item" onclick="addItem()">+ Add Item</button>
+</div>
+
+<!-- SUBMIT BAR -->
+<div class="submit-bar">
+    <div class="submit-status" id="submit-status"><strong>0</strong> items</div>
+    <button class="btn-submit" id="btn-submit" onclick="submitRequisition()">Submit Requisition</button>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-icon amber">&#128230;</div>
+        <h3>Requisition Submitted</h3>
+        <div class="req-id" id="overlay-req-id"></div>
+        <p>Your request has been sent to stores. The storeman will review and authorise your requisition.</p>
+        <div class="overlay-actions">
+            <button class="btn-outline" onclick="window.location.href='index.html'">Back to Hub</button>
+            <button class="btn-primary" onclick="location.reload()">Submit Another</button>
+        </div>
+    </div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+const REQUISITIONS_KEY = 'mii_requisitions';
+let itemCount = 0;
+
+// Set today's date
+document.getElementById('f-date').valueAsDate = new Date();
+
+function addItem() {
+    itemCount++;
+    const list = document.getElementById('items-list');
+    const div = document.createElement('div');
+    div.className = 'line-item';
+    div.id = 'line-' + itemCount;
+    div.innerHTML = `
+        <span class="line-num">${itemCount}</span>
+        <input type="text" placeholder="Description of item required" data-field="desc">
+        <input type="number" placeholder="Qty" min="1" value="1" data-field="qty">
+        <button class="btn-remove" onclick="removeItem(${itemCount})" title="Remove item">&times;</button>
+    `;
+    list.appendChild(div);
+    updateStatus();
+    div.querySelector('input[type="text"]').focus();
+}
+
+function removeItem(num) {
+    const el = document.getElementById('line-' + num);
+    if (el) el.remove();
+    renumberItems();
+    updateStatus();
+}
+
+function renumberItems() {
+    const items = document.querySelectorAll('#items-list .line-item');
+    items.forEach((item, i) => {
+        item.querySelector('.line-num').textContent = i + 1;
+    });
+}
+
+function updateStatus() {
+    const count = document.querySelectorAll('#items-list .line-item').length;
+    document.getElementById('submit-status').innerHTML = `<strong>${count}</strong> item${count !== 1 ? 's' : ''}`;
+}
+
+function submitRequisition() {
+    const dept = document.getElementById('f-dept').value;
+    const requestedBy = document.getElementById('f-requestedBy').value.trim();
+    const date = document.getElementById('f-date').value;
+    const jobNo = document.getElementById('f-jobNo').value.trim();
+
+    if (!dept) { alert('Please select a department.'); return; }
+    if (!requestedBy) { alert('Please enter your name.'); return; }
+    if (!jobNo) { alert('Please enter a Job No.'); return; }
+
+    const lineItems = [];
+    const rows = document.querySelectorAll('#items-list .line-item');
+    if (rows.length === 0) { alert('Please add at least one item.'); return; }
+
+    for (const row of rows) {
+        const desc = row.querySelector('input[data-field="desc"]').value.trim();
+        const qty = parseInt(row.querySelector('input[data-field="qty"]').value) || 0;
+        if (!desc) { alert('Please enter a description for all items.'); row.querySelector('input[data-field="desc"]').focus(); return; }
+        if (qty < 1) { alert('Quantity must be at least 1.'); row.querySelector('input[data-field="qty"]').focus(); return; }
+        lineItems.push({ description: desc, qtyRequested: qty, qtyAuthorised: 0, qtyInStock: 0 });
+    }
+
+    const reqId = 'REQ-' + String(Date.now()).slice(-6);
+    const now = new Date();
+    const timeStr = now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0, 5);
+
+    const requisition = {
+        id: reqId,
+        department: dept,
+        requestedBy: requestedBy,
+        date: date,
+        jobNo: jobNo,
+        status: 'Pending',
+        items: lineItems,
+        notes: [
+            { type: 'created', text: 'Requisition submitted', author: requestedBy, time: timeStr }
+        ]
+    };
+
+    const requisitions = JSON.parse(localStorage.getItem(REQUISITIONS_KEY) || '[]');
+    requisitions.push(requisition);
+    localStorage.setItem(REQUISITIONS_KEY, JSON.stringify(requisitions));
+    MiiDB.save('requisitions', requisition);
+
+    // Show success overlay
+    document.getElementById('overlay-req-id').textContent = reqId;
+    document.getElementById('overlay').classList.add('show');
+}
+
+// Start with one empty item row
+addItem();
+</script>
+
+</body>
+</html>

@@ -386,19 +386,103 @@
             </div>
         </a>
 
-        <!-- WORKPLACE INSPECTIONS -->
-        <a class="card coming-soon" href="#">
+        <!-- STORES REQUISITION -->
+        <a class="card" href="stores_requisition.html">
             <div class="card-accent amber"></div>
-            <span class="coming-soon-badge">Coming Soon</span>
+            <div class="card-body">
+                <div class="card-icon amber">&#128230;</div>
+                <div class="card-title">Stores Requisition</div>
+                <div class="card-desc">
+                    Request materials and consumables from stores. Submit requisition
+                    for storeman review and authorisation. SF 017B digital form.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Per Event</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- STORES MANAGEMENT -->
+        <a class="card" href="stores.html">
+            <div class="card-accent green"></div>
+            <div class="card-body">
+                <div class="card-icon green">&#127970;</div>
+                <div class="card-title">Stores Management</div>
+                <div class="card-desc">
+                    Process requisitions, book tools in/out, inspect goods inward.
+                    Storeman dashboard with full stock tracking. SF 019 &amp; SF 019K.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Live</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- WORKPLACE INSPECTIONS -->
+        <a class="card" href="workplace_inspection.html">
+            <div class="card-accent amber"></div>
             <div class="card-body">
                 <div class="card-icon amber">&#128269;</div>
                 <div class="card-title">Workplace Inspections</div>
                 <div class="card-desc">
-                    Formal weekly workplace inspection. Checklist-driven with photo upload.
-                    Maps to R&R item 21. Currently via MS Forms.
+                    Formal weekly workplace inspection. 20-item checklist with
+                    corrective actions. SF 046E digital form. Maps to R&R item 21.
                 </div>
                 <div class="card-footer">
                     <span class="card-tag weekly">Weekly</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- NEAR MISS REPORT -->
+        <a class="card" href="near_miss.html">
+            <div class="card-accent red"></div>
+            <div class="card-body">
+                <div class="card-icon red">&#9888;</div>
+                <div class="card-title">Near Miss / Hazard</div>
+                <div class="card-desc">
+                    Report near misses, hazards or positive observations.
+                    SF 013C digital form. Reviewed by SHEQ and management.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Per Event</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- HOT WORK CERTIFICATE -->
+        <a class="card" href="hot_work.html">
+            <div class="card-accent red"></div>
+            <div class="card-body">
+                <div class="card-icon red">&#128293;</div>
+                <div class="card-title">Hot Work Certificate</div>
+                <div class="card-desc">
+                    Issue hot work certificates with 23-point risk assessment.
+                    SF 051C digital form. Fire watcher assignment required.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Per Event</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- SUPERVISOR CHECKLIST -->
+        <a class="card" href="supervisor_checklist.html">
+            <div class="card-accent blue"></div>
+            <div class="card-body">
+                <div class="card-icon blue">&#128220;</div>
+                <div class="card-title">Supervisor Checklist</div>
+                <div class="card-desc">
+                    R&R responsibilities checklist Rev 4. Printable document format
+                    with tick-off tracking. Appendix 04 Issue 7.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag reference">Reference</span>
                     <span class="card-arrow">&#8594;</span>
                 </div>
             </div>
@@ -411,7 +495,15 @@
         MII Engineering Ltd &mdash; Supervisor Digital Toolkit &mdash; Prototype v0.1
     </div>
 
+<script src="mii-db.js"></script>
 <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(function(err) {
+            console.log('SW registration failed:', err);
+        });
+    }
+
     // Dynamic greeting
     const hour = new Date().getHours();
     const greetEl = document.getElementById('greeting-text');

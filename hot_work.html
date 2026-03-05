@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hot Work Certificate — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; padding-bottom: 90px; }
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+        .form-header { max-width: 700px; margin: 0 auto; padding: 20px 20px 0; }
+        .form-ref { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--danger); }
+        .form-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin: 2px 0 6px; }
+        .form-desc { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; margin-bottom: 8px; }
+        .form-body { max-width: 700px; margin: 0 auto; padding: 12px 20px; }
+        .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); padding: 14px 0 8px; border-bottom: 2px solid var(--primary); margin-bottom: 12px; }
+        .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .field label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 3px; }
+        .field input, .field select, .field textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
+        .field textarea { min-height: 80px; resize: vertical; }
+        .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+        .field.full { grid-column: 1 / -1; }
+
+        /* Risk assessment checklist */
+        .ra-list { margin-bottom: 16px; }
+        .ra-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; background: var(--white); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; }
+        .ra-number { font-size: 0.75rem; font-weight: 700; color: var(--text-light); min-width: 22px; padding-top: 2px; }
+        .ra-question { flex: 1; font-size: 0.88rem; line-height: 1.4; }
+        .ra-options { display: flex; gap: 4px; flex-shrink: 0; }
+        .ra-opt { width: 38px; height: 32px; border: 1.5px solid var(--border); border-radius: 4px; background: var(--white); font-size: 0.72rem; font-weight: 700; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; color: var(--text-light); }
+        .ra-opt:hover { border-color: #999; }
+        .ra-opt.selected.yes { border-color: var(--success); background: #e6f7ec; color: var(--success); }
+        .ra-opt.selected.na { border-color: var(--text-light); background: #f0f2f5; color: var(--text); }
+        .ra-warning { font-size: 0.75rem; color: var(--danger); font-weight: 600; margin-top: 4px; display: none; }
+        .ra-item.flagged { border-color: var(--danger); background: #fff5f5; }
+        .ra-item.flagged .ra-warning { display: block; }
+
+        .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
+        .submit-status { font-size: 0.82rem; color: var(--text-light); }
+        .btn-submit { padding: 10px 24px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; color: var(--white); background: var(--danger); transition: opacity 0.15s; }
+        .btn-submit:hover { opacity: 0.9; }
+
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
+        .overlay.show { display: flex; }
+        .overlay-card { background: var(--white); border-radius: 12px; padding: 32px 28px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .overlay-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 14px; background: #e6f7ec; color: var(--success); }
+        .overlay-card h3 { font-size: 1.15rem; color: var(--primary); margin-bottom: 6px; }
+        .overlay-card .report-id { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+        .overlay-card p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+        .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+        .overlay-actions button { padding: 9px 20px; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+
+        .validity-row { display: flex; gap: 10px; margin-bottom: 16px; }
+        .validity-row .field { flex: 1; }
+
+        .sig-section { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+        .sig-section .sig-title { font-size: 0.78rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+        .sig-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .ra-summary { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; display: flex; gap: 16px; align-items: center; }
+        .ra-summary .ra-count { text-align: center; flex: 1; }
+        .ra-summary .ra-count .num { font-size: 1.4rem; font-weight: 800; }
+        .ra-summary .ra-count .lbl { font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.3px; }
+        .ra-count .num.green { color: var(--success); }
+        .ra-count .num.grey { color: var(--text-light); }
+        .ra-count .num.red { color: var(--danger); }
+
+        @media (max-width: 600px) {
+            .fields { grid-template-columns: 1fr; }
+            .validity-row { flex-direction: column; }
+            .sig-fields { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Hot Work Certificate</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<div class="form-header">
+    <div class="form-ref">SF 051C &mdash; Issue 5</div>
+    <h2>Hot Work Certificate</h2>
+    <div class="form-desc">Complete this certificate before any hot work (welding, cutting, grinding, brazing). All risk assessment questions must be answered. A fire watcher must be assigned for the duration of works.</div>
+</div>
+
+<div class="form-body">
+
+    <div class="section-title">1 &mdash; Working Party Details</div>
+    <div class="fields">
+        <div class="field">
+            <label>Company</label>
+            <input type="text" id="f-company" value="MII Engineering Ltd">
+        </div>
+        <div class="field">
+            <label>Performing Authority</label>
+            <input type="text" id="f-authority" placeholder="Name of person in charge">
+        </div>
+        <div class="field">
+            <label>ATW / Permit Reference</label>
+            <input type="text" id="f-atw" placeholder="e.g. ATW-2024-0042">
+        </div>
+        <div class="field">
+            <label>Fire Watcher</label>
+            <input type="text" id="f-firewatcher" placeholder="Name of fire watcher">
+        </div>
+    </div>
+
+    <div class="section-title">2 &mdash; Details of Hot Work</div>
+    <div class="fields">
+        <div class="field full">
+            <label>Location of Hot Work</label>
+            <input type="text" id="f-location" placeholder="e.g. Bay 4, ground floor, north side">
+        </div>
+        <div class="field full">
+            <label>Description of Hot Work</label>
+            <textarea id="f-description" placeholder="Describe the hot work activity to be carried out..." style="min-height:70px"></textarea>
+        </div>
+    </div>
+    <div class="validity-row">
+        <div class="field">
+            <label>Valid From &mdash; Date</label>
+            <input type="date" id="f-date-from">
+        </div>
+        <div class="field">
+            <label>Valid From &mdash; Time</label>
+            <input type="time" id="f-time-from">
+        </div>
+        <div class="field">
+            <label>Valid To &mdash; Date</label>
+            <input type="date" id="f-date-to">
+        </div>
+        <div class="field">
+            <label>Valid To &mdash; Time</label>
+            <input type="time" id="f-time-to">
+        </div>
+    </div>
+
+    <div class="section-title">3 &mdash; Risk Assessment</div>
+    <div class="ra-summary" id="ra-summary">
+        <div class="ra-count"><div class="num green" id="ra-yes">0</div><div class="lbl">Yes</div></div>
+        <div class="ra-count"><div class="num grey" id="ra-na">0</div><div class="lbl">N/A</div></div>
+        <div class="ra-count"><div class="num red" id="ra-unanswered">23</div><div class="lbl">Unanswered</div></div>
+    </div>
+    <div class="ra-list" id="ra-list"></div>
+
+    <div class="section-title">4 &mdash; Acceptance &amp; Issue</div>
+    <div class="sig-section">
+        <div class="sig-title">Performing Authority Declaration</div>
+        <div class="sig-fields">
+            <div class="field">
+                <label>Name</label>
+                <input type="text" id="f-pa-name" placeholder="Performing authority name">
+            </div>
+            <div class="field">
+                <label>Date &amp; Time</label>
+                <input type="datetime-local" id="f-pa-datetime">
+            </div>
+        </div>
+    </div>
+    <div class="sig-section">
+        <div class="sig-title">Permit Issuer Declaration</div>
+        <div class="sig-fields">
+            <div class="field">
+                <label>Issued By</label>
+                <input type="text" id="f-issuer" placeholder="Permit issuer name">
+            </div>
+            <div class="field">
+                <label>Date &amp; Time</label>
+                <input type="datetime-local" id="f-issuer-datetime">
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">5 &mdash; Cancellation</div>
+    <div class="fields">
+        <div class="field full">
+            <label>Remarks (if cancelling early)</label>
+            <textarea id="f-cancel-remarks" placeholder="Reason for early cancellation, if applicable..." style="min-height:50px"></textarea>
+        </div>
+    </div>
+</div>
+
+<div class="submit-bar">
+    <div class="submit-status" id="submit-status">SF 051C — Hot Work Certificate</div>
+    <button class="btn-submit" onclick="submitCertificate()">Issue Certificate</button>
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-icon">&#10003;</div>
+        <h3>Certificate Issued</h3>
+        <div class="report-id" id="overlay-id"></div>
+        <p>Hot work certificate has been issued and logged. Ensure the fire watcher is briefed and in position before commencing works.</p>
+        <div class="overlay-actions">
+            <button class="btn-outline" onclick="window.location.href='index.html'">Back to Hub</button>
+            <button class="btn-primary" onclick="location.reload()">Issue Another</button>
+        </div>
+    </div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+const RA_QUESTIONS = [
+    "Is this hot work absolutely necessary? (Could a cold method be used instead?)",
+    "Has the area been cleared of all debris, rubbish and combustible materials within a 10m radius?",
+    "Have all flammable materials that cannot be removed been covered with fire-resistant blankets or shields?",
+    "Are all floor and wall openings, gaps, cracks and drains within the hot work zone covered or sealed?",
+    "Are suitable fire extinguishers (minimum 2) immediately available at the work location?",
+    "Has the fire alarm system been notified / isolated for the area if required?",
+    "Is a dedicated fire watcher appointed and briefed for the duration of works plus 60 minutes after?",
+    "Are gas cylinders stored upright, secured, and positioned away from the hot work area?",
+    "Are cylinder regulators, hoses and flash-back arresters in good condition and tested?",
+    "Has atmospheric / gas testing been carried out where flammable gases or vapours may be present?",
+    "Is the work area adequately ventilated (natural or forced)?",
+    "Are adjacent rooms, walls, partitions and floors checked for combustible materials on the other side?",
+    "Are welding screens / flash guards erected to protect other workers and the public?",
+    "Is appropriate PPE available and worn (welding helmet, gauntlets, fire-retardant clothing, eye protection)?",
+    "Have all personnel in the vicinity been informed that hot work is taking place?",
+    "Is the work location free from confined space entry requirements? (If no, a separate confined space permit is required.)",
+    "Have all relevant RAMS been reviewed, briefed and signed by the working party?",
+    "Is the hot work equipment (welder, torch, grinder) in safe working order and inspected?",
+    "Are electrical leads and connections in good condition with no exposed conductors?",
+    "Is there adequate lighting at the work location?",
+    "Are emergency escape routes clear and accessible from the hot work area?",
+    "Has a post-work fire watch period of at least 60 minutes been planned and communicated?",
+    "Is the Performing Authority satisfied that all precautions are in place and it is safe to proceed?"
+];
+
+let answers = {};
+
+function buildChecklist() {
+    const list = document.getElementById('ra-list');
+    list.innerHTML = RA_QUESTIONS.map((q, i) => `
+        <div class="ra-item" id="ra-item-${i}">
+            <div class="ra-number">${i + 1}</div>
+            <div style="flex:1">
+                <div class="ra-question">${q}</div>
+                <div class="ra-warning">&#9888; This item has not been confirmed — review before issuing.</div>
+            </div>
+            <div class="ra-options">
+                <button class="ra-opt yes" onclick="setAnswer(${i},'Yes',this)">Yes</button>
+                <button class="ra-opt na" onclick="setAnswer(${i},'N/A',this)">N/A</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function setAnswer(index, value, btn) {
+    answers[index] = value;
+    const item = document.getElementById('ra-item-' + index);
+    item.querySelectorAll('.ra-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    item.classList.remove('flagged');
+    updateSummary();
+}
+
+function updateSummary() {
+    let yes = 0, na = 0;
+    for (const k in answers) {
+        if (answers[k] === 'Yes') yes++;
+        else if (answers[k] === 'N/A') na++;
+    }
+    const unanswered = RA_QUESTIONS.length - yes - na;
+    document.getElementById('ra-yes').textContent = yes;
+    document.getElementById('ra-na').textContent = na;
+    document.getElementById('ra-unanswered').textContent = unanswered;
+
+    const status = document.getElementById('submit-status');
+    if (unanswered === 0) {
+        status.textContent = 'All ' + RA_QUESTIONS.length + ' items answered — ready to issue';
+        status.style.color = 'var(--success)';
+    } else {
+        status.textContent = unanswered + ' of ' + RA_QUESTIONS.length + ' items unanswered';
+        status.style.color = 'var(--danger)';
+    }
+}
+
+function submitCertificate() {
+    const authority = document.getElementById('f-authority').value.trim();
+    if (!authority) { alert('Please enter the Performing Authority name.'); return; }
+    const firewatcher = document.getElementById('f-firewatcher').value.trim();
+    if (!firewatcher) { alert('Please enter the Fire Watcher name.'); return; }
+    const location = document.getElementById('f-location').value.trim();
+    if (!location) { alert('Please enter the location of hot work.'); return; }
+    const description = document.getElementById('f-description').value.trim();
+    if (!description) { alert('Please describe the hot work to be carried out.'); return; }
+    const dateFrom = document.getElementById('f-date-from').value;
+    if (!dateFrom) { alert('Please enter the Valid From date.'); return; }
+    const paName = document.getElementById('f-pa-name').value.trim();
+    if (!paName) { alert('Please enter the Performing Authority declaration name.'); return; }
+    const issuer = document.getElementById('f-issuer').value.trim();
+    if (!issuer) { alert('Please enter the Permit Issuer name.'); return; }
+
+    // Check all RA answered
+    const answeredCount = Object.keys(answers).length;
+    if (answeredCount < RA_QUESTIONS.length) {
+        // Highlight unanswered
+        for (let i = 0; i < RA_QUESTIONS.length; i++) {
+            if (!answers.hasOwnProperty(i)) {
+                document.getElementById('ra-item-' + i).classList.add('flagged');
+            }
+        }
+        alert('All ' + RA_QUESTIONS.length + ' risk assessment questions must be answered before issuing.');
+        document.getElementById('ra-item-' + RA_QUESTIONS.findIndex((_, i) => !answers.hasOwnProperty(i))).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
+    const id = 'HW-' + String(Date.now()).slice(-6);
+    const now = new Date();
+    const certificate = {
+        id,
+        company: document.getElementById('f-company').value.trim(),
+        performingAuthority: authority,
+        atwReference: document.getElementById('f-atw').value.trim(),
+        fireWatcher: firewatcher,
+        location,
+        description,
+        validFrom: dateFrom + ' ' + (document.getElementById('f-time-from').value || ''),
+        validTo: (document.getElementById('f-date-to').value || '') + ' ' + (document.getElementById('f-time-to').value || ''),
+        riskAssessment: { ...answers },
+        paDeclaration: { name: paName, datetime: document.getElementById('f-pa-datetime').value },
+        issuerDeclaration: { name: issuer, datetime: document.getElementById('f-issuer-datetime').value },
+        cancelRemarks: document.getElementById('f-cancel-remarks').value.trim(),
+        status: 'Issued',
+        submittedAt: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0, 5)
+    };
+
+    const certs = JSON.parse(localStorage.getItem('mii_hot_work') || '[]');
+    certs.push(certificate);
+    localStorage.setItem('mii_hot_work', JSON.stringify(certs));
+    MiiDB.save('hot_work', certificate);
+
+    document.getElementById('overlay-id').textContent = id;
+    document.getElementById('overlay').classList.add('show');
+}
+
+// Init
+document.getElementById('f-date-from').valueAsDate = new Date();
+document.getElementById('f-date-to').valueAsDate = new Date();
+const nowTime = new Date().toTimeString().slice(0, 5);
+document.getElementById('f-time-from').value = nowTime;
+buildChecklist();
+updateSummary();
+</script>
+</body>
+</html>

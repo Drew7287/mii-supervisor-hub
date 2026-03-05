@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MII Engineering - Supervisor Responsibilities Checklist</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy: #002060;
+            --navy-light: #003380;
+            --mii-red: #d42027;
+            --accent: #0078d4;
+            --success: #28a745;
+            --bg: #e8eaed;
+            --white: #ffffff;
+            --border: #cccccc;
+            --border-light: #e0e0e0;
+            --text: #1a1a1a;
+            --text-light: #666666;
+            --text-mid: #444444;
+            --light-blue: #D6E4F0;
+            --alt-grey: #F2F6FA;
+            --cat-color: #335577;
+        }
+
+        html { font-size: 11px; }
+
+        body {
+            font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.35;
+        }
+
+        /* ===== A4 LANDSCAPE PAGE ===== */
+        .page {
+            width: 297mm;
+            min-height: 210mm;
+            margin: 10mm auto;
+            background: var(--white);
+            padding: 12mm 14mm 14mm 14mm;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+        }
+
+        /* ===== DOCUMENT HEADER ===== */
+        .doc-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--navy);
+            margin-bottom: 10px;
+        }
+        .doc-logo {
+            flex-shrink: 0;
+        }
+        .doc-logo img {
+            height: 60px;
+            width: auto;
+        }
+        /* Inline SVG logo fallback */
+        .doc-logo svg {
+            height: 55px;
+            width: auto;
+        }
+        .doc-title-block {
+            flex: 1;
+        }
+        .doc-title-block h1 {
+            font-size: 1.65rem;
+            color: var(--navy);
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+        }
+        .doc-title-block .doc-subtitle {
+            font-size: 1.15rem;
+            color: #333;
+            margin-top: 1px;
+        }
+        .doc-title-block .doc-ref {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-style: italic;
+            margin-top: 2px;
+        }
+        .doc-rev-badge {
+            flex-shrink: 0;
+            text-align: right;
+        }
+        .doc-rev-badge .rev {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .doc-rev-badge .rev-date {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        /* ===== TOOLBAR (screen only) ===== */
+        .toolbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .toolbar button {
+            padding: 5px 14px;
+            border: 1.5px solid var(--navy);
+            background: var(--white);
+            color: var(--navy);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .toolbar button:hover {
+            background: var(--navy);
+            color: var(--white);
+        }
+        .toolbar .progress-text {
+            align-self: center;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        /* ===== MAIN TABLE ===== */
+        .checklist-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            table-layout: fixed;
+        }
+
+        /* Column widths */
+        .checklist-table .col-ref   { width: 32px; }
+        .checklist-table .col-freq  { width: 62px; }
+        .checklist-table .col-cat   { width: 78px; }
+        .checklist-table .col-duty  { width: auto; }
+        .checklist-table .col-ims   { width: 95px; }
+        .checklist-table .col-forms { width: 115px; }
+        .checklist-table .col-notes { width: 175px; }
+        .checklist-table .col-check { width: 30px; }
+        .checklist-table .col-na    { width: 30px; }
+
+        /* Column header row */
+        .checklist-table thead th {
+            background: var(--navy);
+            color: var(--white);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 5px 5px;
+            text-align: center;
+            border: 1px solid #001040;
+            white-space: nowrap;
+        }
+
+        /* Major section row (DAILY, WEEKLY, etc.) */
+        .major-section td {
+            background: var(--navy);
+            color: var(--white);
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-align: center;
+            padding: 5px 8px;
+            border: 1px solid #001040;
+            letter-spacing: 0.3px;
+        }
+
+        /* Sub-section row (Start of Shift, etc.) */
+        .sub-section td {
+            background: var(--light-blue);
+            font-weight: 700;
+            font-size: 0.88rem;
+            padding: 4px 12px;
+            border: 1px solid #B8CCE4;
+            color: var(--text);
+        }
+
+        /* Data rows */
+        .checklist-table tbody tr.data-row td {
+            padding: 4px 5px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+        .data-row.alt td {
+            background: var(--alt-grey);
+        }
+
+        /* Cell-specific styles */
+        .cell-ref {
+            text-align: center;
+            font-weight: 700;
+            color: var(--navy);
+            font-size: 0.88rem;
+        }
+        .cell-freq {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+        .cell-cat {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--cat-color);
+        }
+        .cell-duty {
+            font-size: 0.88rem;
+            line-height: 1.35;
+        }
+        .cell-ims, .cell-forms {
+            font-size: 0.78rem;
+            color: var(--text-mid);
+            white-space: pre-line;
+        }
+        .cell-notes {
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+        .cell-check {
+            text-align: center;
+            vertical-align: middle !important;
+        }
+
+        /* Checkbox */
+        .chk {
+            width: 17px;
+            height: 17px;
+            border: 1.5px solid var(--border);
+            display: inline-block;
+            cursor: pointer;
+            border-radius: 2px;
+            position: relative;
+            background: var(--white);
+            vertical-align: middle;
+        }
+        .chk.done {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        .chk.done::after {
+            content: '\2713';
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            position: absolute;
+            top: -1px;
+            left: 2px;
+        }
+        .chk.na-on {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+        .chk.na-on::after {
+            content: '\2014';
+            color: #6c757d;
+            font-size: 12px;
+            font-weight: 700;
+            position: absolute;
+            top: -2px;
+            left: 1px;
+        }
+
+        /* ===== SIGNATURE SECTION ===== */
+        .sign-off {
+            margin-top: 14px;
+        }
+        .sign-off-table {
+            width: 60%;
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        .sign-off-table .so-header td {
+            background: var(--navy);
+            color: var(--white);
+            font-weight: 700;
+            text-align: center;
+            padding: 5px 8px;
+            border: 1px solid #001040;
+            font-size: 0.9rem;
+        }
+        .sign-off-table th {
+            background: var(--navy);
+            color: var(--white);
+            font-weight: 700;
+            text-align: center;
+            padding: 4px 8px;
+            border: 1px solid #001040;
+            font-size: 0.82rem;
+        }
+        .sign-off-table td {
+            padding: 8px 10px;
+            border: 1px solid #999;
+            font-size: 0.9rem;
+        }
+        .sign-off-table td.so-label {
+            font-weight: 700;
+            color: var(--navy);
+            width: 100px;
+        }
+        .sign-off-table td input {
+            border: none;
+            border-bottom: 1px dotted var(--border);
+            font-family: inherit;
+            font-size: 0.9rem;
+            width: 100%;
+            padding: 2px 0;
+            background: transparent;
+        }
+        .sign-off-table td input:focus { outline: none; border-bottom-color: var(--accent); }
+
+        .disclaimer {
+            text-align: center;
+            font-size: 0.82rem;
+            font-style: italic;
+            color: var(--text-light);
+            margin-top: 10px;
+        }
+
+        /* ===== FOOTER ===== */
+        .doc-footer {
+            text-align: center;
+            font-size: 0.72rem;
+            color: #999;
+            margin-top: 16px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        /* ===== BACK LINK ===== */
+        .back-link {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            background: var(--navy);
+            color: var(--white);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 100;
+        }
+        .back-link:hover { background: var(--navy-light); }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            html { font-size: 9.5px; }
+            body { background: white; }
+            .page {
+                width: 100%;
+                margin: 0;
+                padding: 8mm 10mm;
+                box-shadow: none;
+            }
+            .toolbar, .back-link { display: none !important; }
+            .chk { border: 1.5px solid #999 !important; }
+            .chk.done { background: #28a745 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .chk.na-on { background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .major-section td, .checklist-table thead th, .sign-off-table .so-header td, .sign-off-table th {
+                background: var(--navy) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .sub-section td {
+                background: var(--light-blue) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .data-row.alt td {
+                background: var(--alt-grey) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .cell-ref { color: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .sign-off-table td.so-label { color: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page {
+                size: A4 landscape;
+                margin: 8mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">&larr; Hub</a>
+
+<div class="page">
+
+    <!-- ===== TOOLBAR (screen only) ===== -->
+    <div class="toolbar">
+        <span class="progress-text" id="progressText">0 / 0 completed</span>
+        <button onclick="resetAll()">Reset All</button>
+        <button onclick="window.print()">&#128424; Print</button>
+    </div>
+
+    <!-- ===== DOCUMENT HEADER ===== -->
+    <div class="doc-header">
+        <div class="doc-logo">
+            <!-- MII Engineering inline SVG logo -->
+            <svg viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg">
+                <defs><style>.mii-red{fill:#d42027;}</style></defs>
+                <!-- m -->
+                <path class="mii-red" d="M0,155 L0,45 L40,45 L40,55 Q55,30 80,30 Q105,30 115,55 Q130,30 155,30 Q185,30 185,70 L185,155 L145,155 L145,78 Q145,62 132,62 Q118,62 112,78 L112,155 L72,155 L72,78 Q72,62 59,62 Q45,62 40,78 L40,155 Z"/>
+                <!-- i (first) -->
+                <rect class="mii-red" x="210" y="45" width="40" height="110" rx="2"/>
+                <rect class="mii-red" x="210" y="8" width="40" height="28" rx="2"/>
+                <!-- i (second) -->
+                <rect class="mii-red" x="270" y="45" width="40" height="110" rx="2"/>
+                <rect class="mii-red" x="270" y="8" width="40" height="28" rx="2"/>
+                <!-- ENGINEERING text -->
+                <text class="mii-red" x="0" y="195" font-family="Calibri,Arial,sans-serif" font-weight="700" font-size="42" letter-spacing="3">ENGINEERING</text>
+            </svg>
+        </div>
+        <div class="doc-title-block">
+            <h1>MII Engineering Ltd</h1>
+            <div class="doc-subtitle">Supervisor Responsibilities Checklist</div>
+            <div class="doc-ref">Ref: Appendix 04 Issue 7, Rev 4 &mdash; March 2025</div>
+        </div>
+        <div class="doc-rev-badge">
+            <div class="rev">REV 4</div>
+            <div class="rev-date">March 2025</div>
+        </div>
+    </div>
+
+    <!-- ===== CHECKLIST TABLE ===== -->
+    <table class="checklist-table" id="checklistTable">
+        <colgroup>
+            <col class="col-ref">
+            <col class="col-freq">
+            <col class="col-cat">
+            <col class="col-duty">
+            <col class="col-ims">
+            <col class="col-forms">
+            <col class="col-notes">
+            <col class="col-check">
+            <col class="col-na">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Ref</th>
+                <th>Freq</th>
+                <th>Category</th>
+                <th>Duty / Responsibility</th>
+                <th>IMS Proc</th>
+                <th>Form(s)</th>
+                <th>Notes</th>
+                <th>&#10003;</th>
+                <th>N/A</th>
+            </tr>
+        </thead>
+        <tbody id="checklistBody">
+        </tbody>
+    </table>
+
+    <!-- ===== SIGN-OFF ===== -->
+    <div class="sign-off">
+        <table class="sign-off-table">
+            <tr class="so-header"><td colspan="4">Sign-Off</td></tr>
+            <tr>
+                <th></th>
+                <th>Name (Print)</th>
+                <th>Signature</th>
+                <th>Date</th>
+            </tr>
+            <tr>
+                <td class="so-label">Employee</td>
+                <td><input type="text" id="sigEmpName"></td>
+                <td><input type="text" id="sigEmpSig"></td>
+                <td><input type="date" id="sigEmpDate"></td>
+            </tr>
+            <tr>
+                <td class="so-label">Director</td>
+                <td><input type="text" id="sigDirName"></td>
+                <td><input type="text" id="sigDirSig"></td>
+                <td><input type="date" id="sigDirDate"></td>
+            </tr>
+        </table>
+        <div class="disclaimer">By signing, the employee confirms they have read, understood and accept the responsibilities outlined above.</div>
+    </div>
+
+    <div class="doc-footer">MII Engineering Ltd &bull; Appendix 04 &bull; Issue 7 &bull; Rev 4 &bull; March 2025</div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Checklist Data — Rev4 (POWRA moved, de-brief added, 21 daily)
+// ═══════════════════════════════════════════════════════════════
+const DATA = [
+  {t:"major", text:"DAILY DUTIES"},
+  {t:"sub", text:"Start of Shift"},
+  {t:"data", r:"1", freq:"Daily", cat:"Planning", duty:"Attend DSUM. Review daily work plan and task allocations against programme", ims:"IMSP 001B", forms:"Work File / Lookahead", notes:"Check previous day\u2019s progress, adjust priorities"},
+  {t:"data", r:"2", freq:"Daily", cat:"H&S", duty:"Deliver information from DSUM, deliver daily briefing to team e.g. RAMS Briefing, job specific hazards (toolbox talk), customer meeting outputs, site coordination", ims:"IMSP 008\nIMSP 011", forms:"SF 012B\nJMS / RAMS", notes:"Record attendance and topic. Cover task-specific hazards, not standard forms. Rescue plans"},
+  {t:"data", r:"3", freq:"Daily", cat:"H&S / Permits", duty:"Obtain all relevant permits to work before commencing activities", ims:"IMSP 001B\nIMSP 015", forms:"Permit to Work forms\nWI (S01)", notes:"Check isolations, air monitoring, confined space if applicable"},
+  {t:"data", r:"4", freq:"Daily", cat:"Competence", duty:"Confirm all personnel are competent for today\u2019s assigned tasks", ims:"IMSP 008\nIMSP 012", forms:"SF 021A\nSF 045F", notes:"Check qualifications, tickets, site inductions are current"},
+  {t:"data", r:"5", freq:"Daily", cat:"H&S", duty:"Confirm correct PPE is available, worn and in good condition", ims:"IMSP 007A", forms:"SF 042 / SF 046C/E", notes:"Task-specific PPE per RAMS (RPE, harness, face fit etc.)"},
+  {t:"data", r:"6", freq:"Daily", cat:"Equipment", duty:"Ensure pre-use equipment inspections completed before work starts (telehandler, MEWPs, lifting equipment, power tools)", ims:"IMSP 006A\nIMSP 006B\nIMSP 006C", forms:"SSW (E06/E07/E08)\nSF 019", notes:"Electrical (PAT), lifting (LOLER), hand tools, power tools, calibration"},
+
+  {t:"sub", text:"During Works"},
+  {t:"data", r:"7", freq:"Daily", cat:"H&S", duty:"Ensure workforce complete Point of Work Risk Assessments (POWRA) before starting work, every time they return to the work area, and after any significant change in conditions", ims:"IMSP 011", forms:"POWRA Booklets\nSF 011D/E/F", notes:"Supervisor to review completed POWRAs, not just tick-box"},
+  {t:"data", r:"8", freq:"Daily", cat:"Supervision", duty:"Provide suitable level of supervision for all work activities", ims:"IMSP 001B", forms:"\u2014", notes:"Appropriate to risk level and workforce competence"},
+  {t:"data", r:"9", freq:"Daily", cat:"Quality", duty:"Monitor quality of workmanship against drawings, specs and ITP. Call up inspections at ITP hold points as required", ims:"IMSP 001D\nIMSP 001E", forms:"SF 010D / SF 010E\nSF 065H / SF 065J", notes:"Do not proceed past hold points without sign-off"},
+  {t:"data", r:"10", freq:"Daily", cat:"H&S", duty:"Monitor compliance with method statements, RAMS and PPE requirements throughout the shift", ims:"IMSP 001B\nIMSP 011\nIMSP 007A", forms:"JMS / RAMS\nSF 042 / SF 046C/E", notes:"Intervene and stop work if unsafe conditions observed. Address PPE non-compliance immediately"},
+  {t:"data", r:"11", freq:"Daily", cat:"H&S / Culture", duty:"Encourage workforce to report hazards, near misses and suggest improvements", ims:"IMSP 003\nIMSP 017A", forms:"SF 013C\nSF 061\nSHEQ Observation Booklets", notes:"Positive reinforcement \u2014 don\u2019t wait for incidents"},
+  {t:"data", r:"12", freq:"Daily", cat:"Environment", duty:"Monitor environmental controls \u2014 waste segregation, spill prevention, dust/noise", ims:"IMSP 022\nIMSP 011A", forms:"SHEQ Observation", notes:"Check waste containers, drip trays, designated storage"},
+  {t:"data", r:"13", freq:"Daily", cat:"Stores", duty:"Receive and check materials/deliveries against PO and delivery documentation. Distinguish between direct site deliveries and stores deliveries", ims:"IMSP 004\nIMSP 004A", forms:"Delivery Notes\nMaterial Certificates", notes:"Check condition, identification, traceability. Report damage."},
+  {t:"data", r:"14", freq:"Daily", cat:"Contractor Mgmt", duty:"Ensure subcontractor activities are compliant with all relevant site rules and MII Procedures", ims:"IMSP 016", forms:"IMSP 016\nIMSP 007A", notes:"Ensure contractor RAMS in place, permits held, personnel inducted"},
+
+  {t:"sub", text:"End of Shift"},
+  {t:"data", r:"15", freq:"Daily", cat:"H&S / Team", duty:"Conduct end-of-shift team de-brief: confirm all hazards or incidents have been reported, collect HAVs exposure feedback from workforce, verify workplace left in acceptable condition, and ensure all tools and equipment returned to stores", ims:"IMSP 001B\nIMSP 003\nIMSP 023", forms:"SF 013C\nSF 049E\nSF 019", notes:"Brief stand-down before team disperses. Capture any unreported issues on the day."},
+  {t:"data", r:"16", freq:"Daily", cat:"Records", duty:"Record daily progress, attendance and impacts to programme", ims:"IMSP 001B", forms:"Work File\nTimesheet\nAllocation Sheet", notes:"Against programme activities \u2014 actual vs planned"},
+  {t:"data", r:"17", freq:"Daily", cat:"Records", duty:"Complete and update site registers (personnel register, equipment register, permit log) as per project requirements", ims:"IMSP 001B", forms:"SF 057\nSF 019 a-e", notes:"Keep registers current at all times"},
+  {t:"data", r:"18", freq:"Daily", cat:"H&S / Permits", duty:"Ensure all permits to work returned, cancelled or suspended for the day. Confirm all isolation and lockout procedures completed", ims:"IMSP 001B\nIMSP 015", forms:"Permit to Work forms", notes:"Never leave live permits open overnight unattended"},
+  {t:"data", r:"19", freq:"Daily", cat:"Housekeeping", duty:"Ensure work areas left in acceptable condition. Take photographs of work area condition", ims:"IMSP 022\nIMSP 001B", forms:"\u2014", notes:"Clean as you go. Waste cleared, materials stored safely"},
+  {t:"data", r:"20", freq:"Daily", cat:"Reporting", duty:"Report daily progress and any issues to Construction Manager", ims:"IMSP 017\nIMSP 014", forms:"Daily Progress Report\nSF 042B", notes:"Productivity data, resource utilisation, upcoming risks"},
+  {t:"data", r:"21", freq:"Daily", cat:"Planning", duty:"Review next day\u2019s work plan and confirm resource and material requirements (consumables, tooling, spares)", ims:"IMSP 001B", forms:"Lookahead / Work File", notes:"Flag potential delays, resource issues or permit requirements early"},
+
+  {t:"major", text:"WEEKLY DUTIES"},
+  {t:"sub", text:"Inspections & Audits"},
+  {t:"data", r:"22", freq:"Weekly", cat:"H&S", duty:"Complete at least one formal workplace inspection per week, including cross-auditing another supervisor\u2019s area", ims:"IMSP 007A", forms:"SF 042 / SF 046C/E", notes:"KPI target \u2014 minimum 1/week. Cover different areas each time"},
+  {t:"sub", text:"Reporting & Meetings"},
+  {t:"data", r:"23", freq:"Weekly", cat:"Meetings", duty:"Attend site progress / coordination meeting", ims:"IMSP 017", forms:"Meeting Minutes / Actions", notes:"Provide input on progress, risks, resource needs"},
+  {t:"sub", text:"Planning"},
+  {t:"data", r:"24", freq:"Weekly", cat:"Planning", duty:"Support development of lookahead schedules (2-week and 6-week) with realistic activity and resource forecasts", ims:"IMSP 001B\nNEC Sch.3 S6", forms:"2-Week Lookahead\n6-Week Lookahead", notes:"Identify constraints, permit requirements, resource clashes. 6-week issued monthly."},
+  {t:"sub", text:"NEC Contract Reporting (where applicable)"},
+  {t:"data", r:"25", freq:"Weekly", cat:"NEC", duty:"Raise Early Warnings for any potential delays, cost or quality risks and report to CM", ims:"NEC Cl.15\nNEC Sch.3 S2", forms:"Early Warning Notice", notes:"Contractual obligation \u2014 failure to warn can impact claims"},
+
+  {t:"major", text:"MONTHLY & PERIODIC DUTIES"},
+  {t:"sub", text:"Monthly"},
+  {t:"data", r:"26", freq:"Periodic", cat:"H&S", duty:"Review and update risk assessments for ongoing activities", ims:"IMSP 011", forms:"RAMS / JMS\nSF 041", notes:"After any change in conditions, personnel, equipment or scope"},
+  {t:"data", r:"27", freq:"Periodic", cat:"Quality", duty:"Support internal quality audit programme", ims:"IMSP 007", forms:"IMSP 007\nAudit Schedule", notes:"Ensure records accessible, workforce available for audit"},
+  {t:"data", r:"28", freq:"Periodic", cat:"Training", duty:"Identify emerging training needs and report to CM", ims:"IMSP 008", forms:"SF 021A\nECITB Guide to Grants", notes:"New starters, refresher training, role changes"},
+  {t:"sub", text:"Periodic (as required by schedule)"},
+  {t:"data", r:"29", freq:"Periodic", cat:"H&S", duty:"Support / participate in emergency drill / test of emergency plans", ims:"IMSP 003B", forms:"SF 059 / SF 059A", notes:"Review and amend plans after each drill"},
+  {t:"data", r:"30", freq:"Periodic", cat:"Health", duty:"Support health surveillance programme (HAV monitoring, noise, dust)", ims:"IMSP 023", forms:"SF 049E/O/P/Q/S\nSF 045M", notes:"Ensure workforce attend appointments"},
+  {t:"data", r:"31", freq:"Periodic", cat:"Appraisals", duty:"Carry out periodic performance appraisals for direct reports", ims:"IMSP 012\nIMSP 008", forms:"SF 021K", notes:"Annual minimum. Discuss development, competence, H&S behaviour"},
+
+  {t:"major", text:"PER JOB / TASK DUTIES"},
+  {t:"sub", text:"Job Setup / Mobilisation"},
+  {t:"data", r:"32", freq:"Per Job", cat:"Planning", duty:"Review customer requirements, site rules and security requirements", ims:"IMSP 001A\nIMSP 001B", forms:"SF 029\nCustomer Requirements", notes:"Before any work starts. Understand what\u2019s expected."},
+  {t:"data", r:"33", freq:"Per Job", cat:"Logistics", duty:"Set up site and prepare/obtain required tooling and equipment", ims:"IMSP 001B\nIMSP 004", forms:"SF 004B\nIMSP 004-006", notes:"Check equipment condition, calibration, statutory certs"},
+  {t:"data", r:"34", freq:"Per Job", cat:"Competence", duty:"Ensure all workers have received company induction and site-specific induction", ims:"IMSP 008\nIMSP 012\nIMSP 016", forms:"SF 021D\nSF 021A", notes:"Including subcontractor personnel"},
+  {t:"data", r:"35", freq:"Per Job", cat:"Emergency", duty:"Obtain emergency plans, identify hospital/medical facilities, brief workforce", ims:"IMSP 003B", forms:"Site Emergency Plans\nHSWI 017 / CPP", notes:"Distance to A&E, first aiders, muster points, comms plan"},
+  {t:"data", r:"36", freq:"Per Job", cat:"CDM", duty:"Welfare facilities adequate, site secure", ims:"IMSP 015", forms:"F10\nSF 004B\nSF 057", notes:""},
+  {t:"sub", text:"During Job Execution"},
+  {t:"data", r:"37", freq:"Per Task", cat:"Commercial", duty:"Record and confirm any additional/varied work with customer before proceeding", ims:"IMSP 001B\nIMSP 021", forms:"Additional Contract Spend form\nTQ Form", notes:"Get written instruction. Verbal agreements are not enough."},
+  {t:"data", r:"38", freq:"Per Task", cat:"Materials", duty:"Receive materials \u2014 check condition, PO, certs, traceability markings", ims:"IMSP 004\nIMSP 004A", forms:"Delivery Notes\nMaterial Certs\nIMSP 004B", notes:"Quarantine non-conforming items. Raise NCR if required."},
+  {t:"sub", text:"Job Completion / Demobilisation"},
+  {t:"data", r:"39", freq:"Per Job", cat:"Quality", duty:"Carry out final inspection of the work before handover", ims:"IMSP 001B\nIMSP 001D", forms:"SF 010D\nSF 001B", notes:"Against drawings, spec, ITP. Snagging complete."},
+  {t:"data", r:"40", freq:"Per Job", cat:"Environment", duty:"Ensure work area left in acceptable condition \u2014 waste cleared, site restored", ims:"IMSP 022\nIMSP 001B", forms:"Waste Transfer Notes", notes:"Waste segregated and removed via licensed carrier"},
+  {t:"data", r:"41", freq:"Per Job", cat:"Permits", duty:"Ensure all permits to work are cleared/cancelled and site registers updated", ims:"IMSP 001B\nIMSP 015", forms:"Permit to Work forms\nSF 057", notes:"No live permits left open after demob"},
+  {t:"data", r:"42", freq:"Per Job", cat:"Equipment", duty:"Return all equipment, tools and hired plant. Update asset registers.", ims:"IMSP 004\nIMSP 006C", forms:"SF 019\nSF 019B", notes:"Off-hire hired equipment. Report damaged items."},
+
+  {t:"major", text:"PER INCIDENT DUTIES"},
+  {t:"sub", text:"Immediate Response (within minutes)"},
+  {t:"data", r:"43", freq:"Per Incident", cat:"Response", duty:"Make area safe. Administer or locate first aid. Call emergency services if needed.", ims:"IMSP 003B", forms:"Emergency Plans", notes:"Priority: people, then scene preservation"},
+  {t:"data", r:"44", freq:"Per Incident", cat:"Reporting", duty:"Communicate details of incident to CM ASAP", ims:"IMSP 003\nIMSP 003A", forms:"SF 013A / SF 013C", notes:"Phone call first, then paperwork. Obtain NCR number."},
+  {t:"data", r:"45", freq:"Per Incident", cat:"Response", duty:"Take immediate corrective action to prevent recurrence", ims:"IMSP 003", forms:"\u2014", notes:"Stop work if necessary. Do not restart until safe to do so."},
+  {t:"data", r:"46", freq:"Per Incident", cat:"Evidence", duty:"Secure the scene \u2014 quarantine equipment, preserve evidence", ims:"IMSP 003A", forms:"Equipment Records", notes:"Do not disturb scene. Do not allow cleanup until authorised."},
+  {t:"data", r:"47", freq:"Per Incident", cat:"Evidence", duty:"Take photographs of scene and any relevant items. Sketch layout if helpful.", ims:"IMSP 003A", forms:"Photographs / Sketches", notes:"Before anything is moved or cleaned up"}
+];
+
+// ═══════════════════════════════════════════════════════════════
+// Render
+// ═══════════════════════════════════════════════════════════════
+const STORAGE_KEY = "mii_supervisor_checklist_v4";
+
+function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+}
+function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    MiiDB.saveChecklist(state);
+}
+
+function nl2br(text) {
+    if (!text) return "";
+    return text.replace(/\n/g, "<br>");
+}
+
+function render() {
+    const tbody = document.getElementById("checklistBody");
+    const state = loadState();
+    let html = "";
+    let dataIdx = 0;
+
+    DATA.forEach((item, i) => {
+        if (item.t === "major") {
+            html += `<tr class="major-section"><td colspan="9">${item.text}</td></tr>`;
+            dataIdx = 0;
+        } else if (item.t === "sub") {
+            html += `<tr class="sub-section"><td colspan="9">${item.text}</td></tr>`;
+            dataIdx = 0;
+        } else if (item.t === "data") {
+            const alt = dataIdx % 2 === 1 ? " alt" : "";
+            const chkState = state[item.r] || "";
+            const doneClass = chkState === "done" ? " done" : "";
+            const naClass = chkState === "na" ? " na-on" : "";
+            html += `<tr class="data-row${alt}">
+                <td class="cell-ref">${item.r}</td>
+                <td class="cell-freq">${item.freq}</td>
+                <td class="cell-cat">${item.cat}</td>
+                <td class="cell-duty">${item.duty}</td>
+                <td class="cell-ims">${nl2br(item.ims)}</td>
+                <td class="cell-forms">${nl2br(item.forms)}</td>
+                <td class="cell-notes">${item.notes}</td>
+                <td class="cell-check"><span class="chk${doneClass}" data-ref="${item.r}" data-action="done" onclick="toggleCheck(this)"></span></td>
+                <td class="cell-check"><span class="chk${naClass}" data-ref="${item.r}" data-action="na" onclick="toggleCheck(this)"></span></td>
+            </tr>`;
+            dataIdx++;
+        }
+    });
+
+    tbody.innerHTML = html;
+    updateProgress();
+}
+
+function toggleCheck(el) {
+    const ref = el.dataset.ref;
+    const action = el.dataset.action;
+    const state = loadState();
+
+    if (state[ref] === action) {
+        delete state[ref];
+    } else {
+        state[ref] = action;
+    }
+    saveState(state);
+    render();
+}
+
+function updateProgress() {
+    const state = loadState();
+    const total = DATA.filter(d => d.t === "data").length;
+    const completed = Object.values(state).filter(v => v === "done" || v === "na").length;
+    document.getElementById("progressText").textContent = `${completed} / ${total} completed`;
+}
+
+function resetAll() {
+    if (confirm("Reset all checkboxes? This cannot be undone.")) {
+        localStorage.removeItem(STORAGE_KEY);
+        MiiDB.clearChecklist();
+        render();
+    }
+}
+
+// Boot
+render();
+</script>
+</body>
+</html>

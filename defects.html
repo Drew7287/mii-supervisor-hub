@@ -475,7 +475,15 @@
     </div>
 </div>
 
+<script src="mii-db.js"></script>
 <script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
 // ===== localStorage KEYS =====
 const DEFECTS_KEY = 'mii_defects';
 const INSPECTIONS_KEY = 'mii_inspections';
@@ -633,6 +641,7 @@ function getDefects() {
 }
 function saveDefects(defects) {
     localStorage.setItem(DEFECTS_KEY, JSON.stringify(defects));
+    MiiDB.saveAll('defects', defects);
 }
 function getInspections() {
     return JSON.parse(localStorage.getItem(INSPECTIONS_KEY) || '[]');

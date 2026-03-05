@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Workplace Inspection — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; padding-bottom: 90px; }
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+        .form-header { max-width: 700px; margin: 0 auto; padding: 20px 20px 0; }
+        .form-ref { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent); }
+        .form-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin: 2px 0 6px; }
+        .form-desc { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; margin-bottom: 8px; }
+        .fields { max-width: 700px; margin: 0 auto; padding: 12px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .field label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 3px; }
+        .field input, .field select { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
+        .field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+        .checklist { max-width: 700px; margin: 12px auto 0; padding: 0 20px; }
+        .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); padding: 14px 0 8px; border-bottom: 2px solid var(--primary); margin-bottom: 8px; }
+        .check-item { background: var(--white); border: 1.5px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; transition: border-color 0.2s; }
+        .check-item.pass { border-color: var(--success); }
+        .check-item.fail { border-color: var(--danger); }
+        .check-item.na { border-color: #ccc; opacity: 0.6; }
+        .check-main { display: flex; align-items: stretch; }
+        .check-text { flex: 1; padding: 10px 12px; }
+        .check-num { font-size: 0.7rem; font-weight: 700; color: var(--accent); }
+        .check-label { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+        .check-detail { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; line-height: 1.4; }
+        .check-buttons { display: flex; flex-shrink: 0; }
+        .check-btn { width: 52px; display: flex; align-items: center; justify-content: center; border: none; background: #f8f9fa; cursor: pointer; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-light); border-left: 1px solid #eee; transition: all 0.15s; }
+        .check-btn:hover { background: #eef1f5; }
+        .check-btn.yes-btn.selected { background: var(--success); color: var(--white); }
+        .check-btn.no-btn.selected { background: var(--danger); color: var(--white); }
+        .check-btn.na-btn.selected { background: #999; color: var(--white); }
+        .action-panel { display: none; border-top: 1px solid #f0f0f0; padding: 10px 12px; background: #fffbfb; }
+        .check-item.fail .action-panel { display: block; }
+        .action-label { font-size: 0.7rem; font-weight: 600; color: var(--danger); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+        .action-panel textarea { width: 100%; padding: 8px 10px; border: 1px solid #f0c0c0; border-radius: 6px; font-size: 0.85rem; font-family: inherit; resize: vertical; min-height: 48px; background: var(--white); }
+        .action-panel textarea:focus { outline: none; border-color: var(--danger); }
+        .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+        .action-row input { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; font-family: inherit; }
+        .action-row input:focus { outline: none; border-color: var(--accent); }
+        .action-row label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: var(--text-light); margin-bottom: 2px; display: block; }
+        .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
+        .submit-status { font-size: 0.82rem; color: var(--text-light); }
+        .submit-status strong { color: var(--primary); }
+        .btn-submit { padding: 10px 24px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; color: var(--white); transition: background 0.15s; }
+        .btn-submit.green { background: var(--success); }
+        .btn-submit.green:hover { background: #218838; }
+        .btn-submit.red { background: var(--danger); }
+        .btn-submit.red:hover { background: #c82333; }
+        .btn-submit.grey { background: #aaa; }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
+        .overlay.show { display: flex; }
+        .overlay-card { background: var(--white); border-radius: 12px; padding: 32px 28px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .overlay-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 14px; }
+        .overlay-icon.green { background: #e6f7ec; color: var(--success); }
+        .overlay-icon.amber { background: #fff6e0; color: var(--warning); }
+        .overlay-card h3 { font-size: 1.15rem; color: var(--primary); margin-bottom: 6px; }
+        .overlay-card p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+        .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+        .overlay-actions button { padding: 9px 20px; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+        @media (max-width: 600px) { .fields { grid-template-columns: 1fr; } .check-btn { width: 44px; font-size: 0.65rem; } .action-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Workplace Inspection</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<div class="form-header">
+    <div class="form-ref">SF 046E &mdash; Issue 4</div>
+    <h2>Workplace Inspection Checklist</h2>
+    <div class="form-desc">Weekly supervisor workplace inspection. Assess each area and record YES, NO or N/A. Where NO is recorded, detail the corrective action required.</div>
+</div>
+
+<div class="fields">
+    <div class="field">
+        <label>Location / Area</label>
+        <input type="text" id="f-location" placeholder="e.g. Bay 3, Fabrication Shop">
+    </div>
+    <div class="field">
+        <label>Inspector</label>
+        <input type="text" id="f-inspector" placeholder="Your name">
+    </div>
+    <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date">
+    </div>
+    <div class="field">
+        <label>Associated SSW / JMS</label>
+        <input type="text" id="f-ssw" placeholder="e.g. SSW-045">
+    </div>
+</div>
+
+<div class="checklist" id="checklist"></div>
+
+<div class="submit-bar">
+    <div class="submit-status" id="submit-status">0 of 20 checked</div>
+    <button class="btn-submit grey" id="btn-submit" disabled onclick="submitInspection()">Submit</button>
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-icon" id="overlay-icon"></div>
+        <h3 id="overlay-title"></h3>
+        <p id="overlay-msg"></p>
+        <div class="overlay-actions">
+            <button class="btn-outline" onclick="window.location.href='index.html'">Back to Hub</button>
+            <button class="btn-primary" onclick="location.reload()">New Inspection</button>
+        </div>
+    </div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+const ITEMS = [
+    { id: 'wi01', section: 'Welfare & Facilities', label: 'Welfare Facilities', detail: 'Enough welfare facilities for working party? Hand-washing (hot water, soap), food storage/heating, toilets maintained?' },
+    { id: 'wi02', section: 'Permits & Documentation', label: 'Permit System', detail: 'All necessary permits, certificates and isolations in place?' },
+    { id: 'wi03', section: 'Permits & Documentation', label: 'RAMS & Acknowledgement', detail: 'RAMS/JMS available at point of work, signed by all working party?' },
+    { id: 'wi04', section: 'Permits & Documentation', label: 'Supervisor Conversation', detail: 'SHEQ concerns identified and discussed with team?' },
+    { id: 'wi05', section: 'Permits & Documentation', label: 'Point of Work Risk Assessment', detail: 'POWRA completed correctly and regularly updated?' },
+    { id: 'wi06', section: 'Working Environment', label: 'Access & Egress', detail: 'Scaffold access erected, safe working platforms, clear walkways?' },
+    { id: 'wi07', section: 'Working Environment', label: 'Lighting', detail: 'Suitable and sufficient for the work? Switched off when not required?' },
+    { id: 'wi08', section: 'Working Environment', label: 'Housekeeping', detail: 'Trailing leads eliminated or protected? Equipment and materials removed as required?' },
+    { id: 'wi09', section: 'Working Environment', label: 'Dust, Fumes & Noise', detail: 'Forced ventilation or extraction required? Noise levels acceptable?' },
+    { id: 'wi10', section: 'People & PPE', label: 'PPE Compliance', detail: 'All mandatory PPE being worn? RPE worn when required (welding, burning etc.)?' },
+    { id: 'wi11', section: 'People & PPE', label: 'Manual Handling', detail: 'Weights of items being handled known and safe? Mechanical aids used where needed?' },
+    { id: 'wi12', section: 'People & PPE', label: 'Competency of Team', detail: 'Supervisor qualifications current? Mobile plant operators certified? Team competent for the task?' },
+    { id: 'wi13', section: 'High-Risk Activities', label: 'Lift Operations', detail: 'Lift Plan or POWLP available? Banksman in place? Access to area controlled?' },
+    { id: 'wi14', section: 'High-Risk Activities', label: 'Working at Height', detail: 'Adequate edge protection at open edges, around pits and openings? Objects secured from falling?' },
+    { id: 'wi15', section: 'High-Risk Activities', label: 'Hot Work Controls', detail: 'Combustible materials removed? Fire watchers with extinguishers correctly positioned?' },
+    { id: 'wi16', section: 'High-Risk Activities', label: 'Confined Space / Gas Hazard', detail: 'Top Man in place? Entry register maintained? Atmosphere monitored?' },
+    { id: 'wi17', section: 'Substances & Equipment', label: 'COSHH', detail: 'Hazardous substance containers clearly marked? Suitable PPE/RPE worn when working with hazardous substances?' },
+    { id: 'wi18', section: 'Substances & Equipment', label: 'Equipment Condition', detail: 'Hand tools, lifting accessories, portable electrical equipment, mobile plant — fit for purpose, compliant, tagged, pre-use inspections done?' },
+    { id: 'wi19', section: 'Environment & Emergency', label: 'Environmental', detail: 'Waste/scrap segregated and disposed of correctly? Drip trays provided and in use?' },
+    { id: 'wi20', section: 'Environment & Emergency', label: 'Emergency Preparedness', detail: 'Rescue plans in place? Fire exits and routes clear of obstacles?' },
+];
+
+const itemState = {};
+const totalItems = ITEMS.length;
+
+document.getElementById('f-date').valueAsDate = new Date();
+
+// Build checklist
+const container = document.getElementById('checklist');
+let currentSection = '';
+ITEMS.forEach((item, idx) => {
+    if (item.section !== currentSection) {
+        currentSection = item.section;
+        const div = document.createElement('div');
+        div.innerHTML = '<div class="section-title">' + currentSection + '</div>';
+        container.appendChild(div);
+    }
+    const el = document.createElement('div');
+    el.className = 'check-item';
+    el.id = 'item-' + item.id;
+    el.innerHTML = `
+        <div class="check-main">
+            <div class="check-text">
+                <div class="check-num">${idx + 1} of ${totalItems}</div>
+                <div class="check-label">${item.label}</div>
+                <div class="check-detail">${item.detail}</div>
+            </div>
+            <div class="check-buttons">
+                <button class="check-btn yes-btn" onclick="setCheck('${item.id}','pass')">YES</button>
+                <button class="check-btn no-btn" onclick="setCheck('${item.id}','fail')">NO</button>
+                <button class="check-btn na-btn" onclick="setCheck('${item.id}','na')">N/A</button>
+            </div>
+        </div>
+        <div class="action-panel">
+            <div class="action-label">Corrective Action Required</div>
+            <textarea placeholder="Describe the issue and action needed..."></textarea>
+            <div class="action-row">
+                <div><label>Assigned To</label><input type="text" data-field="who" placeholder="Name / role"></div>
+                <div><label>Target Date</label><input type="date" data-field="target"></div>
+            </div>
+        </div>
+    `;
+    container.appendChild(el);
+});
+
+function setCheck(id, status) {
+    if (itemState[id] === status) { delete itemState[id]; updateItem(id, null); }
+    else { itemState[id] = status; updateItem(id, status); }
+    updateSummary();
+}
+
+function updateItem(id, status) {
+    const el = document.getElementById('item-' + id);
+    el.className = 'check-item' + (status ? ' ' + status : '');
+    el.querySelectorAll('.check-btn').forEach(btn => btn.classList.remove('selected'));
+    if (status) {
+        const cls = status === 'pass' ? 'yes' : status === 'fail' ? 'no' : 'na';
+        el.querySelector('.' + cls + '-btn')?.classList.add('selected');
+    }
+}
+
+function updateSummary() {
+    const checked = Object.keys(itemState).length;
+    const fails = Object.values(itemState).filter(s => s === 'fail').length;
+    document.getElementById('submit-status').innerHTML = `<strong>${checked}</strong> of ${totalItems} checked`;
+    const btn = document.getElementById('btn-submit');
+    if (checked < totalItems) { btn.className = 'btn-submit grey'; btn.disabled = true; btn.textContent = 'Submit'; }
+    else if (fails > 0) { btn.className = 'btn-submit red'; btn.disabled = false; btn.textContent = 'Submit — ' + fails + ' Action' + (fails > 1 ? 's' : '') + ' Required'; }
+    else { btn.className = 'btn-submit green'; btn.disabled = false; btn.textContent = 'Submit — All Satisfactory'; }
+}
+
+function submitInspection() {
+    const location = document.getElementById('f-location').value.trim();
+    const inspector = document.getElementById('f-inspector').value.trim();
+    if (!location) { alert('Please enter the location/area.'); return; }
+    if (!inspector) { alert('Please enter your name.'); return; }
+
+    const fails = Object.entries(itemState).filter(([,s]) => s === 'fail');
+    for (const [id] of fails) {
+        const ta = document.querySelector('#item-' + id + ' .action-panel textarea');
+        if (ta && !ta.value.trim()) {
+            alert('Please describe the corrective action for: ' + ITEMS.find(i => i.id === id).label);
+            ta.focus(); return;
+        }
+    }
+
+    const actions = fails.map(([id]) => {
+        const el = document.getElementById('item-' + id);
+        return {
+            item: ITEMS.find(i => i.id === id).label,
+            action: el.querySelector('textarea').value.trim(),
+            assignedTo: el.querySelector('[data-field="who"]').value.trim(),
+            targetDate: el.querySelector('[data-field="target"]').value
+        };
+    });
+
+    const record = {
+        id: 'WI-' + String(Date.now()).slice(-6),
+        type: 'Workplace Inspection',
+        location, inspector,
+        date: document.getElementById('f-date').value,
+        ssw: document.getElementById('f-ssw').value.trim(),
+        result: fails.length > 0 ? 'Actions Required' : 'Satisfactory',
+        totalChecks: totalItems,
+        passCount: Object.values(itemState).filter(s => s === 'pass').length,
+        failCount: fails.length,
+        naCount: Object.values(itemState).filter(s => s === 'na').length,
+        actions
+    };
+
+    const records = JSON.parse(localStorage.getItem('mii_workplace_inspections') || '[]');
+    records.push(record);
+    localStorage.setItem('mii_workplace_inspections', JSON.stringify(records));
+    MiiDB.save('workplace_inspections', record);
+
+    const icon = document.getElementById('overlay-icon');
+    const title = document.getElementById('overlay-title');
+    const msg = document.getElementById('overlay-msg');
+    if (fails.length > 0) {
+        icon.className = 'overlay-icon amber'; icon.textContent = '\u26A0';
+        title.textContent = 'Inspection Submitted — Actions Required';
+        msg.textContent = record.id + ' — ' + fails.length + ' corrective action' + (fails.length > 1 ? 's' : '') + ' raised at ' + location + '.';
+    } else {
+        icon.className = 'overlay-icon green'; icon.textContent = '\u2713';
+        title.textContent = 'Inspection Passed';
+        msg.textContent = record.id + ' — All areas satisfactory at ' + location + '.';
+    }
+    document.getElementById('overlay').classList.add('show');
+}
+</script>
+</body>
+</html>

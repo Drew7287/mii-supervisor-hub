@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Near Miss Report — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; padding-bottom: 90px; }
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+        .form-header { max-width: 700px; margin: 0 auto; padding: 20px 20px 0; }
+        .form-ref { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--danger); }
+        .form-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin: 2px 0 6px; }
+        .form-desc { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; margin-bottom: 8px; }
+        .form-body { max-width: 700px; margin: 0 auto; padding: 12px 20px; }
+        .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); padding: 14px 0 8px; border-bottom: 2px solid var(--primary); margin-bottom: 12px; }
+        .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .field label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 3px; }
+        .field input, .field select, .field textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
+        .field textarea { min-height: 100px; resize: vertical; }
+        .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+        .field.full { grid-column: 1 / -1; }
+
+        .type-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+        .type-btn { flex: 1; padding: 12px 8px; border: 2px solid var(--border); border-radius: 8px; background: var(--white); cursor: pointer; text-align: center; font-family: inherit; transition: all 0.15s; }
+        .type-btn:hover { border-color: #999; }
+        .type-btn .type-icon { font-size: 1.4rem; margin-bottom: 4px; }
+        .type-btn .type-label { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+        .type-btn .type-desc { font-size: 0.72rem; color: var(--text-light); margin-top: 2px; }
+        .type-btn.selected.near-miss { border-color: var(--warning); background: #fff6e0; }
+        .type-btn.selected.hazard { border-color: var(--danger); background: #fde8ea; }
+        .type-btn.selected.positive { border-color: var(--success); background: #e6f7ec; }
+
+        .severity-options { display: flex; gap: 6px; margin-bottom: 16px; }
+        .sev-btn { flex: 1; padding: 10px 6px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--white); font-size: 0.82rem; font-weight: 600; font-family: inherit; cursor: pointer; text-align: center; transition: all 0.15s; }
+        .sev-btn:hover { border-color: #999; }
+        .sev-btn.selected.high { border-color: var(--danger); background: #fde8ea; color: var(--danger); }
+        .sev-btn.selected.medium { border-color: var(--warning); background: #fff6e0; color: #b07d00; }
+        .sev-btn.selected.low { border-color: var(--success); background: #e6f7ec; color: var(--success); }
+
+        .photo-section { margin-bottom: 16px; }
+        .photo-btn { padding: 8px 16px; border: 1.5px dashed var(--border); border-radius: 6px; background: var(--white); font-size: 0.82rem; font-family: inherit; color: var(--text-light); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .photo-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .photo-preview { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+        .photo-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); }
+
+        .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
+        .submit-status { font-size: 0.82rem; color: var(--text-light); }
+        .btn-submit { padding: 10px 24px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; color: var(--white); background: var(--danger); transition: opacity 0.15s; }
+        .btn-submit:hover { opacity: 0.9; }
+
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
+        .overlay.show { display: flex; }
+        .overlay-card { background: var(--white); border-radius: 12px; padding: 32px 28px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .overlay-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 14px; background: #e6f7ec; color: var(--success); }
+        .overlay-card h3 { font-size: 1.15rem; color: var(--primary); margin-bottom: 6px; }
+        .overlay-card .report-id { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+        .overlay-card p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+        .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+        .overlay-actions button { padding: 9px 20px; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+
+        @media (max-width: 600px) { .fields { grid-template-columns: 1fr; } .type-selector { flex-direction: column; } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Near Miss / Hazard Report</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<div class="form-header">
+    <div class="form-ref">SF 013C &mdash; Issue 1</div>
+    <h2>Near Miss &amp; Hazard Report</h2>
+    <div class="form-desc">Report any near miss, hazard or positive observation. All reports are reviewed by SHEQ and management. Reporting near misses prevents future incidents.</div>
+</div>
+
+<div class="form-body">
+    <div class="section-title">Type of Report</div>
+    <div class="type-selector">
+        <button class="type-btn near-miss" onclick="selectType('Near Miss', this)">
+            <div class="type-icon">&#9888;</div>
+            <div class="type-label">Near Miss</div>
+            <div class="type-desc">An event that could have caused harm but didn't</div>
+        </button>
+        <button class="type-btn hazard" onclick="selectType('Hazard', this)">
+            <div class="type-icon">&#9889;</div>
+            <div class="type-label">Hazard</div>
+            <div class="type-desc">An unsafe condition or behaviour observed</div>
+        </button>
+        <button class="type-btn positive" onclick="selectType('Positive', this)">
+            <div class="type-icon">&#10003;</div>
+            <div class="type-label">Positive</div>
+            <div class="type-desc">Good practice or safety behaviour observed</div>
+        </button>
+    </div>
+
+    <div class="section-title">Incident Details</div>
+    <div class="fields">
+        <div class="field">
+            <label>Reported By</label>
+            <input type="text" id="f-name" placeholder="Your name">
+        </div>
+        <div class="field">
+            <label>Date</label>
+            <input type="date" id="f-date">
+        </div>
+        <div class="field">
+            <label>Site / Area</label>
+            <input type="text" id="f-site" value="Enabling Works — Port Talbot">
+        </div>
+        <div class="field">
+            <label>Specific Location</label>
+            <input type="text" id="f-location" placeholder="e.g. Bay 4, ground floor">
+        </div>
+        <div class="field full">
+            <label>Description of Incident or Observation</label>
+            <textarea id="f-description" placeholder="Describe what happened, what you observed, and who was involved..."></textarea>
+        </div>
+    </div>
+
+    <div class="section-title">Risk Level</div>
+    <div class="severity-options">
+        <button class="sev-btn high" onclick="selectSeverity('High', this)">High</button>
+        <button class="sev-btn medium" onclick="selectSeverity('Medium', this)">Medium</button>
+        <button class="sev-btn low" onclick="selectSeverity('Low', this)">Low</button>
+    </div>
+
+    <div class="section-title">Immediate Action Taken</div>
+    <div class="fields">
+        <div class="field full">
+            <label>What action did you take?</label>
+            <textarea id="f-action" placeholder="Describe any immediate corrective action you took..." style="min-height:70px"></textarea>
+        </div>
+    </div>
+
+    <div class="section-title">Photo Evidence</div>
+    <div class="photo-section">
+        <label class="photo-btn">
+            <input type="file" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto(this)">
+            &#128247; Add Photo
+        </label>
+        <div class="photo-preview" id="photos"></div>
+    </div>
+</div>
+
+<div class="submit-bar">
+    <div class="submit-status">SF 013C — Near Miss &amp; Hazard Report</div>
+    <button class="btn-submit" onclick="submitReport()">Submit Report</button>
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-icon">&#10003;</div>
+        <h3>Report Submitted</h3>
+        <div class="report-id" id="overlay-id"></div>
+        <p>Your report has been logged and will be reviewed by SHEQ and management. Thank you for reporting.</p>
+        <div class="overlay-actions">
+            <button class="btn-outline" onclick="window.location.href='index.html'">Back to Hub</button>
+            <button class="btn-primary" onclick="location.reload()">Submit Another</button>
+        </div>
+    </div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+let reportType = '';
+let severity = 'Medium';
+
+document.getElementById('f-date').valueAsDate = new Date();
+
+function selectType(type, btn) {
+    reportType = type;
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function selectSeverity(level, btn) {
+    severity = level;
+    document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(input.files[0]);
+        document.getElementById('photos').appendChild(img);
+    }
+}
+
+function submitReport() {
+    if (!reportType) { alert('Please select a report type (Near Miss, Hazard or Positive).'); return; }
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { alert('Please enter your name.'); return; }
+    const description = document.getElementById('f-description').value.trim();
+    if (!description) { alert('Please describe what happened.'); return; }
+
+    const id = 'NM-' + String(Date.now()).slice(-6);
+    const now = new Date();
+    const report = {
+        id,
+        type: reportType,
+        severity,
+        reportedBy: name,
+        date: document.getElementById('f-date').value,
+        site: document.getElementById('f-site').value.trim(),
+        location: document.getElementById('f-location').value.trim(),
+        description,
+        actionTaken: document.getElementById('f-action').value.trim(),
+        status: 'Open',
+        submittedAt: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0, 5)
+    };
+
+    const reports = JSON.parse(localStorage.getItem('mii_near_miss') || '[]');
+    reports.push(report);
+    localStorage.setItem('mii_near_miss', JSON.stringify(reports));
+    MiiDB.save('near_miss', report);
+
+    document.getElementById('overlay-id').textContent = id;
+    document.getElementById('overlay').classList.add('show');
+}
+</script>
+</body>
+</html>
