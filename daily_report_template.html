@@ -1325,20 +1325,43 @@ if ('serviceWorker' in navigator) {
         tbody.appendChild(tr);
     }
 
-    // ===== EMPLOYEE LIST (from employees.js, sourced from RAMSBuilder training matrix DB) =====
-    // employees.js sets window._MII_EMPLOYEES as [[id, name], ...] pairs
-    const EMPLOYEES = window._MII_EMPLOYEES || [];
-    console.log(`Loaded ${EMPLOYEES.length} employees`);
+    // ===== EMPLOYEE LIST =====
+    // Fallback: employees.js sets window._MII_EMPLOYEES as [[id, name], ...] pairs
+    // Live: fetch from API and update in background
+    let EMPLOYEES = window._MII_EMPLOYEES || [];
+    console.log(`Loaded ${EMPLOYEES.length} employees (static fallback)`);
 
-    // Build <select> options HTML from current EMPLOYEES array
-    function buildNameSelect(selectedName) {
-        let html = '<select class="name-select" onchange="handleNameSelect(this)"><option value="">— Select —</option>';
+    // Try to fetch live data from API (non-blocking)
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    fetch(`${MII_API}/employees`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.employees && data.employees.length > 0) {
+                EMPLOYEES = data.employees.map(e => [e.employee_number, e.name]);
+                console.log(`Updated to ${EMPLOYEES.length} employees (live API)`);
+                // Re-render any open dropdowns
+                document.querySelectorAll('.name-select').forEach(sel => {
+                    const current = sel.value;
+                    sel.innerHTML = buildNameOptions(current);
+                });
+            }
+        })
+        .catch(() => console.log('API offline, using static employee list'));
+
+    // Build just the <option> tags from current EMPLOYEES array
+    function buildNameOptions(selectedName) {
+        let html = '<option value="">— Select —</option>';
         EMPLOYEES.forEach(([num, name]) => {
             const label = num ? `${num} — ${name}` : name;
             html += `<option value="${name}"${name === selectedName ? ' selected' : ''}>${label}</option>`;
         });
-        html += '<option value="_other">Other...</option></select>';
+        html += '<option value="_other">Other...</option>';
         return html;
+    }
+
+    // Build full <select> element HTML
+    function buildNameSelect(selectedName) {
+        return '<select class="name-select" onchange="handleNameSelect(this)">' + buildNameOptions(selectedName) + '</select>';
     }
 
     // Add manning row (blank or pre-filled)
