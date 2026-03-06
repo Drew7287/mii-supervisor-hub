@@ -557,7 +557,7 @@
 </head>
 <body>
 
-<a href="index.html" class="back-link">&larr; Hub</a>
+<a href="hub.html" class="back-link">&larr; Hub</a>
 
 <div class="page">
 
@@ -567,7 +567,15 @@
 
     <!-- TOOLBAR (screen only) -->
     <div class="toolbar">
+        <span id="save-status" style="font-size:0.8rem;color:var(--text-light);align-self:center;margin-right:4px;"></span>
+        <button onclick="saveReport()">&#128190; Save</button>
         <button onclick="window.print()">&#128424; Print</button>
+        <button onclick="togglePreviousReports()" style="font-size:0.8rem;">&#128196; Previous</button>
+    </div>
+    <!-- Previous reports list (hidden by default) -->
+    <div id="previous-reports" style="display:none;margin-bottom:10px;border:1px solid var(--border);border-radius:3px;max-height:180px;overflow-y:auto;font-size:0.85rem;">
+        <div style="background:#eef2f7;padding:4px 8px;font-weight:600;color:var(--text-light);text-transform:uppercase;font-size:0.75rem;">Previous Reports</div>
+        <div id="previous-reports-list" style="padding:4px;"></div>
     </div>
 
     <!-- HEADER -->
@@ -1488,6 +1496,418 @@ if ('serviceWorker' in navigator) {
         if (supervisor) params.set('inspector', supervisor);
         window.open('inspection.html?' + params.toString(), '_blank');
     }
+
+    // ===== SAVE / LOAD / AUTO-SAVE =====
+    let _autoSaveTimer = null;
+    let _currentReportId = null;
+
+    function getInfoFields() {
+        const cells = document.querySelectorAll('.info-grid .info-cell');
+        const val = (i) => {
+            const inp = cells[i]?.querySelector('input') || cells[i]?.querySelector('select');
+            return inp ? inp.value : '';
+        };
+        return {
+            reportDate: val(0),
+            supervisorName: val(1),
+            site: val(2),
+            zone: val(3),
+            shift: val(4),
+            weather: val(5),
+            weekCommencing: val(6),
+            dayOfWeek: val(7),
+        };
+    }
+
+    function collectWorkPlan() {
+        const rows = [];
+        document.querySelectorAll('#work-plan-body tr').forEach((tr, idx) => {
+            const tds = tr.querySelectorAll('td');
+            if (!tds.length) return;
+            const getText = (td) => {
+                const inp = td.querySelector('input') || td.querySelector('select');
+                return inp ? inp.value : td.textContent.trim();
+            };
+            const activity = getText(tds[1]);
+            if (!activity && !getText(tds[0])) return; // skip truly empty rows
+            rows.push({
+                sortOrder: idx,
+                p6TaskId: getText(tds[0]),
+                activity: activity,
+                location: getText(tds[2]),
+                trade: getText(tds[3]),
+                plannedCrew: parseInt(getText(tds[4])) || null,
+                actualCrew: parseInt(getText(tds[5])) || null,
+                status: getText(tds[6]),
+                percentComplete: parseInt(getText(tds[7])) || null,
+                notes: getText(tds[8]),
+            });
+        });
+        return rows;
+    }
+
+    function collectManning() {
+        const rows = [];
+        document.querySelectorAll('#manning-body tr').forEach((tr, idx) => {
+            const sel = tr.querySelector('.name-select');
+            const name = sel ? sel.value : '';
+            const tradeTd = tr.querySelectorAll('td')[1];
+            const trade = tradeTd ? (tradeTd.querySelector('input')?.value || tradeTd.textContent.trim()) : '';
+            const planned = parseInt(tr.querySelector('.manning-planned')?.value) || null;
+            const actual = parseInt(tr.querySelector('.manning-actual')?.value) || null;
+            const taskTd = tr.querySelectorAll('td')[5];
+            const taskIds = taskTd ? (taskTd.querySelector('input')?.value || taskTd.textContent.trim()) : '';
+            const notesTd = tr.querySelectorAll('td')[6];
+            const notes = notesTd ? (notesTd.querySelector('input')?.value || notesTd.textContent.trim()) : '';
+            if (!name && !planned && !actual) return;
+            rows.push({ sortOrder: idx, employeeName: name, companyTrade: trade, planned, actual, taskIds, notes });
+        });
+        return rows;
+    }
+
+    function collectChecklist() {
+        const items = [];
+        document.querySelectorAll('.checklist tbody tr').forEach(tr => {
+            const refTd = tr.querySelector('.col-ref');
+            if (!refTd) return;
+            const rrRef = parseInt(refTd.textContent.trim());
+            if (isNaN(rrRef)) return;
+            const boxes = tr.querySelectorAll('.check-box');
+            const checked = boxes[0]?.classList.contains('checked') ? 1 : 0;
+            const na = boxes[1]?.classList.contains('na-checked') ? 1 : 0;
+            const noteInput = tr.querySelector('.note-input');
+            items.push({ rrRef, checked, na, notes: noteInput?.value || '' });
+        });
+        // Weekly items (R&R 22-25)
+        document.querySelectorAll('.weekly-item').forEach(item => {
+            const refEl = item.querySelector('.ref');
+            if (!refEl) return;
+            const rrRef = parseInt(refEl.textContent.trim());
+            if (isNaN(rrRef)) return;
+            const box = item.querySelector('.check-box');
+            items.push({ rrRef, checked: box?.classList.contains('checked') ? 1 : 0, na: 0, notes: '' });
+        });
+        return items;
+    }
+
+    function collectIncidents() {
+        const TYPES = ['accidents', 'stop_work', 'ncrs', 'equipment_quarantined', 'environmental', 'early_warnings'];
+        const items = [];
+        document.querySelectorAll('.incident-row').forEach((row, idx) => {
+            const boxes = row.querySelectorAll('.yn-box');
+            let yesNo = null;
+            if (boxes[0]?.classList.contains('yes-active')) yesNo = 1;
+            else if (boxes[1]?.classList.contains('no-active')) yesNo = 0;
+            const ref = row.querySelector('.incident-ref-input')?.value || '';
+            items.push({ incidentType: TYPES[idx] || `type_${idx}`, yesNo, reference: ref });
+        });
+        return items;
+    }
+
+    function collectNarratives() {
+        const SECTIONS = ['progress', 'issues', 'tomorrow', 'general'];
+        const items = [];
+        document.querySelectorAll('.narrative-box textarea').forEach((ta, idx) => {
+            items.push({ section: SECTIONS[idx] || `section_${idx}`, body: ta.value });
+        });
+        return items;
+    }
+
+    function collectReportData() {
+        const info = getInfoFields();
+        const clientId = `DR-${info.reportDate || 'nodate'}-${info.supervisorName || 'unknown'}`;
+        const id = _currentReportId || clientId;
+        return {
+            id: id,
+            clientId: clientId,
+            ...info,
+            status: 'draft',
+            work_plan: collectWorkPlan(),
+            manning: collectManning(),
+            checklist: collectChecklist(),
+            incidents: collectIncidents(),
+            narratives: collectNarratives(),
+        };
+    }
+
+    function populateReportData(data) {
+        if (!data) return;
+        _currentReportId = data.id || data.clientId;
+
+        // Info fields
+        const cells = document.querySelectorAll('.info-grid .info-cell');
+        const setVal = (i, val) => {
+            const inp = cells[i]?.querySelector('input') || cells[i]?.querySelector('select');
+            if (inp && val != null) inp.value = val;
+        };
+        setVal(0, data.reportDate || data.report_date);
+        // Supervisor — may need to add option if not in list
+        const supSel = document.getElementById('supervisor-select');
+        const supName = data.supervisorName || data.supervisor_name || '';
+        if (supSel && supName) {
+            let found = false;
+            for (const opt of supSel.options) {
+                if (opt.value === supName || opt.textContent === supName) { supSel.value = opt.value; found = true; break; }
+            }
+            if (!found && supName) {
+                const opt = document.createElement('option');
+                opt.value = supName; opt.textContent = supName;
+                supSel.insertBefore(opt, supSel.querySelector('[value="_other"]'));
+                supSel.value = supName;
+            }
+        }
+        setVal(2, data.site);
+        setVal(3, data.zone);
+        setVal(4, data.shift);
+        setVal(5, data.weather);
+        setVal(6, data.weekCommencing || data.week_commencing);
+        setVal(7, data.dayOfWeek || data.day_of_week);
+
+        // Work plan
+        const wp = data.work_plan || [];
+        if (wp.length) {
+            const tbody = document.getElementById('work-plan-body');
+            tbody.innerHTML = '';
+            wp.forEach(r => {
+                const tr = document.createElement('tr');
+                const statusColor = r.status === 'Complete' ? 'var(--success)' :
+                                    r.status === 'Blocked' || r.status === 'Stopped' ? 'var(--danger)' :
+                                    r.status === 'Planned' ? 'var(--warning)' : 'var(--success)';
+                tr.innerHTML = `
+                    <td><input type="text" style="width:46px" value="${r.p6TaskId || r.p6_task_id || ''}" /></td>
+                    <td><input type="text" value="${r.activity || ''}" /></td>
+                    <td><input type="text" value="${r.location || ''}" /></td>
+                    <td><input type="text" value="${r.trade || ''}" /></td>
+                    <td class="center"><input type="number" min="0" value="${r.plannedCrew ?? r.planned_crew ?? ''}" /></td>
+                    <td class="center"><input type="number" min="0" value="${r.actualCrew ?? r.actual_crew ?? ''}" /></td>
+                    <td class="center">${statusSelectHTML.replace('value="">—', r.status ? `value="">—</option><option selected` : 'value="">—')}</td>
+                    <td class="center"><input type="number" min="0" max="100" style="width:32px" value="${r.percentComplete ?? r.percent_complete ?? ''}" /></td>
+                    <td><input type="text" value="${r.notes || ''}" /></td>`;
+                // Fix status select
+                const sel = tr.querySelector('select');
+                if (sel && r.status) {
+                    for (const opt of sel.options) {
+                        if (opt.textContent === r.status) { sel.value = opt.value || opt.textContent; break; }
+                    }
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Manning
+        const mn = data.manning || [];
+        if (mn.length) {
+            document.getElementById('manning-body').innerHTML = '';
+            mn.forEach(r => {
+                addManningRow(
+                    r.employeeName || r.employee_name || '',
+                    r.companyTrade || r.company_trade || '',
+                    r.planned, r.actual,
+                    r.taskIds || r.task_ids || '',
+                    r.notes || ''
+                );
+            });
+            updateManningTotals();
+        }
+
+        // Checklist
+        const cl = data.checklist || [];
+        if (cl.length) {
+            const weeklyRefs = new Set([22, 23, 24, 25]);
+            cl.forEach(item => {
+                const ref = item.rrRef || item.rr_ref;
+                if (weeklyRefs.has(ref)) {
+                    // Weekly items
+                    const weeklyItems = document.querySelectorAll('.weekly-item');
+                    const wi = weeklyItems[ref - 22];
+                    if (wi) {
+                        const box = wi.querySelector('.check-box');
+                        if (box && item.checked) box.classList.add('checked');
+                    }
+                } else {
+                    // Regular checklist rows
+                    document.querySelectorAll('.checklist tbody tr').forEach(tr => {
+                        const refTd = tr.querySelector('.col-ref');
+                        if (refTd && parseInt(refTd.textContent.trim()) === ref) {
+                            const boxes = tr.querySelectorAll('.check-box');
+                            if (item.checked && boxes[0]) boxes[0].classList.add('checked');
+                            if (item.na && boxes[1]) boxes[1].classList.add('na-checked');
+                            const noteInput = tr.querySelector('.note-input');
+                            if (noteInput && item.notes) noteInput.value = item.notes;
+                        }
+                    });
+                }
+            });
+        }
+
+        // Incidents
+        const inc = data.incidents || [];
+        if (inc.length) {
+            const rows = document.querySelectorAll('.incident-row');
+            inc.forEach((item, idx) => {
+                if (!rows[idx]) return;
+                const boxes = rows[idx].querySelectorAll('.yn-box');
+                if (item.yesNo === 1 || item.yes_no === 1) boxes[0]?.classList.add('yes-active');
+                else if (item.yesNo === 0 || item.yes_no === 0) boxes[1]?.classList.add('no-active');
+                const refInput = rows[idx].querySelector('.incident-ref-input');
+                if (refInput) refInput.value = item.reference || '';
+            });
+        }
+
+        // Narratives
+        const narr = data.narratives || [];
+        const textareas = document.querySelectorAll('.narrative-box textarea');
+        const SECTION_ORDER = ['progress', 'issues', 'tomorrow', 'general'];
+        narr.forEach(n => {
+            const idx = SECTION_ORDER.indexOf(n.section);
+            if (idx >= 0 && textareas[idx]) textareas[idx].value = n.body || '';
+        });
+
+        setSaveStatus('Loaded');
+    }
+
+    function setSaveStatus(text, color) {
+        const el = document.getElementById('save-status');
+        if (el) {
+            el.textContent = text;
+            el.style.color = color || 'var(--text-light)';
+        }
+    }
+
+    async function saveReport() {
+        setSaveStatus('Saving...', 'var(--warning)');
+        try {
+            const data = collectReportData();
+            _currentReportId = data.id;
+            await MiiDB.save('daily_reports', data);
+            setSaveStatus('Saved', 'var(--success)');
+
+            // If online, also sync via batch endpoint
+            try {
+                const token = localStorage.getItem('mii_token');
+                if (token && navigator.onLine) {
+                    await fetch(MII_API + '/sync/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ items: [{ entity: 'daily_reports', action: 'upsert', payload: data }] }),
+                    });
+                    setSaveStatus('Saved & synced', 'var(--success)');
+                }
+            } catch (e) {
+                console.warn('DR sync failed (queued for later):', e);
+            }
+        } catch (e) {
+            console.error('Save failed:', e);
+            setSaveStatus('Save failed', 'var(--danger)');
+        }
+    }
+
+    // Auto-save: debounced on any input change
+    function scheduleAutoSave() {
+        setSaveStatus('Unsaved', 'var(--warning)');
+        clearTimeout(_autoSaveTimer);
+        _autoSaveTimer = setTimeout(async () => {
+            const data = collectReportData();
+            if (!data.reportDate && !data.supervisorName) return; // Don't save empty forms
+            _currentReportId = data.id;
+            try {
+                await MiiDB.save('daily_reports', data);
+                setSaveStatus('Auto-saved', 'var(--text-light)');
+            } catch (e) {
+                console.warn('Auto-save failed:', e);
+            }
+        }, 500);
+    }
+
+    // Attach auto-save listeners
+    document.addEventListener('input', (e) => {
+        if (e.target.closest('.page')) scheduleAutoSave();
+    });
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('check-box') || e.target.classList.contains('yn-box')) {
+            setTimeout(scheduleAutoSave, 50);
+        }
+    });
+
+    // Load from URL params or IndexedDB
+    async function initLoad() {
+        await MiiDB.ready();
+        const params = new URLSearchParams(window.location.search);
+        const dateParam = params.get('date');
+        const supervisorParam = params.get('supervisor');
+
+        if (dateParam && supervisorParam) {
+            // Try API first
+            try {
+                const token = localStorage.getItem('mii_token');
+                if (token && navigator.onLine) {
+                    const resp = await fetch(`${MII_API}/daily-report?date=${dateParam}&supervisor=${encodeURIComponent(supervisorParam)}`, {
+                        headers: { 'Authorization': 'Bearer ' + token },
+                    });
+                    if (resp.ok) {
+                        const json = await resp.json();
+                        if (json.report) { populateReportData(json.report); return; }
+                    }
+                }
+            } catch (e) { console.warn('API load failed, trying IndexedDB:', e); }
+
+            // Fall back to IndexedDB
+            const clientId = `DR-${dateParam}-${supervisorParam}`;
+            const all = await MiiDB.getAll('daily_reports');
+            const match = all.find(r => r.id === clientId || r.clientId === clientId);
+            if (match) { populateReportData(match); return; }
+        }
+
+        // Auto-fill today's date if empty
+        const dateInput = document.querySelector('.info-grid .info-cell:first-child input');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+    }
+
+    // Previous reports panel
+    function togglePreviousReports() {
+        const panel = document.getElementById('previous-reports');
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            loadPreviousReports();
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    async function loadPreviousReports() {
+        const list = document.getElementById('previous-reports-list');
+        list.innerHTML = '<div style="padding:4px 8px;color:var(--text-light);">Loading...</div>';
+        try {
+            const all = await MiiDB.getAll('daily_reports');
+            all.sort((a, b) => (b.reportDate || b.report_date || '').localeCompare(a.reportDate || a.report_date || ''));
+            if (!all.length) {
+                list.innerHTML = '<div style="padding:4px 8px;color:var(--text-light);">No saved reports</div>';
+                return;
+            }
+            list.innerHTML = '';
+            all.slice(0, 30).forEach(r => {
+                const d = r.reportDate || r.report_date || '?';
+                const s = r.supervisorName || r.supervisor_name || '?';
+                const div = document.createElement('div');
+                div.style.cssText = 'padding:4px 8px;cursor:pointer;border-bottom:1px solid #eee;';
+                div.innerHTML = `<strong>${d}</strong> &mdash; ${s} <span style="color:var(--text-light);font-size:0.8rem;">[${r.status || 'draft'}]</span>`;
+                div.addEventListener('click', () => {
+                    populateReportData(r);
+                    document.getElementById('previous-reports').style.display = 'none';
+                });
+                div.addEventListener('mouseenter', () => div.style.background = '#f0f2f5');
+                div.addEventListener('mouseleave', () => div.style.background = '');
+                list.appendChild(div);
+            });
+        } catch (e) {
+            list.innerHTML = '<div style="padding:4px 8px;color:var(--danger);">Error loading reports</div>';
+        }
+    }
+
+    // Initialize on page load
+    initLoad();
 </script>
 
 </body>
