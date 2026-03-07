@@ -553,6 +553,143 @@
                 border-radius: 2px;
             }
         }
+
+        /* ===== TASK SEARCH ===== */
+        .task-search-btn {
+            width: 100%;
+            padding: 3px 4px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            font: inherit;
+            background: var(--white);
+            text-align: left;
+            cursor: pointer;
+            color: var(--text);
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .task-search-btn:hover { border-color: var(--accent); }
+        .task-search-btn .task-btn-arrow { color: var(--text-light); font-size: 0.7em; margin-left: 4px; }
+        .task-search-btn.has-value { font-weight: 500; }
+
+        /* Task search modal */
+        .task-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 9999;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 10vh;
+        }
+        .task-modal-overlay.open { display: flex; }
+        .task-modal {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+            width: 600px;
+            max-width: 95vw;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .task-modal-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .task-modal-header input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 2px solid var(--accent);
+            border-radius: 5px;
+            font-size: 1.1em;
+            outline: none;
+        }
+        .task-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.4em;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 4px 8px;
+        }
+        .task-modal-close:hover { color: var(--danger); }
+        .task-modal-list {
+            overflow-y: auto;
+            flex: 1;
+            padding: 4px 0;
+        }
+        .task-modal-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .task-modal-item:hover, .task-modal-item.highlighted {
+            background: var(--accent);
+            color: var(--white);
+        }
+        .task-modal-item .task-item-name { font-weight: 500; }
+        .task-modal-item .task-item-meta {
+            font-size: 0.85em;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+        .task-modal-item:hover .task-item-meta,
+        .task-modal-item.highlighted .task-item-meta { color: rgba(255,255,255,0.8); }
+        .task-modal-footer {
+            padding: 8px 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+        .task-modal-footer button {
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font: inherit;
+            background: var(--white);
+        }
+        .task-modal-footer .btn-custom { color: var(--accent); font-weight: 600; }
+        .task-modal-footer .btn-custom:hover { background: #e8f0fe; }
+        .task-modal-count { color: var(--text-light); font-size: 0.85em; margin-left: auto; line-height: 32px; }
+
+        /* Trade filter chips */
+        .task-modal-filters {
+            padding: 8px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            border-bottom: 1px solid var(--border);
+            max-height: 72px;
+            overflow-y: auto;
+        }
+        .trade-chip {
+            padding: 3px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            font-size: 0.85em;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .trade-chip:hover { border-color: var(--accent); background: #e8f0fe; }
+        .trade-chip.active {
+            background: var(--accent);
+            color: var(--white);
+            border-color: var(--accent);
+        }
+        .trade-chip .chip-count {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-left: 3px;
+        }
     </style>
 </head>
 <body>
@@ -650,7 +787,7 @@
     <div class="section">
         <div class="section-header">
             Today's Work Plan
-            <span class="rr-range">R&R 1 — Review daily work plan &amp; task allocations</span>
+            <span class="rr-range">R&R 2 — Review daily work plan &amp; task allocations</span>
         </div>
         <table class="data-table" id="work-plan-table">
             <thead>
@@ -667,86 +804,6 @@
                 </tr>
             </thead>
             <tbody id="work-plan-body">
-                <tr>
-                    <td>4039</td>
-                    <td class="wrap-text">CAS-OB 1 & Steel Desulph Removal</td>
-                    <td>CAS OB 1 Area</td>
-                    <td>MII</td>
-                    <td class="center">6</td>
-                    <td class="center">5</td>
-                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
-                    <td class="center">40</td>
-                    <td>Delayed 3hrs awaiting crane access. 5 crew on stand-by. CE notified to CM</td>
-                </tr>
-                <tr>
-                    <td>4047</td>
-                    <td class="wrap-text">Vessel 1 Steam Room Removals</td>
-                    <td>RED Bay Zone B (5-8.5)</td>
-                    <td>MII</td>
-                    <td class="center">4</td>
-                    <td class="center">4</td>
-                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
-                    <td class="center">25</td>
-                    <td>Pipework removal ongoing. Access scaffold in place</td>
-                </tr>
-                <tr>
-                    <td>4050</td>
-                    <td class="wrap-text">Ladle Scrapping</td>
-                    <td>Teeming Bay Zone A (3-5)</td>
-                    <td>MII</td>
-                    <td class="center">5</td>
-                    <td class="center">5</td>
-                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
-                    <td class="center">60</td>
-                    <td>Burning out ladle 3. Good progress</td>
-                </tr>
-                <tr>
-                    <td>4053</td>
-                    <td class="wrap-text">Removal of Hood Water Trestles</td>
-                    <td>External - Misc</td>
-                    <td>MII</td>
-                    <td class="center">5</td>
-                    <td class="center">5</td>
-                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
-                    <td class="center">30</td>
-                    <td>Crane on stand-by for PM lift</td>
-                </tr>
-                <tr>
-                    <td>4028</td>
-                    <td class="wrap-text">Cutting and Burning Ladle</td>
-                    <td>Teeming Bay Zone A (3-5)</td>
-                    <td>MII</td>
-                    <td class="center">3</td>
-                    <td class="center">3</td>
-                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
-                    <td class="center">70</td>
-                    <td>Ladle 2 complete. Ladle 3 started</td>
-                </tr>
-                <tr>
-                    <td>4034</td>
-                    <td class="wrap-text">Removal of HM Bay Rails</td>
-                    <td>RED Bay Zone B (5-8.5)</td>
-                    <td>MII</td>
-                    <td class="center">4</td>
-                    <td class="center">3</td>
-                    <td class="center"><span style="color:var(--warning);font-weight:600">Planned</span></td>
-                    <td class="center">0</td>
-                    <td>Awaiting isolation confirmation. Start PM</td>
-                </tr>
-                <tr>
-                    <td>4032</td>
-                    <td class="wrap-text">Dosing Station Removals</td>
-                    <td>Charging Bay Zone D (10-13)</td>
-                    <td>MII</td>
-                    <td class="center">2</td>
-                    <td class="center">2</td>
-                    <td class="center"><span style="color:var(--success);font-weight:600">Started</span></td>
-                    <td class="center">45</td>
-                    <td>Pipework disconnection. On programme</td>
-                </tr>
-                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             </tbody>
         </table>
         <button class="add-row-btn" onclick="addWorkRow()">+ Add Activity Row</button>
@@ -757,7 +814,7 @@
     <div class="section">
         <div class="section-header">
             Manning Tracker
-            <span class="rr-range">R&R 5, 14, 15 — Competence, subcon monitoring &amp; attendance</span>
+            <span class="rr-range">R&R 4, 14, 15 — Competence, subcon monitoring &amp; attendance</span>
         </div>
         <table class="data-table" id="manning-table">
             <thead>
@@ -807,7 +864,7 @@
     <div class="section">
         <div class="section-header">
             Start of Shift Checks
-            <span class="rr-range">R&R 1–7</span>
+            <span class="rr-range">R&R 1–6</span>
         </div>
         <table class="checklist">
             <thead>
@@ -823,23 +880,6 @@
             <tbody>
                 <tr>
                     <td class="col-ref">1</td>
-                    <td class="duty-text">DSUM attended, daily plan & task allocations reviewed</td>
-                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
-                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">Work File / Lookahead</td>
-                    <td class="col-notes"><input class="note-input" type="text" /></td>
-                </tr>
-                <tr>
-                    <td class="col-ref">2</td>
-                    <td class="duty-text">Toolbox talk / method statement briefing delivered
-                        <div class="detail">Topic & attendance recorded</div></td>
-                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
-                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="#" onclick="openSignOff(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 012B</a></td>
-                    <td class="col-notes"><input class="note-input" type="text" placeholder="Topic:" /></td>
-                </tr>
-                <tr>
-                    <td class="col-ref">3</td>
                     <td class="duty-text">Permits to work obtained before work commenced
                         <div class="detail">Isolations, air monitoring, confined space checked if applicable</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
@@ -848,16 +888,25 @@
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Permit ref(s):" /></td>
                 </tr>
                 <tr>
-                    <td class="col-ref">4</td>
-                    <td class="duty-text">POWRAs completed & reviewed by supervisor
-                        <div class="detail">Before starting, on return to area, after any change</div></td>
+                    <td class="col-ref">2</td>
+                    <td class="duty-text">Daily Briefing Meeting attended, daily plan &amp; task allocations reviewed
+                        <div class="detail">Key issues from previous day</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="https://forms.office.com/Pages/ResponsePage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUNVhJQ1NWVE1FSDMwUlREVU4zNjZUOERINyQlQCN0PWcu" target="_blank" style="color:var(--accent);text-decoration:underline;">POWRA Form</a></td>
-                    <td class="col-notes"><input class="note-input" type="text" placeholder="Count:" /></td>
+                    <td class="col-forms">Work File / Lookahead</td>
+                    <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
-                    <td class="col-ref">5</td>
+                    <td class="col-ref">3</td>
+                    <td class="duty-text">Toolbox talk / method statement briefing delivered
+                        <div class="detail">Topic &amp; attendance recorded</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms"><a href="#" onclick="openSignOff(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 012B</a> / <a href="rams_library.html" style="color:var(--accent);text-decoration:underline;">RAMS</a></td>
+                    <td class="col-notes"><input class="note-input" type="text" placeholder="Topic:" /></td>
+                </tr>
+                <tr>
+                    <td class="col-ref">4</td>
                     <td class="duty-text">Workforce competency confirmed for today's tasks
                         <div class="detail">Qualifications, tickets, inductions current</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
@@ -866,15 +915,15 @@
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
-                    <td class="col-ref">6</td>
-                    <td class="duty-text">PPE available, worn correctly & in good condition</td>
+                    <td class="col-ref">5</td>
+                    <td class="duty-text">PPE available, worn correctly &amp; in good condition</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
                     <td class="col-forms"><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5iwnyfVzpURlOijWMAbk_tI9UNjBIRTNDWUhER0RRMk4wTUw1UTRPMzJLNC4u&origin=QRCode&qrcodeorigin=presentation" target="_blank" style="color:var(--accent);text-decoration:underline;">Inspection Report</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
-                    <td class="col-ref">7</td>
+                    <td class="col-ref">6</td>
                     <td class="duty-text">Pre-use equipment inspections completed
                         <div class="detail">Telehandlers, MEWPs, lifting gear, power tools</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
@@ -889,8 +938,8 @@
     <!-- ===== DURING WORKS ===== -->
     <div class="section">
         <div class="section-header">
-            During Works — Monitoring & Supervision
-            <span class="rr-range">R&R 8–14</span>
+            During Works — Monitoring &amp; Supervision
+            <span class="rr-range">R&R 7–14</span>
         </div>
         <table class="checklist">
             <thead>
@@ -905,6 +954,15 @@
             </thead>
             <tbody>
                 <tr>
+                    <td class="col-ref">7</td>
+                    <td class="duty-text">POWRAs completed &amp; reviewed by supervisor
+                        <div class="detail">Before starting, on return to area, after any change</div></td>
+                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
+                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
+                    <td class="col-forms"><a href="https://forms.office.com/Pages/ResponsePage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUNVhJQ1NWVE1FSDMwUlREVU4zNjZUOERINyQlQCN0PWcu" target="_blank" style="color:var(--accent);text-decoration:underline;">POWRA Form</a></td>
+                    <td class="col-notes"><input class="note-input" type="text" placeholder="Count:" /></td>
+                </tr>
+                <tr>
                     <td class="col-ref">8</td>
                     <td class="duty-text">Suitable level of supervision maintained for all activities</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
@@ -914,16 +972,17 @@
                 </tr>
                 <tr>
                     <td class="col-ref">9</td>
-                    <td class="duty-text">Quality & ITP compliance monitored; inspections called at hold points</td>
+                    <td class="duty-text">Quality &amp; ITP compliance monitored; inspections called at hold points
+                        <div class="detail">Including weld inspections where applicable</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">SF 010D/E<br>SF 065H/J</td>
+                    <td class="col-forms">SF 010D/E<br>SF 065H/J<br><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5iwnyfVzpURlOijWMAbk_tI9UNjBIRTNDWUhER0RRMk4wTUw1UTRPMzJLNC4u&origin=QRCode&qrcodeorigin=presentation" target="_blank" style="color:var(--accent);text-decoration:underline;">Inspection Report</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
                     <td class="col-ref">10</td>
-                    <td class="duty-text">RAMS, method statement & PPE compliance monitored
-                        <div class="detail">Intervene & stop work if unsafe</div></td>
+                    <td class="duty-text">RAMS, method statement &amp; PPE compliance monitored
+                        <div class="detail">Intervene &amp; stop work if unsafe</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
                     <td class="col-forms">JMS / RAMS<br>SF 042</td>
@@ -931,10 +990,10 @@
                 </tr>
                 <tr>
                     <td class="col-ref">11</td>
-                    <td class="duty-text">Hazard reporting & near-miss culture encouraged</td>
+                    <td class="duty-text">Hazard reporting &amp; near-miss culture encouraged</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&route=shorturl" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:none;">SHEQ Obs</a></td>
+                    <td class="col-forms"><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&route=shorturl" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:underline;">SHEQ Obs</a></td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Reports:" /></td>
                 </tr>
                 <tr>
@@ -942,23 +1001,23 @@
                     <td class="duty-text">Environmental controls monitored — waste, spills, dust, noise</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">SF 033 / WTN</td>
+                    <td class="col-forms"><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&route=shorturl" target="_blank" style="color:var(--accent);text-decoration:underline;">SHEQ Obs</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
                     <td class="col-ref">13</td>
-                    <td class="duty-text">Deliveries received, checked against PO & documentation</td>
+                    <td class="duty-text">Deliveries received, checked against PO &amp; documentation</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">Del. Notes<br>Mat. Certs</td>
+                    <td class="col-forms">SF 019K</td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
                     <td class="col-ref">14</td>
-                    <td class="duty-text">Subcontractor activities & compliance monitored</td>
+                    <td class="duty-text">Subcontractor activities &amp; compliance monitored</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">IMSP 016</td>
+                    <td class="col-forms"><a href="#" style="color:var(--accent);text-decoration:underline;">IMSP 016</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
             </tbody>
@@ -969,7 +1028,7 @@
     <div class="section">
         <div class="section-header">
             End of Shift Checks
-            <span class="rr-range">R&R 15–21</span>
+            <span class="rr-range">R&R 15–17</span>
         </div>
         <table class="checklist">
             <thead>
@@ -986,7 +1045,7 @@
                 <tr>
                     <td class="col-ref">15</td>
                     <td class="duty-text">End-of-shift team de-brief conducted
-                        <div class="detail">Hazards/incidents reported, HAVs feedback, workplace acceptable, tools returned to stores</div></td>
+                        <div class="detail">Hazards/incidents reported, HAVs feedback, workplace acceptable [take photo], tools returned to stores</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
                     <td class="col-forms">SF 013C<br>SF 049E</td>
@@ -994,7 +1053,7 @@
                 </tr>
                 <tr>
                     <td class="col-ref">16</td>
-                    <td class="duty-text">Daily progress, attendance & programme impacts recorded</td>
+                    <td class="duty-text">Daily progress, attendance &amp; programme impacts recorded</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
                     <td class="col-forms">Work File<br>Timesheet</td>
@@ -1002,164 +1061,42 @@
                 </tr>
                 <tr>
                     <td class="col-ref">17</td>
-                    <td class="duty-text">Site registers updated (personnel, equipment, permits)</td>
-                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
-                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">SF 057</td>
-                    <td class="col-notes"><input class="note-input" type="text" /></td>
-                </tr>
-                <tr>
-                    <td class="col-ref">18</td>
                     <td class="duty-text">All permits returned, cancelled or suspended
-                        <div class="detail">Isolations & lockout procedures completed</div></td>
+                        <div class="detail">Isolations &amp; lockout procedures completed</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
                     <td class="col-forms">PTW forms</td>
-                    <td class="col-notes"><input class="note-input" type="text" /></td>
-                </tr>
-                <tr>
-                    <td class="col-ref">19</td>
-                    <td class="duty-text">Work area left in acceptable condition; photos taken</td>
-                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
-                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">—</td>
-                    <td class="col-notes"><input class="note-input" type="text" /></td>
-                </tr>
-                <tr>
-                    <td class="col-ref">20</td>
-                    <td class="duty-text">Progress & issues reported to Construction Manager</td>
-                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
-                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">This report</td>
-                    <td class="col-notes"><input class="note-input" type="text" /></td>
-                </tr>
-                <tr>
-                    <td class="col-ref">21</td>
-                    <td class="duty-text">Next day's work plan reviewed; resources & materials confirmed</td>
-                    <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
-                    <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">Lookahead</td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- ===== INCIDENTS & ISSUES ===== -->
+    <!-- ===== DELAYS & NOTES ===== -->
     <div class="section">
         <div class="section-header">
-            Incidents & Issues
-            <span class="rr-range">Triggers R&R 50–62 if Yes</span>
-        </div>
-        <div class="incidents-grid">
-            <div class="incident-row">
-                <div class="yn-group">
-                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
-                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
-                </div>
-                <span class="incident-label">Accidents / near misses</span>
-                <input class="incident-ref-input" type="text" placeholder="Ref #" />
-            </div>
-            <div class="incident-row">
-                <div class="yn-group">
-                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
-                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
-                </div>
-                <span class="incident-label">Stop-work interventions</span>
-                <input class="incident-ref-input" type="text" placeholder="Detail" />
-            </div>
-            <div class="incident-row">
-                <div class="yn-group">
-                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
-                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
-                </div>
-                <span class="incident-label">NCRs raised</span>
-                <input class="incident-ref-input" type="text" placeholder="NCR #" />
-            </div>
-            <div class="incident-row">
-                <div class="yn-group">
-                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
-                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
-                </div>
-                <span class="incident-label">Equipment quarantined</span>
-                <input class="incident-ref-input" type="text" placeholder="Detail" />
-            </div>
-            <div class="incident-row">
-                <div class="yn-group">
-                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
-                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
-                </div>
-                <span class="incident-label">Environmental incidents</span>
-                <input class="incident-ref-input" type="text" placeholder="Detail" />
-            </div>
-            <div class="incident-row">
-                <div class="yn-group">
-                    <div class="yn-box" onclick="toggleYN(this,'yes')">Y</div>
-                    <div class="yn-box" onclick="toggleYN(this,'no')">N</div>
-                </div>
-                <span class="incident-label">Early warnings raised (NEC)</span>
-                <input class="incident-ref-input" type="text" placeholder="EW #" />
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ============================================================ -->
-    <!-- PAGE 3: PROGRESS NARRATIVE, WEEKLY, SIGN-OFF                -->
-    <!-- ============================================================ -->
-    <div class="page-break"></div>
-
-    <!-- ===== PROGRESS NARRATIVE ===== -->
-    <div class="section">
-        <div class="section-header">
-            Progress Summary & Narrative
-            <span class="rr-range">R&R 15, 19, 20</span>
+            Delays, Issues &amp; Early Warnings
         </div>
 
         <div class="narrative-section">
-            <div class="narrative-label">Today's Progress vs Programme <span class="rr-ref">Reference Task IDs where possible</span></div>
-            <div class="narrative-box large"><textarea rows="6"></textarea></div>
-        </div>
-
-        <div class="narrative-section">
-            <div class="narrative-label">Issues, Delays & Blockers <span class="rr-ref">Flag potential Early Warnings (R&R 24)</span></div>
-            <div class="narrative-box large"><textarea rows="5">Task 4039 (CAS-OB 1 &amp; Steel Desulph Removal) — Crane not available until 11:00. 5 crew stood down for 3 hours from 08:00. Client informed crane was committed to Tata works in adjacent bay. No prior notice given. Notified CM as potential Compensation Event — access &amp; plant not provided per programme. EW raised.</textarea></div>
-        </div>
-
-        <div class="narrative-section">
-            <div class="narrative-label">Plan for Tomorrow <span class="rr-ref">Resources, materials, permits, plant required (R&R 20)</span></div>
-            <div class="narrative-box large"><textarea rows="5"></textarea></div>
+            <div class="narrative-label">Delays &amp; Issues <span class="rr-ref">Flag potential Early Warnings (NEC Cl.15)</span></div>
+            <div class="narrative-box large"><textarea rows="5" placeholder="Record any delays, access issues, resource shortfalls, client instructions, weather impacts etc. Include task IDs where possible."></textarea></div>
         </div>
 
         <div class="narrative-section">
             <div class="narrative-label">General Notes / Observations <span class="rr-ref">Welfare, visitors, client interface, other</span></div>
-            <div class="narrative-box"><textarea rows="4"></textarea></div>
+            <div class="narrative-box"><textarea rows="3" placeholder="Any other observations, notes or comments."></textarea></div>
         </div>
     </div>
 
-    <!-- ===== WEEKLY TRACKER ===== -->
+    <!-- ===== WEEKLY — WORKPLACE INSPECTION ===== -->
     <div class="weekly-strip">
-        <div class="weekly-header">Weekly Items — Complete When Due (R&R 22–25)</div>
+        <div class="weekly-header">Weekly — Complete When Due</div>
         <div class="weekly-items">
             <div class="weekly-item">
                 <span class="check-box" onclick="toggleCheck(this)"></span>
-                <span class="ref">22</span>
+                <span class="ref">18</span>
                 <a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUNEQyVlA0TjBDRTJaWkVZOEE3TzQwMFRMSyQlQCN0PWcu&route=shorturl" target="_blank" style="color:var(--accent);text-decoration:underline;">Formal workplace inspection</a> completed
-            </div>
-            <div class="weekly-item">
-                <span class="check-box" onclick="toggleCheck(this)"></span>
-                <span class="ref">23</span>
-                Site progress / coordination meeting attended
-            </div>
-            <div class="weekly-item">
-                <span class="check-box" onclick="toggleCheck(this)"></span>
-                <span class="ref">24</span>
-                Lookahead schedule input provided
-            </div>
-            <div class="weekly-item">
-                <span class="check-box" onclick="toggleCheck(this)"></span>
-                <span class="ref">25</span>
-                Early warnings raised to CM
             </div>
         </div>
     </div>
@@ -1180,61 +1117,21 @@
         </div>
     </div>
 
-    <!-- ===== API OUTPUT DEMO — CE DETECTION ===== -->
-    <div class="section" style="margin-top:16px;">
-        <div class="section-header" style="background:#1a1a2e;">
-            API Output — Compensation Event Detection
-            <span class="rr-range" style="opacity:0.7;">Automated analysis from daily report narrative</span>
-        </div>
-        <div style="background:#1a1a2e; color:#e0e0e0; font-family:'Consolas','Courier New',monospace; font-size:0.85rem; padding:14px 16px; border:1px solid #333; border-top:none; line-height:1.6;">
-            <div style="color:#6ec6ff;margin-bottom:6px;">// Claude API — Daily Report CE Scan — 02/03/2026</div>
-            <div style="color:#ff9800;margin-bottom:10px; font-weight:700;">&#9888; COMPENSATION EVENT DETECTED</div>
-            <table style="width:100%; color:#e0e0e0; font-family:inherit; font-size:inherit; border-collapse:collapse;">
-                <tr>
-                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Task ID:</td>
-                    <td style="padding:2px 0; font-weight:700; color:#fff;">4039</td>
-                </tr>
-                <tr>
-                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Activity:</td>
-                    <td style="padding:2px 0;">CAS-OB 1 & Steel Desulph Removal</td>
-                </tr>
-                <tr>
-                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Cause:</td>
-                    <td style="padding:2px 0;">Crane access not provided — committed to client works (no prior notice)</td>
-                </tr>
-                <tr>
-                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Delay:</td>
-                    <td style="padding:2px 0; font-weight:700; color:#ff5252;">3 hours</td>
-                </tr>
-                <tr>
-                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Crew affected:</td>
-                    <td style="padding:2px 0; font-weight:700; color:#ff5252;">5 operatives</td>
-                </tr>
-                <tr>
-                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Standing time:</td>
-                    <td style="padding:2px 0; font-weight:700; color:#ff5252;">15 man-hours</td>
-                </tr>
-                <tr>
-                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">NEC clause:</td>
-                    <td style="padding:2px 0;">60.1(3) — Employer does not provide access / plant by date in programme</td>
-                </tr>
-                <tr>
-                    <td style="padding:2px 8px 2px 0; color:#888; white-space:nowrap;">Early Warning:</td>
-                    <td style="padding:2px 0; color:#4caf50;">Raised &#10003;</td>
-                </tr>
-            </table>
-            <div style="margin-top:12px; padding-top:10px; border-top:1px solid #333;">
-                <div style="color:#6ec6ff; margin-bottom:4px;">// Recommended action → Planner</div>
-                <div style="color:#ffcc02;">Record CE in register. Assess time impact on Task 4039 critical path.</div>
-                <div style="color:#ffcc02;">Cost impact: 15 man-hours × blended rate = quotation required within 3 weeks (cl. 62.3).</div>
-            </div>
-        </div>
+    <!-- ===== SUBMIT ===== -->
+    <div style="text-align:center; margin:16px 0 8px;">
+        <button id="submit-btn" onclick="submitReport()" style="
+            padding:10px 36px; font-size:1.1rem; font-weight:700; font-family:inherit;
+            background:var(--primary); color:var(--white); border:none; border-radius:4px;
+            cursor:pointer; letter-spacing:0.3px;">
+            Submit Report
+        </button>
+        <div id="submit-status" style="margin-top:6px; font-size:0.85rem; color:var(--text-light);"></div>
     </div>
 
     <!-- FOOTER -->
     <div class="footer">
-        <span>SF-DR-SUP-001 Rev 0.3 DRAFT — MII Engineering Ltd</span>
-        <span>R&R Ref: Supervisor Checklist Rev 4 — Appendix 04 Issue 7</span>
+        <span>SF-DR-SUP-001 Rev 0.4 DRAFT — MII Engineering Ltd</span>
+        <span>R&R Ref: Supervisor Checklist Rev 5 — Appendix 04 Issue 7</span>
     </div>
 
 </div>
@@ -1242,6 +1139,7 @@
 
 <!-- ===== INTERACTIVE JS (digital use only) ===== -->
 <script src="employees.js"></script>
+<script src="programme_tasks.js"></script>
 <script src="mii-db.js"></script>
 <script>
 // Register Service Worker
@@ -1304,6 +1202,228 @@ if ('serviceWorker' in navigator) {
         handleOtherSelect(sel, 'Enter person name:');
     }
 
+    // ===== PROGRAMME TASKS (P6 export) =====
+    const PROGRAMME_TASKS = window._PROGRAMME_TASKS || [];
+    console.log('Loaded ' + PROGRAMME_TASKS.length + ' programme tasks');
+
+    // --- Task search modal (singleton) ---
+    let _taskModalOverlay = null;
+    let _taskModalInput = null;
+    let _taskModalList = null;
+    let _taskModalCount = null;
+    let _taskModalFilters = null;
+    let _taskModalCallback = null;
+    let _taskHighlightIdx = -1;
+    let _activeTradeFilter = null; // null = All
+
+    // Build sorted list of trades with counts
+    const _tradeCounts = {};
+    PROGRAMME_TASKS.forEach(t => {
+        if (t.trade) _tradeCounts[t.trade] = (_tradeCounts[t.trade] || 0) + 1;
+    });
+    const _tradeList = Object.entries(_tradeCounts)
+        .sort((a, b) => b[1] - a[1]); // sort by count descending
+
+    function getTaskModal() {
+        if (_taskModalOverlay) return _taskModalOverlay;
+        const overlay = document.createElement('div');
+        overlay.className = 'task-modal-overlay';
+        overlay.innerHTML = `
+            <div class="task-modal">
+                <div class="task-modal-header">
+                    <input type="text" placeholder="Search by task name or ID..." autofocus />
+                    <button class="task-modal-close">&times;</button>
+                </div>
+                <div class="task-modal-filters"></div>
+                <div class="task-modal-list"></div>
+                <div class="task-modal-footer">
+                    <button class="btn-custom">+ Free text entry</button>
+                    <span class="task-modal-count"></span>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+
+        _taskModalOverlay = overlay;
+        _taskModalInput = overlay.querySelector('.task-modal-header input');
+        _taskModalList = overlay.querySelector('.task-modal-list');
+        _taskModalCount = overlay.querySelector('.task-modal-count');
+        _taskModalFilters = overlay.querySelector('.task-modal-filters');
+
+        // Build trade filter chips
+        // "All" chip first
+        const allChip = document.createElement('button');
+        allChip.type = 'button';
+        allChip.className = 'trade-chip active';
+        allChip.innerHTML = 'All <span class="chip-count">' + PROGRAMME_TASKS.length + '</span>';
+        allChip.dataset.trade = '';
+        allChip.addEventListener('click', () => setTradeFilter(null));
+        _taskModalFilters.appendChild(allChip);
+
+        _tradeList.forEach(([trade, count]) => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'trade-chip';
+            chip.innerHTML = trade + ' <span class="chip-count">' + count + '</span>';
+            chip.dataset.trade = trade;
+            chip.addEventListener('click', () => setTradeFilter(trade));
+            _taskModalFilters.appendChild(chip);
+        });
+
+        // Close
+        overlay.querySelector('.task-modal-close').addEventListener('click', closeTaskModal);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeTaskModal(); });
+
+        // Free text
+        overlay.querySelector('.btn-custom').addEventListener('click', () => {
+            const name = _taskModalInput.value.trim() || '';
+            closeTaskModal();
+            if (_taskModalCallback) _taskModalCallback({ id: '', name: name, location: '', trade: '', zone: '', custom: true });
+        });
+
+        // Search input
+        _taskModalInput.addEventListener('input', () => {
+            _taskHighlightIdx = -1;
+            renderTaskResults();
+        });
+
+        // Keyboard nav
+        _taskModalInput.addEventListener('keydown', (e) => {
+            const items = _taskModalList.querySelectorAll('.task-modal-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                _taskHighlightIdx = Math.min(_taskHighlightIdx + 1, items.length - 1);
+                updateTaskHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                _taskHighlightIdx = Math.max(_taskHighlightIdx - 1, 0);
+                updateTaskHighlight(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (_taskHighlightIdx >= 0 && items[_taskHighlightIdx]) {
+                    items[_taskHighlightIdx].click();
+                }
+            } else if (e.key === 'Escape') {
+                closeTaskModal();
+            }
+        });
+
+        return overlay;
+    }
+
+    function setTradeFilter(trade) {
+        _activeTradeFilter = trade;
+        // Update chip highlights
+        _taskModalFilters.querySelectorAll('.trade-chip').forEach(chip => {
+            chip.classList.toggle('active', (trade === null && chip.dataset.trade === '') || chip.dataset.trade === trade);
+        });
+        _taskHighlightIdx = -1;
+        renderTaskResults();
+    }
+
+    function updateTaskHighlight(items) {
+        items.forEach((el, i) => el.classList.toggle('highlighted', i === _taskHighlightIdx));
+        if (_taskHighlightIdx >= 0 && items[_taskHighlightIdx]) {
+            items[_taskHighlightIdx].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function renderTaskResults() {
+        const q = (_taskModalInput ? _taskModalInput.value : '').toLowerCase().trim();
+        let matches = PROGRAMME_TASKS;
+
+        // Apply trade filter
+        if (_activeTradeFilter) {
+            matches = matches.filter(t => t.trade === _activeTradeFilter);
+        }
+
+        // Apply text search
+        if (q) {
+            matches = matches.filter(t =>
+                t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q)
+            );
+        }
+
+        const total = matches.length;
+        _taskModalList.innerHTML = '';
+
+        matches.forEach((task) => {
+            const div = document.createElement('div');
+            div.className = 'task-modal-item';
+            div.innerHTML = '<div class="task-item-name">' + task.name + '</div>' +
+                '<div class="task-item-meta">' +
+                (task.id ? 'ID: ' + task.id : '') +
+                (task.location ? ' &bull; ' + task.location : '') +
+                (task.trade ? ' &bull; ' + task.trade : '') + '</div>';
+            div.addEventListener('click', () => {
+                closeTaskModal();
+                if (_taskModalCallback) _taskModalCallback(task);
+            });
+            _taskModalList.appendChild(div);
+        });
+
+        _taskModalCount.textContent = total + ' task' + (total !== 1 ? 's' : '');
+    }
+
+    function openTaskModal(currentValue, callback) {
+        _taskModalCallback = callback;
+        _activeTradeFilter = null;
+        const overlay = getTaskModal();
+        overlay.classList.add('open');
+        _taskModalInput.value = currentValue || '';
+        _taskHighlightIdx = -1;
+        // Reset filter chips to "All"
+        _taskModalFilters.querySelectorAll('.trade-chip').forEach(chip => {
+            chip.classList.toggle('active', chip.dataset.trade === '');
+        });
+        renderTaskResults();
+        setTimeout(() => _taskModalInput.focus(), 50);
+    }
+
+    function closeTaskModal() {
+        if (_taskModalOverlay) _taskModalOverlay.classList.remove('open');
+    }
+
+    // Create a button that opens the task search modal
+    function createTaskSearch(initialValue) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'task-search-btn' + (initialValue ? ' has-value' : '');
+        btn.innerHTML = (initialValue || '<span style="color:var(--text-light)">Search tasks...</span>') +
+            ' <span class="task-btn-arrow">&#9660;</span>';
+        // Hidden input to store the value (for collectWorkPlan)
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.value = initialValue || '';
+
+        btn.addEventListener('click', () => {
+            openTaskModal(hidden.value, (task) => {
+                hidden.value = task.name;
+                btn.innerHTML = (task.name || '<span style="color:var(--text-light)">Search tasks...</span>') +
+                    ' <span class="task-btn-arrow">&#9660;</span>';
+                btn.classList.toggle('has-value', !!task.name);
+                // Auto-fill row fields
+                if (!task.custom) {
+                    const tr = btn.closest('tr');
+                    if (tr) onTaskSelected(tr, task);
+                }
+            });
+        });
+
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        wrapper.appendChild(btn);
+        wrapper.appendChild(hidden);
+        return wrapper;
+    }
+
+    function onTaskSelected(tr, task) {
+        if (!task) return;
+        const tds = tr.children;
+        tds[0].querySelector('input').value = task.id;      // Task ID
+        tds[2].querySelector('input').value = task.location; // Location
+        tds[3].querySelector('input').value = task.trade;    // Trade
+    }
+
     // Status select HTML for reuse
     const statusSelectHTML = `
         <select>
@@ -1315,21 +1435,36 @@ if ('serviceWorker' in navigator) {
             <option>Stopped</option>
         </select>`;
 
-    // Add work plan row
-    function addWorkRow() {
+    // Add work plan row (blank or pre-filled from saved data)
+    function addWorkRow(prefill) {
         const tbody = document.getElementById('work-plan-body');
         const tr = document.createElement('tr');
+        const p = prefill || {};
+        const statusHTML = p.status
+            ? statusSelectHTML.replace('value="">—', `value="">—</option><option selected`)
+            : statusSelectHTML;
         tr.innerHTML = `
-            <td><input type="text" style="width:46px" /></td>
-            <td><input type="text" /></td>
-            <td><input type="text" /></td>
-            <td><input type="text" /></td>
-            <td class="center"><input type="number" min="0" /></td>
-            <td class="center"><input type="number" min="0" /></td>
-            <td class="center">${statusSelectHTML}</td>
-            <td class="center"><input type="number" min="0" max="100" style="width:32px" /></td>
-            <td><input type="text" /></td>
+            <td><input type="text" style="width:46px" value="${p.p6TaskId || p.p6_task_id || ''}" /></td>
+            <td></td>
+            <td><input type="text" value="${p.location || ''}" /></td>
+            <td><input type="text" value="${p.trade || ''}" /></td>
+            <td class="center"><input type="number" min="0" value="${p.plannedCrew ?? p.planned_crew ?? ''}" /></td>
+            <td class="center"><input type="number" min="0" value="${p.actualCrew ?? p.actual_crew ?? ''}" /></td>
+            <td class="center">${statusHTML}</td>
+            <td class="center"><input type="number" min="0" max="100" style="width:32px" value="${p.percentComplete ?? p.percent_complete ?? ''}" /></td>
+            <td><input type="text" value="${p.notes || ''}" /></td>
         `;
+        // Insert searchable dropdown into Activity cell (td[1])
+        tr.children[1].appendChild(createTaskSearch(p.activity || ''));
+        // Fix status select if pre-filled
+        if (p.status) {
+            const sel = tr.querySelector('select');
+            if (sel) {
+                for (const opt of sel.options) {
+                    if (opt.textContent === p.status) { sel.value = opt.value || opt.textContent; break; }
+                }
+            }
+        }
         tbody.appendChild(tr);
     }
 
@@ -1392,6 +1527,9 @@ if ('serviceWorker' in navigator) {
         `;
         tbody.appendChild(tr);
     }
+
+    // Seed empty work plan rows
+    for (let i = 0; i < 5; i++) addWorkRow();
 
     // ===== DEMO CREW (real people from RAMSBuilder DB) =====
     const DEMO_CREW = [
@@ -1605,7 +1743,7 @@ if ('serviceWorker' in navigator) {
     }
 
     function collectNarratives() {
-        const SECTIONS = ['progress', 'issues', 'tomorrow', 'general'];
+        const SECTIONS = ['delays', 'general'];
         const items = [];
         document.querySelectorAll('.narrative-box textarea').forEach((ta, idx) => {
             items.push({ section: SECTIONS[idx] || `section_${idx}`, body: ta.value });
@@ -1666,32 +1804,8 @@ if ('serviceWorker' in navigator) {
         // Work plan
         const wp = data.work_plan || [];
         if (wp.length) {
-            const tbody = document.getElementById('work-plan-body');
-            tbody.innerHTML = '';
-            wp.forEach(r => {
-                const tr = document.createElement('tr');
-                const statusColor = r.status === 'Complete' ? 'var(--success)' :
-                                    r.status === 'Blocked' || r.status === 'Stopped' ? 'var(--danger)' :
-                                    r.status === 'Planned' ? 'var(--warning)' : 'var(--success)';
-                tr.innerHTML = `
-                    <td><input type="text" style="width:46px" value="${r.p6TaskId || r.p6_task_id || ''}" /></td>
-                    <td><input type="text" value="${r.activity || ''}" /></td>
-                    <td><input type="text" value="${r.location || ''}" /></td>
-                    <td><input type="text" value="${r.trade || ''}" /></td>
-                    <td class="center"><input type="number" min="0" value="${r.plannedCrew ?? r.planned_crew ?? ''}" /></td>
-                    <td class="center"><input type="number" min="0" value="${r.actualCrew ?? r.actual_crew ?? ''}" /></td>
-                    <td class="center">${statusSelectHTML.replace('value="">—', r.status ? `value="">—</option><option selected` : 'value="">—')}</td>
-                    <td class="center"><input type="number" min="0" max="100" style="width:32px" value="${r.percentComplete ?? r.percent_complete ?? ''}" /></td>
-                    <td><input type="text" value="${r.notes || ''}" /></td>`;
-                // Fix status select
-                const sel = tr.querySelector('select');
-                if (sel && r.status) {
-                    for (const opt of sel.options) {
-                        if (opt.textContent === r.status) { sel.value = opt.value || opt.textContent; break; }
-                    }
-                }
-                tbody.appendChild(tr);
-            });
+            document.getElementById('work-plan-body').innerHTML = '';
+            wp.forEach(r => addWorkRow(r));
         }
 
         // Manning
@@ -1713,13 +1827,13 @@ if ('serviceWorker' in navigator) {
         // Checklist
         const cl = data.checklist || [];
         if (cl.length) {
-            const weeklyRefs = new Set([22, 23, 24, 25]);
+            const weeklyRefs = new Set([18]);
             cl.forEach(item => {
                 const ref = item.rrRef || item.rr_ref;
                 if (weeklyRefs.has(ref)) {
                     // Weekly items
                     const weeklyItems = document.querySelectorAll('.weekly-item');
-                    const wi = weeklyItems[ref - 22];
+                    const wi = weeklyItems[ref - 18];
                     if (wi) {
                         const box = wi.querySelector('.check-box');
                         if (box && item.checked) box.classList.add('checked');
@@ -1757,7 +1871,7 @@ if ('serviceWorker' in navigator) {
         // Narratives
         const narr = data.narratives || [];
         const textareas = document.querySelectorAll('.narrative-box textarea');
-        const SECTION_ORDER = ['progress', 'issues', 'tomorrow', 'general'];
+        const SECTION_ORDER = ['delays', 'general'];
         narr.forEach(n => {
             const idx = SECTION_ORDER.indexOf(n.section);
             if (idx >= 0 && textareas[idx]) textareas[idx].value = n.body || '';
@@ -1903,6 +2017,60 @@ if ('serviceWorker' in navigator) {
             });
         } catch (e) {
             list.innerHTML = '<div style="padding:4px 8px;color:var(--danger);">Error loading reports</div>';
+        }
+    }
+
+    // Submit report
+    async function submitReport() {
+        const btn = document.getElementById('submit-btn');
+        const status = document.getElementById('submit-status');
+        const data = collectReportData();
+
+        if (!data.reportDate || !data.supervisorName) {
+            status.textContent = 'Please fill in date and supervisor before submitting.';
+            status.style.color = 'var(--danger)';
+            return;
+        }
+
+        if (!confirm('Submit this report? It will be marked as submitted and sent for review.')) return;
+
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        status.textContent = 'Submitting...';
+        status.style.color = 'var(--warning)';
+
+        data.status = 'submitted';
+        data.submittedAt = new Date().toISOString();
+        _currentReportId = data.id;
+
+        try {
+            await MiiDB.save('daily_reports', data);
+
+            // Sync to API if online
+            try {
+                const token = localStorage.getItem('mii_token');
+                if (token && navigator.onLine) {
+                    await fetch(MII_API + '/sync/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ items: [{ entity: 'daily_reports', action: 'upsert', payload: data }] }),
+                    });
+                }
+            } catch (e) {
+                console.warn('Submit sync failed (queued for later):', e);
+            }
+
+            btn.textContent = 'Submitted';
+            btn.style.background = 'var(--success)';
+            status.textContent = 'Report submitted successfully.';
+            status.style.color = 'var(--success)';
+            setSaveStatus('Submitted', 'var(--success)');
+        } catch (e) {
+            console.error('Submit failed:', e);
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            status.textContent = 'Submit failed — try again.';
+            status.style.color = 'var(--danger)';
         }
     }
 
