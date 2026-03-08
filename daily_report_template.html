@@ -1575,6 +1575,24 @@ if ('serviceWorker' in navigator) {
         return '<select class="name-select" onchange="handleNameSelect(this)">' + buildNameOptions(selectedName) + '</select>';
     }
 
+    // Trade dropdown for manning tracker
+    const TRADES = [
+        'Pipe Fitter', 'Pipe Welder', 'Welder', 'Fabricator Welder',
+        'Mech Fitter', 'Electrician', 'Rigger', 'Crane Operator',
+        'Scaffolder', 'Labourer', 'Plater', 'Burner',
+        'Banksman', 'Supervisor', 'Foreman', 'Chargehand',
+        'Apprentice', 'Storeman', 'SHEQ Advisor',
+    ];
+
+    function buildTradeSelect(selectedTrade) {
+        let html = '<option value="">—</option>';
+        TRADES.forEach(t => {
+            html += `<option${t === selectedTrade ? ' selected' : ''}>${t}</option>`;
+        });
+        html += '<option value="_other">Other...</option>';
+        return '<select class="manning-trade-select" onchange="handleOtherSelect(this,\'Enter trade:\')">' + html + '</select>';
+    }
+
     // Build task ID dropdown options from current work plan
     function buildTaskIdOptions(selectedId) {
         let html = '<option value="">—</option>';
@@ -1610,7 +1628,7 @@ if ('serviceWorker' in navigator) {
         const vText = v === '' ? '' : v === 0 ? '0' : (v > 0 ? '+' + v : v);
         tr.innerHTML = `
             <td>${buildNameSelect(name || '')}</td>
-            <td>${trade ? trade : '<input type="text" />'}</td>
+            <td>${buildTradeSelect(trade || '')}</td>
             <td class="center"><input type="number" min="0" ${p !== '' ? 'value="'+p+'"' : ''} class="manning-planned" oninput="calcVariance(this)" /></td>
             <td class="center"><input type="number" min="0" ${a !== '' ? 'value="'+a+'"' : ''} class="manning-actual" oninput="calcVariance(this)" /></td>
             <td class="center variance-cell" style="color:${vColor}">${vText}</td>
@@ -1795,7 +1813,7 @@ if ('serviceWorker' in navigator) {
             const sel = tr.querySelector('.name-select');
             const name = sel ? sel.value : '';
             const tradeTd = tr.querySelectorAll('td')[1];
-            const trade = tradeTd ? (tradeTd.querySelector('input')?.value || tradeTd.textContent.trim()) : '';
+            const trade = tradeTd ? (tradeTd.querySelector('select')?.value || tradeTd.querySelector('input')?.value || tradeTd.textContent.trim()) : '';
             const planned = parseInt(tr.querySelector('.manning-planned')?.value) || null;
             const actual = parseInt(tr.querySelector('.manning-actual')?.value) || null;
             const taskTd = tr.querySelectorAll('td')[5];
