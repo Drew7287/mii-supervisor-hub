@@ -795,11 +795,10 @@
                     <th style="width:50px">Task ID</th>
                     <th style="min-width:150px">Task / Activity</th>
                     <th style="min-width:100px">Location</th>
-                    <th style="min-width:70px">Trade</th>
                     <th class="center" style="width:50px">Planned<br>Crew</th>
                     <th class="center" style="width:50px">Actual<br>Crew</th>
                     <th style="width:65px" class="center">Status</th>
-                    <th style="width:35px" class="center">%</th>
+                    <th style="width:55px" class="center">%</th>
                     <th style="min-width:130px">Notes / Progress</th>
                 </tr>
             </thead>
@@ -884,7 +883,7 @@
                         <div class="detail">Isolations, air monitoring, confined space checked if applicable</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">PTW / WI (S01)</td>
+                    <td class="col-forms">—</td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Permit ref(s):" /></td>
                 </tr>
                 <tr>
@@ -893,7 +892,7 @@
                         <div class="detail">Key issues from previous day</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">Work File / Lookahead</td>
+                    <td class="col-forms">—</td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
@@ -911,7 +910,7 @@
                         <div class="detail">Qualifications, tickets, inductions current</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="#" onclick="openTrainingMatrix(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 021A</a> / SF 045F</td>
+                    <td class="col-forms"><a href="#" onclick="openTrainingMatrix(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 021A</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
@@ -919,7 +918,7 @@
                     <td class="duty-text">PPE available, worn correctly &amp; in good condition</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5iwnyfVzpURlOijWMAbk_tI9UNjBIRTNDWUhER0RRMk4wTUw1UTRPMzJLNC4u&origin=QRCode&qrcodeorigin=presentation" target="_blank" style="color:var(--accent);text-decoration:underline;">Inspection Report</a></td>
+                    <td class="col-forms">—</td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
@@ -928,7 +927,7 @@
                         <div class="detail">Telehandlers, MEWPs, lifting gear, power tools</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="#" onclick="openInspection('flt',event)" style="color:var(--accent);font-weight:600;text-decoration:none;">FLT</a> / <a href="#" onclick="openInspection('telehandler',event)" style="color:var(--accent);font-weight:600;text-decoration:none;">T/H</a> / <a href="#" onclick="openInspection('oxyfuel',event)" style="color:var(--accent);font-weight:600;text-decoration:none;">Oxy</a></td>
+                    <td class="col-forms"><a href="inspections.html" style="color:var(--accent);font-weight:600;text-decoration:none;">Inspections</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
             </tbody>
@@ -976,7 +975,7 @@
                         <div class="detail">Including weld inspections where applicable</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">SF 010D/E<br>SF 065H/J<br><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5iwnyfVzpURlOijWMAbk_tI9UNjBIRTNDWUhER0RRMk4wTUw1UTRPMzJLNC4u&origin=QRCode&qrcodeorigin=presentation" target="_blank" style="color:var(--accent);text-decoration:underline;">Inspection Report</a></td>
+                    <td class="col-forms"><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5iwnyfVzpURlOijWMAbk_tI9UNjBIRTNDWUhER0RRMk4wTUw1UTRPMzJLNC4u&origin=QRCode&qrcodeorigin=presentation" target="_blank" style="color:var(--accent);text-decoration:underline;">Inspection Report</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
@@ -1421,7 +1420,6 @@ if ('serviceWorker' in navigator) {
         const tds = tr.children;
         tds[0].querySelector('input').value = task.id;      // Task ID
         tds[2].querySelector('input').value = task.location; // Location
-        tds[3].querySelector('input').value = task.trade;    // Trade
     }
 
     // Status select HTML for reuse
@@ -1443,15 +1441,17 @@ if ('serviceWorker' in navigator) {
         const statusHTML = p.status
             ? statusSelectHTML.replace('value="">—', `value="">—</option><option selected`)
             : statusSelectHTML;
+        const pctVal = p.percentComplete ?? p.percent_complete ?? '';
+        let pctOptions = '<option value="">—</option>';
+        for (let i = 0; i <= 100; i++) pctOptions += `<option${i == pctVal ? ' selected' : ''}>${i}</option>`;
         tr.innerHTML = `
             <td><input type="text" style="width:46px" value="${p.p6TaskId || p.p6_task_id || ''}" /></td>
             <td></td>
             <td><input type="text" value="${p.location || ''}" /></td>
-            <td><input type="text" value="${p.trade || ''}" /></td>
             <td class="center"><input type="number" min="0" value="${p.plannedCrew ?? p.planned_crew ?? ''}" /></td>
             <td class="center"><input type="number" min="0" value="${p.actualCrew ?? p.actual_crew ?? ''}" /></td>
             <td class="center">${statusHTML}</td>
-            <td class="center"><input type="number" min="0" max="100" style="width:32px" value="${p.percentComplete ?? p.percent_complete ?? ''}" /></td>
+            <td class="center"><select style="width:50px">${pctOptions}</select></td>
             <td><input type="text" value="${p.notes || ''}" /></td>
         `;
         // Insert searchable dropdown into Activity cell (td[1])
@@ -1673,12 +1673,11 @@ if ('serviceWorker' in navigator) {
                 p6TaskId: getText(tds[0]),
                 activity: activity,
                 location: getText(tds[2]),
-                trade: getText(tds[3]),
-                plannedCrew: parseInt(getText(tds[4])) || null,
-                actualCrew: parseInt(getText(tds[5])) || null,
-                status: getText(tds[6]),
-                percentComplete: parseInt(getText(tds[7])) || null,
-                notes: getText(tds[8]),
+                plannedCrew: parseInt(getText(tds[3])) || null,
+                actualCrew: parseInt(getText(tds[4])) || null,
+                status: getText(tds[5]),
+                percentComplete: parseInt(getText(tds[6])) || null,
+                notes: getText(tds[7]),
             });
         });
         return rows;
