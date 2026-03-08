@@ -742,7 +742,7 @@
 </head>
 <body>
 
-<a href="hub.html" class="back-link">&larr; Hub</a>
+<a href="hub.html" class="back-link" target="_blank">&larr; Hub</a>
 
 <div class="page">
 
@@ -762,6 +762,7 @@
         <button onclick="saveReport()">&#128190; Save</button>
         <button onclick="window.print()">&#128424; Print</button>
         <button onclick="togglePreviousReports()" style="font-size:0.8rem;">&#128196; Previous</button>
+        <button onclick="resetReport()" style="font-size:0.8rem;color:var(--danger);border-color:var(--danger);">&#8635; Reset</button>
     </div>
     <!-- Previous reports list (hidden by default) -->
     <div id="previous-reports" style="display:none;margin-bottom:10px;border:1px solid var(--border);border-radius:3px;max-height:180px;overflow-y:auto;font-size:0.85rem;">
@@ -976,7 +977,7 @@
                         <div class="detail">Topic &amp; attendance recorded</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="#" onclick="openSignOff(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 012B</a> / <a href="rams_library.html" style="color:var(--accent);text-decoration:underline;">RAMS</a></td>
+                    <td class="col-forms"><a href="#" onclick="openSignOff(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 012B</a> / <a href="rams_library.html" target="_blank" style="color:var(--accent);text-decoration:underline;">RAMS</a></td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Topic:" /></td>
                 </tr>
                 <tr>
@@ -1002,7 +1003,7 @@
                         <div class="detail">Telehandlers, MEWPs, lifting gear, power tools</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="inspections.html" style="color:var(--accent);font-weight:600;text-decoration:none;">Inspections</a></td>
+                    <td class="col-forms"><a href="inspections.html" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:none;">Inspections</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
             </tbody>
@@ -2011,6 +2012,34 @@ if ('serviceWorker' in navigator) {
         }
     }
 
+    function resetReport() {
+        if (!confirm('Clear the entire form and start a new report?\n\nThis cannot be undone.')) return;
+        _currentReportId = null;
+        // Clear info grid
+        document.querySelectorAll('.info-grid input, .info-grid select').forEach(el => {
+            if (el.type === 'date') el.value = '';
+            else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+            else if (el.value !== 'Port Talbot') el.value = '';
+        });
+        // Clear work plan
+        document.getElementById('work-plan-body').innerHTML = '';
+        for (let i = 0; i < 5; i++) addWorkRow();
+        // Clear manning
+        document.getElementById('manning-body').innerHTML = '';
+        for (let i = 0; i < 5; i++) addManningRow();
+        updateManningTotals();
+        // Clear checklist
+        document.querySelectorAll('.check-box').forEach(b => { b.classList.remove('checked'); b.classList.remove('na-checked'); });
+        document.querySelectorAll('.yn-box').forEach(b => { b.classList.remove('yes-active'); b.classList.remove('no-active'); });
+        document.querySelectorAll('.note-input').forEach(i => i.value = '');
+        // Clear narratives
+        document.querySelectorAll('textarea').forEach(t => t.value = '');
+        // Clear incidents
+        document.querySelectorAll('.incident-row .yn-box').forEach(b => { b.classList.remove('yes-active'); b.classList.remove('no-active'); });
+        document.querySelectorAll('.incident-row input').forEach(i => i.value = '');
+        setSaveStatus('Reset', 'var(--text-light)');
+    }
+
     async function saveReport() {
         setSaveStatus('Saving...', 'var(--warning)');
         try {
@@ -2058,6 +2087,9 @@ if ('serviceWorker' in navigator) {
 
     // Attach auto-save listeners
     document.addEventListener('input', (e) => {
+        if (e.target.closest('.page')) scheduleAutoSave();
+    });
+    document.addEventListener('change', (e) => {
         if (e.target.closest('.page')) scheduleAutoSave();
     });
     document.addEventListener('click', (e) => {
