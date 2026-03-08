@@ -1575,6 +1575,30 @@ if ('serviceWorker' in navigator) {
         return '<select class="name-select" onchange="handleNameSelect(this)">' + buildNameOptions(selectedName) + '</select>';
     }
 
+    // Build task ID dropdown options from current work plan
+    function buildTaskIdOptions(selectedId) {
+        let html = '<option value="">—</option>';
+        document.querySelectorAll('#work-plan-body tr').forEach(tr => {
+            const taskInput = tr.querySelector('td:first-child input');
+            const tid = taskInput ? taskInput.value.trim() : '';
+            if (!tid) return;
+            // Get activity name for label
+            const actInput = tr.querySelectorAll('td')[1]?.querySelector('input');
+            const actName = actInput ? actInput.value.trim() : '';
+            const label = actName ? tid + ' — ' + actName : tid;
+            html += `<option value="${tid}"${tid === selectedId ? ' selected' : ''}>${label}</option>`;
+        });
+        return html;
+    }
+
+    // Refresh all task ID dropdowns in manning tracker
+    function refreshManningTaskIds() {
+        document.querySelectorAll('.manning-task-select').forEach(sel => {
+            const current = sel.value;
+            sel.innerHTML = buildTaskIdOptions(current);
+        });
+    }
+
     // Add manning row (blank or pre-filled)
     function addManningRow(name, trade, planned, actual, taskId, notes) {
         const tbody = document.getElementById('manning-body');
@@ -1590,14 +1614,18 @@ if ('serviceWorker' in navigator) {
             <td class="center"><input type="number" min="0" ${p !== '' ? 'value="'+p+'"' : ''} class="manning-planned" oninput="calcVariance(this)" /></td>
             <td class="center"><input type="number" min="0" ${a !== '' ? 'value="'+a+'"' : ''} class="manning-actual" oninput="calcVariance(this)" /></td>
             <td class="center variance-cell" style="color:${vColor}">${vText}</td>
-            <td>${taskId || ''}</td>
-            <td>${notes || ''}</td>
+            <td><select class="manning-task-select">${buildTaskIdOptions(taskId || '')}</select></td>
+            <td><input type="text" value="${notes || ''}" /></td>
         `;
         tbody.appendChild(tr);
     }
 
     // Seed empty work plan rows
     for (let i = 0; i < 5; i++) addWorkRow();
+
+    // Refresh manning task ID dropdowns when work plan changes
+    document.getElementById('work-plan-body').addEventListener('input', refreshManningTaskIds);
+    document.getElementById('work-plan-body').addEventListener('change', refreshManningTaskIds);
 
     // Seed manning rows — first row has placeholder hints, rest blank
     addManningRow();
@@ -1771,7 +1799,7 @@ if ('serviceWorker' in navigator) {
             const planned = parseInt(tr.querySelector('.manning-planned')?.value) || null;
             const actual = parseInt(tr.querySelector('.manning-actual')?.value) || null;
             const taskTd = tr.querySelectorAll('td')[5];
-            const taskIds = taskTd ? (taskTd.querySelector('input')?.value || taskTd.textContent.trim()) : '';
+            const taskIds = taskTd ? (taskTd.querySelector('select')?.value || taskTd.querySelector('input')?.value || taskTd.textContent.trim()) : '';
             const notesTd = tr.querySelectorAll('td')[6];
             const notes = notesTd ? (notesTd.querySelector('input')?.value || notesTd.textContent.trim()) : '';
             if (!name && !planned && !actual) return;
