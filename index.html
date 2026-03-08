@@ -242,16 +242,138 @@
             font-size: 0.78rem;
             color: var(--text-light);
         }
+
+        /* ===== LOGIN OVERLAY ===== */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-overlay.hidden { display: none; }
+        .login-box {
+            background: var(--white);
+            max-width: 400px;
+            width: 90%;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            padding: 40px 32px;
+        }
+        .login-box h2 {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        .login-box .login-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 24px;
+        }
+        .login-box label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .login-box input:focus {
+            border-color: var(--accent);
+        }
+        .login-box button {
+            width: 100%;
+            padding: 11px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .login-box button:hover { background: var(--primary-light); }
+        .login-box button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .login-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            min-height: 1.2em;
+        }
+        .login-view { display: block; }
+        .login-view.hidden { display: none; }
+
+        /* ===== LOGOUT BUTTON ===== */
+        .topbar .btn-logout {
+            background: transparent;
+            border: 1.5px solid rgba(255,255,255,0.4);
+            color: var(--white);
+            padding: 5px 14px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .topbar .btn-logout:hover {
+            border-color: var(--white);
+            background: rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
+
+    <!-- LOGIN OVERLAY -->
+    <div class="login-overlay" id="login-overlay">
+        <div class="login-box">
+            <!-- Login form -->
+            <div id="login-view" class="login-view">
+                <h2>Supervisor Hub</h2>
+                <p class="login-subtitle">Sign in with your employee number and PIN</p>
+                <div id="login-error" class="login-error"></div>
+                <label for="login-emp">Employee Number</label>
+                <input type="text" id="login-emp" placeholder="e.g. MII001" autocomplete="username" autofocus>
+                <label for="login-pin">PIN</label>
+                <input type="password" id="login-pin" placeholder="4-6 digit PIN" inputmode="numeric" maxlength="6" autocomplete="current-password">
+                <button id="btn-login" onclick="doLogin()">Sign In</button>
+            </div>
+            <!-- PIN setup form -->
+            <div id="pin-setup-view" class="login-view hidden">
+                <h2>Set Your PIN</h2>
+                <p class="login-subtitle" id="pin-setup-welcome">Welcome! Create a PIN to secure your account.</p>
+                <div id="pin-setup-error" class="login-error"></div>
+                <label for="setup-pin">New PIN (4-6 digits)</label>
+                <input type="password" id="setup-pin" placeholder="Enter PIN" inputmode="numeric" maxlength="6">
+                <label for="setup-pin-confirm">Confirm PIN</label>
+                <input type="password" id="setup-pin-confirm" placeholder="Confirm PIN" inputmode="numeric" maxlength="6">
+                <button id="btn-set-pin" onclick="doSetPin()">Set PIN &amp; Sign In</button>
+            </div>
+        </div>
+    </div>
 
     <!-- TOP BAR -->
     <div class="topbar">
         <h1>MII Engineering — Supervisor Hub</h1>
         <div class="user-info">
             <span>Enabling Works, Port Talbot</span>
-            <div class="user-avatar">DE</div>
+            <span id="user-name"></span>
+            <div class="user-avatar" id="user-avatar"></div>
+            <button class="btn-logout" id="btn-logout" onclick="logout()" style="display:none">Sign Out</button>
         </div>
     </div>
 
@@ -472,17 +594,211 @@
         });
     }
 
-    // Dynamic greeting
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+
+    // ───── Auth helpers ─────
+
+    let _pendingSetupUserId = null;
+
+    function decodeJwtPayload(token) {
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+            const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            return JSON.parse(atob(payload));
+        } catch { return null; }
+    }
+
+    function isTokenValid(token) {
+        if (!token) return false;
+        const payload = decodeJwtPayload(token);
+        if (!payload || !payload.exp) return false;
+        return payload.exp * 1000 > Date.now();
+    }
+
+    function showLoginOverlay() {
+        document.getElementById('login-overlay').classList.remove('hidden');
+        document.getElementById('login-view').classList.remove('hidden');
+        document.getElementById('pin-setup-view').classList.add('hidden');
+        document.getElementById('login-error').textContent = '';
+        document.getElementById('login-emp').value = '';
+        document.getElementById('login-pin').value = '';
+    }
+
+    function hideLoginOverlay() {
+        document.getElementById('login-overlay').classList.add('hidden');
+    }
+
+    function checkAuth() {
+        const token = localStorage.getItem('mii_token');
+        if (!token || !isTokenValid(token)) {
+            localStorage.removeItem('mii_token');
+            localStorage.removeItem('mii_user');
+            showLoginOverlay();
+            return;
+        }
+        hideLoginOverlay();
+        applyUserInfo();
+    }
+
+    function applyUserInfo() {
+        const userJson = localStorage.getItem('mii_user');
+        const user = userJson ? JSON.parse(userJson) : null;
+        const nameEl = document.getElementById('user-name');
+        const avatarEl = document.getElementById('user-avatar');
+        const logoutBtn = document.getElementById('btn-logout');
+
+        if (user && user.username) {
+            nameEl.textContent = user.username;
+            const parts = user.username.trim().split(/\s+/);
+            const initials = parts.length >= 2
+                ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                : user.username.substring(0, 2).toUpperCase();
+            avatarEl.textContent = initials;
+            logoutBtn.style.display = '';
+
+            // Update greeting with name
+            const firstName = parts[0];
+            const hour = new Date().getHours();
+            let greeting = 'Good evening';
+            if (hour < 12) greeting = 'Good morning';
+            else if (hour < 17) greeting = 'Good afternoon';
+            document.getElementById('greeting-text').textContent = greeting + ', ' + firstName;
+        } else {
+            nameEl.textContent = '';
+            avatarEl.textContent = '';
+            logoutBtn.style.display = 'none';
+        }
+    }
+
+    async function doLogin() {
+        const emp = document.getElementById('login-emp').value.trim();
+        const pin = document.getElementById('login-pin').value.trim();
+        const errEl = document.getElementById('login-error');
+        const btn = document.getElementById('btn-login');
+
+        errEl.textContent = '';
+        if (!emp || !pin) { errEl.textContent = 'Enter employee number and PIN.'; return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Signing in…';
+        try {
+            const res = await fetch(MII_API + '/auth/pin-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employee_number: emp, pin: pin }),
+            });
+            const data = await res.json();
+
+            if (data.needs_pin_setup) {
+                _pendingSetupUserId = data.user_id;
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('pin-setup-view').classList.remove('hidden');
+                document.getElementById('pin-setup-welcome').textContent =
+                    'Welcome, ' + (data.username || '') + '! Create a PIN to secure your account.';
+                document.getElementById('setup-pin').value = '';
+                document.getElementById('setup-pin-confirm').value = '';
+                document.getElementById('pin-setup-error').textContent = '';
+                return;
+            }
+
+            if (!res.ok) {
+                errEl.textContent = data.error || 'Login failed.';
+                return;
+            }
+
+            localStorage.setItem('mii_token', data.token);
+            localStorage.setItem('mii_user', JSON.stringify(data.user));
+            onLoginSuccess(data.token);
+        } catch (e) {
+            errEl.textContent = 'Network error. Check your connection.';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+        }
+    }
+
+    async function doSetPin() {
+        const pin = document.getElementById('setup-pin').value.trim();
+        const confirm = document.getElementById('setup-pin-confirm').value.trim();
+        const errEl = document.getElementById('pin-setup-error');
+        const btn = document.getElementById('btn-set-pin');
+
+        errEl.textContent = '';
+        if (!pin || !confirm) { errEl.textContent = 'Enter and confirm your PIN.'; return; }
+        if (pin !== confirm) { errEl.textContent = 'PINs do not match.'; return; }
+        if (!/^\d{4,6}$/.test(pin)) { errEl.textContent = 'PIN must be 4-6 digits.'; return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Setting PIN…';
+        try {
+            const res = await fetch(MII_API + '/auth/set-pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: _pendingSetupUserId, pin: pin }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                errEl.textContent = data.error || 'Failed to set PIN.';
+                return;
+            }
+
+            localStorage.setItem('mii_token', data.token);
+            localStorage.setItem('mii_user', JSON.stringify(data.user));
+            onLoginSuccess(data.token);
+        } catch (e) {
+            errEl.textContent = 'Network error. Check your connection.';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Set PIN & Sign In';
+        }
+    }
+
+    function onLoginSuccess(token) {
+        _pendingSetupUserId = null;
+        hideLoginOverlay();
+        applyUserInfo();
+
+        // Post JWT to Service Worker for authenticated fetches
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'config',
+                apiBase: MII_API,
+                jwt: token,
+            });
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('mii_token');
+        localStorage.removeItem('mii_user');
+        showLoginOverlay();
+        applyUserInfo();
+    }
+
+    // Allow Enter key to submit login / PIN setup
+    document.getElementById('login-pin').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doLogin();
+    });
+    document.getElementById('setup-pin-confirm').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doSetPin();
+    });
+
+    // ───── Greeting + date ─────
+
     const hour = new Date().getHours();
     const greetEl = document.getElementById('greeting-text');
     if (hour < 12) greetEl.textContent = 'Good morning';
     else if (hour < 17) greetEl.textContent = 'Good afternoon';
     else greetEl.textContent = 'Good evening';
 
-    // Today's date
     const now = new Date();
     const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
     document.getElementById('date-text').textContent = now.toLocaleDateString('en-GB', opts);
+
+    // ───── Auth check on load ─────
+    checkAuth();
 </script>
 
 </body>

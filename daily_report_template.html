@@ -770,7 +770,7 @@
 </head>
 <body>
 
-<a href="hub.html" class="back-link" target="_blank">&larr; Hub</a>
+<a href="index.html" class="back-link" target="_blank">&larr; Hub</a>
 
 <div class="page">
 
@@ -1237,6 +1237,24 @@
 </div>
 
 
+<!-- ===== AUTH GUARD ===== -->
+<script>
+(function() {
+    var token = localStorage.getItem('mii_token');
+    if (!token) { window.location.href = 'index.html'; return; }
+    try {
+        var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+        if (!payload.exp || payload.exp * 1000 < Date.now()) {
+            localStorage.removeItem('mii_token');
+            localStorage.removeItem('mii_user');
+            window.location.href = 'index.html';
+        }
+    } catch(e) {
+        localStorage.removeItem('mii_token');
+        window.location.href = 'index.html';
+    }
+})();
+</script>
 <!-- ===== INTERACTIVE JS (digital use only) ===== -->
 <script src="employees.js"></script>
 <script src="programme_tasks.js"></script>
