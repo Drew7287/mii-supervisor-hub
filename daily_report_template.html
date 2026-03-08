@@ -1550,20 +1550,30 @@ if ('serviceWorker' in navigator) {
     // Seed empty work plan rows
     for (let i = 0; i < 5; i++) addWorkRow();
 
-    // ===== DEMO CREW (real people from RAMSBuilder DB) =====
-    const DEMO_CREW = [
-        ["Cain Thomas",      "Fabricator Welder", 1, 1, "4039", "Burning team lead - CAS OB 1"],
-        ["Chris Morgan",     "Welder",            1, 1, "4039", "Burning team - CAS OB 1"],
-        ["Craig Richards",   "Pipe Fitter",       1, 1, "4047", "Steam room pipework"],
-        ["Carl Jones",       "Pipe Fitter",       1, 1, "4050", "Ladle burning"],
-        ["Cliff Quinn",      "Rigger",            1, 0, "4034", "No show — reported to CM"],
-        ["Craig Rogers",     "Mech Fitter",       1, 1, "4053", "Hood water trestles - crane banksman"],
-        ["Anthony Prangley", "Pipe Welder",       1, 1, "4028", "Ladle cutting"],
-        ["Dale Henley",      "Pipe Fitter",       1, 1, "4032", "Dosing station pipework"],
-    ];
-
-    DEMO_CREW.forEach(c => addManningRow(...c));
-    // Add 4 empty rows
+    // Seed manning rows — first row has placeholder hints, rest blank
+    addManningRow();
+    // Add placeholder hints to first row
+    (function() {
+        const firstRow = document.querySelector('#manning-body tr');
+        if (!firstRow) return;
+        const sel = firstRow.querySelector('.name-select');
+        if (sel) sel.style.color = '#aaa';
+        const tradeTd = firstRow.querySelectorAll('td')[1];
+        const tradeInput = tradeTd && tradeTd.querySelector('input');
+        if (tradeInput) tradeInput.placeholder = 'e.g. Pipe Fitter';
+        const planned = firstRow.querySelector('.manning-planned');
+        if (planned) planned.placeholder = '1';
+        const actual = firstRow.querySelector('.manning-actual');
+        if (actual) actual.placeholder = '1';
+        // Clear hints on first interaction
+        function clearHints() {
+            if (sel) sel.style.color = '';
+            firstRow.removeEventListener('input', clearHints);
+            firstRow.removeEventListener('change', clearHints);
+        }
+        firstRow.addEventListener('input', clearHints);
+        firstRow.addEventListener('change', clearHints);
+    })();
     for (let i = 0; i < 4; i++) addManningRow();
     updateManningTotals();
 
