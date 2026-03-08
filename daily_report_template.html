@@ -187,10 +187,6 @@
             padding: 8px 16px;
             font-size: 0.95rem;
         }
-        .touch-mode .trade-chip {
-            padding: 6px 14px;
-            font-size: 0.95em;
-        }
         .touch-mode .task-modal-item {
             padding: 12px 16px;
         }
@@ -742,36 +738,6 @@
         .task-modal-footer .btn-custom:hover { background: #e8f0fe; }
         .task-modal-count { color: var(--text-light); font-size: 0.85em; margin-left: auto; line-height: 32px; }
 
-        /* Trade filter chips */
-        .task-modal-filters {
-            padding: 8px 16px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            border-bottom: 1px solid var(--border);
-            max-height: none;
-            overflow-y: visible;
-        }
-        .trade-chip {
-            padding: 3px 10px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: var(--white);
-            font-size: 0.85em;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .trade-chip:hover { border-color: var(--accent); background: #e8f0fe; }
-        .trade-chip.active {
-            background: var(--accent);
-            color: var(--white);
-            border-color: var(--accent);
-        }
-        .trade-chip .chip-count {
-            font-size: 0.8em;
-            opacity: 0.7;
-            margin-left: 3px;
-        }
     </style>
 </head>
 <body>
@@ -1337,18 +1303,8 @@ if ('serviceWorker' in navigator) {
     let _taskModalInput = null;
     let _taskModalList = null;
     let _taskModalCount = null;
-    let _taskModalFilters = null;
     let _taskModalCallback = null;
     let _taskHighlightIdx = -1;
-    let _activeTradeFilter = null; // null = All
-
-    // Build sorted list of trades with counts
-    const _tradeCounts = {};
-    PROGRAMME_TASKS.forEach(t => {
-        if (t.trade) _tradeCounts[t.trade] = (_tradeCounts[t.trade] || 0) + 1;
-    });
-    const _tradeList = Object.entries(_tradeCounts)
-        .sort((a, b) => b[1] - a[1]); // sort by count descending
 
     function getTaskModal() {
         if (_taskModalOverlay) return _taskModalOverlay;
@@ -1357,10 +1313,9 @@ if ('serviceWorker' in navigator) {
         overlay.innerHTML = `
             <div class="task-modal">
                 <div class="task-modal-header">
-                    <input type="text" placeholder="Search by task name or ID..." autofocus />
+                    <input type="text" placeholder="Search MII tasks by name or ID..." autofocus />
                     <button class="task-modal-close">&times;</button>
                 </div>
-                <div class="task-modal-filters"></div>
                 <div class="task-modal-list"></div>
                 <div class="task-modal-footer">
                     <button class="btn-custom">+ Free text entry</button>
@@ -1373,27 +1328,6 @@ if ('serviceWorker' in navigator) {
         _taskModalInput = overlay.querySelector('.task-modal-header input');
         _taskModalList = overlay.querySelector('.task-modal-list');
         _taskModalCount = overlay.querySelector('.task-modal-count');
-        _taskModalFilters = overlay.querySelector('.task-modal-filters');
-
-        // Build trade filter chips
-        // "All" chip first
-        const allChip = document.createElement('button');
-        allChip.type = 'button';
-        allChip.className = 'trade-chip active';
-        allChip.innerHTML = 'All <span class="chip-count">' + PROGRAMME_TASKS.length + '</span>';
-        allChip.dataset.trade = '';
-        allChip.addEventListener('click', () => setTradeFilter(null));
-        _taskModalFilters.appendChild(allChip);
-
-        _tradeList.forEach(([trade, count]) => {
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'trade-chip';
-            chip.innerHTML = trade + ' <span class="chip-count">' + count + '</span>';
-            chip.dataset.trade = trade;
-            chip.addEventListener('click', () => setTradeFilter(trade));
-            _taskModalFilters.appendChild(chip);
-        });
 
         // Close
         overlay.querySelector('.task-modal-close').addEventListener('click', closeTaskModal);
@@ -1436,16 +1370,6 @@ if ('serviceWorker' in navigator) {
         return overlay;
     }
 
-    function setTradeFilter(trade) {
-        _activeTradeFilter = trade;
-        // Update chip highlights
-        _taskModalFilters.querySelectorAll('.trade-chip').forEach(chip => {
-            chip.classList.toggle('active', (trade === null && chip.dataset.trade === '') || chip.dataset.trade === trade);
-        });
-        _taskHighlightIdx = -1;
-        renderTaskResults();
-    }
-
     function updateTaskHighlight(items) {
         items.forEach((el, i) => el.classList.toggle('highlighted', i === _taskHighlightIdx));
         if (_taskHighlightIdx >= 0 && items[_taskHighlightIdx]) {
@@ -1455,31 +1379,20 @@ if ('serviceWorker' in navigator) {
 
     function renderTaskResults() {
         const q = (_taskModalInput ? _taskModalInput.value : '').toLowerCase().trim();
-        let matches = PROGRAMME_TASKS;
-
-        // Apply trade filter
-        if (_activeTradeFilter) {
-            matches = matches.filter(t => t.trade === _activeTradeFilter);
-        }
-
-        // Apply text search
-        if (q) {
-            matches = matches.filter(t =>
+        const matches = q
+            ? PROGRAMME_TASKS.filter(t =>
                 t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q)
-            );
-        }
+              )
+            : PROGRAMME_TASKS;
 
-        const total = matches.length;
         _taskModalList.innerHTML = '';
-
         matches.forEach((task) => {
             const div = document.createElement('div');
             div.className = 'task-modal-item';
             div.innerHTML = '<div class="task-item-name">' + task.name + '</div>' +
                 '<div class="task-item-meta">' +
                 (task.id ? 'ID: ' + task.id : '') +
-                (task.location ? ' &bull; ' + task.location : '') +
-                (task.trade ? ' &bull; ' + task.trade : '') + '</div>';
+                (task.location ? ' &bull; ' + task.location : '') + '</div>';
             div.addEventListener('click', () => {
                 closeTaskModal();
                 if (_taskModalCallback) _taskModalCallback(task);
@@ -1487,20 +1400,15 @@ if ('serviceWorker' in navigator) {
             _taskModalList.appendChild(div);
         });
 
-        _taskModalCount.textContent = total + ' task' + (total !== 1 ? 's' : '');
+        _taskModalCount.textContent = matches.length + ' task' + (matches.length !== 1 ? 's' : '');
     }
 
     function openTaskModal(currentValue, callback) {
         _taskModalCallback = callback;
-        _activeTradeFilter = null;
         const overlay = getTaskModal();
         overlay.classList.add('open');
         _taskModalInput.value = currentValue || '';
         _taskHighlightIdx = -1;
-        // Reset filter chips to "All"
-        _taskModalFilters.querySelectorAll('.trade-chip').forEach(chip => {
-            chip.classList.toggle('active', chip.dataset.trade === '');
-        });
         renderTaskResults();
         setTimeout(() => _taskModalInput.focus(), 50);
     }
