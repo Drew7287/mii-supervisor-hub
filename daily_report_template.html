@@ -1508,6 +1508,7 @@ if ('serviceWorker' in navigator) {
         const tds = tr.children;
         tds[0].querySelector('input').value = task.id;      // Task ID
         tds[2].querySelector('input').value = task.location; // Location
+        refreshManningTaskIds();
     }
 
     // Status select HTML for reuse
