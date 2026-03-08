@@ -1532,7 +1532,7 @@ if ('serviceWorker' in navigator) {
         EMPLOYEES.forEach(([num, name]) => {
             const opt = document.createElement('option');
             opt.value = name;
-            opt.textContent = name;
+            opt.textContent = num ? num + ' — ' + name : name;
             supSel.insertBefore(opt, otherOpt);
         });
         // Restore selection
