@@ -1825,6 +1825,15 @@ if ('serviceWorker' in navigator) {
     let _suppressAutoSave = false;
     let _currentReportId = null;
 
+    // Current logged-in user (from hub login)
+    function _getUser() {
+        try { return JSON.parse(localStorage.getItem('mii_user') || 'null'); } catch { return null; }
+    }
+    function _getUserId() {
+        const u = _getUser();
+        return u ? (u.user_id || u.userId || '') : '';
+    }
+
     function getInfoFields() {
         const cells = document.querySelectorAll('.info-grid .info-cell');
         const val = (i) => {
@@ -2005,11 +2014,15 @@ if ('serviceWorker' in navigator) {
 
     function collectReportData() {
         const info = getInfoFields();
-        const clientId = `DR-${info.reportDate || 'nodate'}-${info.supervisorName || 'unknown'}`;
+        const userId = _getUserId();
+        const clientId = userId
+            ? `DR-${info.reportDate || 'nodate'}-${userId}`
+            : `DR-${info.reportDate || 'nodate'}-${info.supervisorName || 'unknown'}`;
         const id = _currentReportId || clientId;
         return {
             id: id,
             clientId: clientId,
+            supervisorId: userId || null,
             ...info,
             status: 'draft',
             work_plan: collectWorkPlan(),
@@ -2280,10 +2293,15 @@ if ('serviceWorker' in navigator) {
 
         // No URL params — try to load most recent report for today from IndexedDB
         const today = new Date().toISOString().split('T')[0];
+        const userId = _getUserId();
         try {
             const all = await MiiDB.getAll('daily_reports');
-            // Find today's report(s), pick most recently saved
-            const todayReports = all.filter(r => (r.reportDate || r.report_date) === today);
+            // Find today's report(s) for the current user, pick most recently saved
+            let todayReports = all.filter(r => (r.reportDate || r.report_date) === today);
+            if (userId) {
+                const userReports = todayReports.filter(r => (r.supervisorId || r.supervisor_id) === userId);
+                if (userReports.length) todayReports = userReports;
+            }
             if (todayReports.length) {
                 todayReports.sort((a, b) => (b.updatedAt || b.updated_at || 0) - (a.updatedAt || a.updated_at || 0));
                 populateReportData(todayReports[0]);
@@ -2302,6 +2320,25 @@ if ('serviceWorker' in navigator) {
         if (dateInput && !dateInput.value) {
             dateInput.value = today;
         }
+
+        // Auto-fill supervisor from logged-in user
+        const user = _getUser();
+        if (user && user.username) {
+            const supSel = document.getElementById('supervisor-select');
+            // Try to select matching option
+            let found = false;
+            for (const opt of supSel.options) {
+                if (opt.value === user.username || opt.textContent.includes(user.username)) {
+                    supSel.value = opt.value; found = true; break;
+                }
+            }
+            if (!found) {
+                const opt = document.createElement('option');
+                opt.value = user.username; opt.textContent = user.username;
+                supSel.insertBefore(opt, supSel.querySelector('[value="_other"]'));
+                supSel.value = user.username;
+            }
+        }
     }
 
     // Previous reports panel
@@ -2319,7 +2356,12 @@ if ('serviceWorker' in navigator) {
         const list = document.getElementById('previous-reports-list');
         list.innerHTML = '<div style="padding:4px 8px;color:var(--text-light);">Loading...</div>';
         try {
-            const all = await MiiDB.getAll('daily_reports');
+            let all = await MiiDB.getAll('daily_reports');
+            // Filter to current user's reports only
+            const userId = _getUserId();
+            if (userId) {
+                all = all.filter(r => (r.supervisorId || r.supervisor_id) === userId);
+            }
             all.sort((a, b) => (b.reportDate || b.report_date || '').localeCompare(a.reportDate || a.report_date || ''));
             if (!all.length) {
                 list.innerHTML = '<div style="padding:4px 8px;color:var(--text-light);">No saved reports</div>';
