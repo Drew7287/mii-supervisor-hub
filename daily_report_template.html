@@ -1822,6 +1822,7 @@ if ('serviceWorker' in navigator) {
 
     // ===== SAVE / LOAD / AUTO-SAVE =====
     let _autoSaveTimer = null;
+    let _suppressAutoSave = false;
     let _currentReportId = null;
 
     function getInfoFields() {
@@ -2053,28 +2054,30 @@ if ('serviceWorker' in navigator) {
         setVal(6, data.weekCommencing || data.week_commencing);
         setVal(7, data.dayOfWeek || data.day_of_week);
 
-        // Work plan
+        // Work plan — always clear and rebuild from saved data
         const wp = data.work_plan || [];
-        if (wp.length) {
-            document.getElementById('work-plan-body').innerHTML = '';
-            wp.forEach(r => addWorkRow(r));
-        }
+        document.getElementById('work-plan-body').innerHTML = '';
+        wp.forEach(r => addWorkRow(r));
+        // Pad to at least 5 blank rows
+        const wpCount = document.querySelectorAll('#work-plan-body tr').length;
+        for (let i = wpCount; i < 5; i++) addWorkRow();
 
-        // Manning
+        // Manning — always clear and rebuild from saved data
         const mn = data.manning || [];
-        if (mn.length) {
-            document.getElementById('manning-body').innerHTML = '';
-            mn.forEach(r => {
-                addManningRow(
-                    r.employeeName || r.employee_name || '',
-                    r.companyTrade || r.company_trade || '',
-                    r.planned, r.actual,
-                    r.taskIds || r.task_ids || '',
-                    r.notes || ''
-                );
-            });
-            updateManningTotals();
-        }
+        document.getElementById('manning-body').innerHTML = '';
+        mn.forEach(r => {
+            addManningRow(
+                r.employeeName || r.employee_name || '',
+                r.companyTrade || r.company_trade || '',
+                r.planned, r.actual,
+                r.taskIds || r.task_ids || '',
+                r.notes || ''
+            );
+        });
+        // Pad to at least 5 blank rows
+        const mnCount = document.querySelectorAll('#manning-body tr').length;
+        for (let i = mnCount; i < 5; i++) addManningRow();
+        updateManningTotals();
 
         // Checklist
         const cl = data.checklist || [];
@@ -2145,9 +2148,17 @@ if ('serviceWorker' in navigator) {
         }
     }
 
-    function resetReport() {
+    async function resetReport() {
         if (!confirm('Clear the entire form and start a new report?\n\nThis cannot be undone.')) return;
+
+        // Delete old report from IndexedDB so it won't reload
+        const oldId = _currentReportId;
         _currentReportId = null;
+        _suppressAutoSave = true;
+        if (oldId) {
+            try { await MiiDB.remove('daily_reports', oldId); } catch (e) { console.warn('Could not remove old report:', e); }
+        }
+
         // Clear info grid
         document.querySelectorAll('.info-grid input, .info-grid select').forEach(el => {
             if (el.type === 'date') el.value = '';
@@ -2172,7 +2183,10 @@ if ('serviceWorker' in navigator) {
         document.querySelectorAll('.incident-row input').forEach(i => i.value = '');
         // Clear photos
         document.getElementById('photo-grid').innerHTML = '';
-        setSaveStatus('Reset', 'var(--text-light)');
+        setSaveStatus('Reset — form cleared', 'var(--text-light)');
+
+        // Re-enable auto-save after a short delay so blank form doesn't immediately save
+        setTimeout(() => { _suppressAutoSave = false; }, 1000);
     }
 
     async function saveReport() {
@@ -2205,9 +2219,11 @@ if ('serviceWorker' in navigator) {
 
     // Auto-save: debounced on any input change
     function scheduleAutoSave() {
+        if (_suppressAutoSave) return;
         setSaveStatus('Unsaved', 'var(--warning)');
         clearTimeout(_autoSaveTimer);
         _autoSaveTimer = setTimeout(async () => {
+            if (_suppressAutoSave) return;
             const data = collectReportData();
             if (!data.reportDate && !data.supervisorName) return; // Don't save empty forms
             _currentReportId = data.id;
