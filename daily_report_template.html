@@ -797,30 +797,51 @@
         <div class="info-cell"><label>Date</label><input type="date" /></div>
         <div class="info-cell"><label>Supervisor</label>
             <select id="supervisor-select">
-                <option value="">—</option>
-                <option>Chris Harris</option>
-                <option>Christopher Scourfield</option>
-                <option>Craig Kelly</option>
-                <option>Daniel Ellis-Pattern</option>
-                <option>Darren Booth</option>
-                <option>Darren Tudor</option>
-                <option>Gavin Gwyn</option>
-                <option>James Jones</option>
-                <option>Michael James</option>
-                <option>Richard Lacey</option>
-                <option>Richard Samuel</option>
-                <option>Richie Clayton</option>
-                <option>Saikiran Rudra</option>
-                <option>Samuel Jones</option>
-                <option>Sara Jenkins</option>
-                <option>Vikas Patel</option>
+                <option value="">— Select —</option>
                 <option value="_other">Other...</option>
             </select>
         </div>
         <div class="info-cell"><label>Site / Project</label><input type="text" value="Port Talbot" /></div>
         <div class="info-cell"><label>Zone / Area</label><input type="text" /></div>
-        <div class="info-cell"><label>Shift</label><input type="text" placeholder="e.g. 07:00 – 17:30" /></div>
-        <div class="info-cell"><label>Weather</label><input type="text" /></div>
+        <div class="info-cell"><label>Shift</label>
+            <select id="shift-select">
+                <option value="">—</option>
+                <option>07:00 – 15:30</option>
+                <option>07:00 – 17:30</option>
+                <option>07:00 – 19:30</option>
+                <option value="_other">Other...</option>
+            </select>
+        </div>
+        <div class="info-cell"><label>Weather</label>
+            <select id="weather-select">
+                <option value="">—</option>
+                <optgroup label="Conditions">
+                    <option>Dry</option>
+                    <option>Wet / Rain</option>
+                    <option>Overcast</option>
+                    <option>Fog</option>
+                    <option>Cold / Frost</option>
+                    <option>Snow</option>
+                    <option>High Wind</option>
+                    <option>Hot / Sun</option>
+                </optgroup>
+                <optgroup label="Met Office Warnings">
+                    <option style="color:#e6a000">⚠ Yellow — Wind</option>
+                    <option style="color:#e6a000">⚠ Yellow — Rain</option>
+                    <option style="color:#e6a000">⚠ Yellow — Ice</option>
+                    <option style="color:#e6a000">⚠ Yellow — Snow</option>
+                    <option style="color:#ff8c00">⚠ Amber — Wind</option>
+                    <option style="color:#ff8c00">⚠ Amber — Rain</option>
+                    <option style="color:#ff8c00">⚠ Amber — Ice</option>
+                    <option style="color:#ff8c00">⚠ Amber — Snow</option>
+                    <option style="color:#dc3545">⚠ Red — Wind</option>
+                    <option style="color:#dc3545">⚠ Red — Rain</option>
+                    <option style="color:#dc3545">⚠ Red — Ice</option>
+                    <option style="color:#dc3545">⚠ Red — Snow</option>
+                </optgroup>
+                <option value="_other">Other...</option>
+            </select>
+        </div>
         <div class="info-cell"><label>Week Commencing</label><input type="date" /></div>
         <div class="info-cell"><label>Day</label>
             <select>
@@ -1273,6 +1294,12 @@ if ('serviceWorker' in navigator) {
     document.getElementById('supervisor-select').addEventListener('change', function() {
         handleOtherSelect(this, 'Enter supervisor name:');
     });
+    document.getElementById('shift-select').addEventListener('change', function() {
+        handleOtherSelect(this, 'Enter shift times (e.g. 06:00 – 18:00):');
+    });
+    document.getElementById('weather-select').addEventListener('change', function() {
+        handleOtherSelect(this, 'Enter weather conditions:');
+    });
 
     function handleNameSelect(sel) {
         handleOtherSelect(sel, 'Enter person name:');
@@ -1493,6 +1520,26 @@ if ('serviceWorker' in navigator) {
     let EMPLOYEES = window._MII_EMPLOYEES || [];
     console.log(`Loaded ${EMPLOYEES.length} employees (static fallback)`);
 
+    // Populate supervisor dropdown from employee list
+    function populateSupervisorSelect() {
+        const supSel = document.getElementById('supervisor-select');
+        const current = supSel.value;
+        // Keep first option (— Select —) and last option (Other...)
+        const otherOpt = supSel.querySelector('[value="_other"]');
+        // Remove all options except first and last
+        while (supSel.options.length > 2) supSel.remove(1);
+        // Insert employee names before "Other..."
+        EMPLOYEES.forEach(([num, name]) => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            supSel.insertBefore(opt, otherOpt);
+        });
+        // Restore selection
+        if (current) supSel.value = current;
+    }
+    populateSupervisorSelect();
+
     // Try to fetch live data from API (non-blocking)
     const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
     fetch(`${MII_API}/employees`)
@@ -1501,11 +1548,13 @@ if ('serviceWorker' in navigator) {
             if (data.employees && data.employees.length > 0) {
                 EMPLOYEES = data.employees.map(e => [e.employee_number, e.name]);
                 console.log(`Updated to ${EMPLOYEES.length} employees (live API)`);
-                // Re-render any open dropdowns
+                // Re-render manning dropdowns
                 document.querySelectorAll('.name-select').forEach(sel => {
                     const current = sel.value;
                     sel.innerHTML = buildNameOptions(current);
                 });
+                // Re-render supervisor dropdown
+                populateSupervisorSelect();
             }
         })
         .catch(() => console.log('API offline, using static employee list'));
