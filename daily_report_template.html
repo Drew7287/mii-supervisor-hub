@@ -2127,10 +2127,29 @@ if ('serviceWorker' in navigator) {
             if (match) { populateReportData(match); return; }
         }
 
+        // No URL params — try to load most recent report for today from IndexedDB
+        const today = new Date().toISOString().split('T')[0];
+        try {
+            const all = await MiiDB.getAll('daily_reports');
+            // Find today's report(s), pick most recently saved
+            const todayReports = all.filter(r => (r.reportDate || r.report_date) === today);
+            if (todayReports.length) {
+                todayReports.sort((a, b) => (b.updatedAt || b.updated_at || 0) - (a.updatedAt || a.updated_at || 0));
+                populateReportData(todayReports[0]);
+                setSaveStatus('Restored', 'var(--text-light)');
+                return;
+            }
+            // If no today report, check if there's any report with a _currentReportId saved
+            if (_currentReportId) {
+                const match = all.find(r => r.id === _currentReportId || r.clientId === _currentReportId);
+                if (match) { populateReportData(match); setSaveStatus('Restored', 'var(--text-light)'); return; }
+            }
+        } catch (e) { console.warn('Could not restore from IndexedDB:', e); }
+
         // Auto-fill today's date if empty
         const dateInput = document.querySelector('.info-grid .info-cell:first-child input');
         if (dateInput && !dateInput.value) {
-            dateInput.value = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
         }
     }
 
