@@ -422,6 +422,7 @@
 </div>
 
 <script src="mii-db.js"></script>
+<script src="employees.js"></script>
 <script>
 // Register Service Worker
 if ('serviceWorker' in navigator) {
@@ -464,11 +465,19 @@ let allTools = [];
 async function init() {
     await MiiDB.ready();
 
+    // Seed employees from static employees.js if IndexedDB is empty
+    if (window._MII_EMPLOYEES && window._MII_EMPLOYEES.length) {
+        await MiiDB.seedEmployees(window._MII_EMPLOYEES);
+    }
+
+    // Seed tools if not already seeded (same data as stores.html)
+    await seedToolsIfNeeded();
+
     // Set default date to today
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('havs-date').value = today;
 
-    // Populate worker dropdown
+    // Populate worker dropdown from IndexedDB employees
     const pairs = await MiiDB.getEmployeePairs();
     const workerSelect = document.getElementById('havs-worker');
     pairs.forEach(([id, name]) => {
@@ -494,6 +503,31 @@ async function init() {
     // Trigger initial load
     onDateWorkerChange();
     renderDashboard();
+}
+
+async function seedToolsIfNeeded() {
+    if (localStorage.getItem('mii_tools_seeded')) return;
+    const seedTools = [
+        { id: 'TL-SEED-01', description: '4.5" Grinder', category: 'Grinder', vibrationMagnitude: 2.15, isActive: 1 },
+        { id: 'TL-SEED-02', description: '5" Grinder', category: 'Grinder', vibrationMagnitude: 1.78, isActive: 1 },
+        { id: 'TL-SEED-03', description: '7" Grinder', category: 'Grinder', vibrationMagnitude: 3.30, isActive: 1 },
+        { id: 'TL-SEED-04', description: '9" Grinder', category: 'Grinder', vibrationMagnitude: 1.60, isActive: 1 },
+        { id: 'TL-SEED-05', description: 'Internal/Die Grinder', category: 'Grinder', vibrationMagnitude: 0.50, isActive: 1 },
+        { id: 'TL-SEED-06', description: 'Tec Gun', category: 'Other', vibrationMagnitude: 0.50, isActive: 1 },
+        { id: 'TL-SEED-07', description: '1/2" Impact Wrench', category: 'Impact Wrench', vibrationMagnitude: 3.85, isActive: 1 },
+        { id: 'TL-SEED-08', description: '3/4" Impact Wrench', category: 'Impact Wrench', vibrationMagnitude: 11.40, isActive: 1 },
+        { id: 'TL-SEED-09', description: 'Chop Saw', category: 'Saw', vibrationMagnitude: 1.00, isActive: 1 },
+        { id: 'TL-SEED-10', description: 'Pistol Drill (Metal)', category: 'Drill', vibrationMagnitude: 0.50, isActive: 1 },
+        { id: 'TL-SEED-11', description: 'Pistol Drill (Concrete)', category: 'Drill', vibrationMagnitude: 14.70, isActive: 1 },
+        { id: 'TL-SEED-12', description: 'SDS Hammer Drill', category: 'Drill', vibrationMagnitude: 4.40, isActive: 1 },
+        { id: 'TL-SEED-13', description: 'Reciprocating Saw', category: 'Saw', vibrationMagnitude: 16.90, isActive: 1 },
+        { id: 'TL-SEED-14', description: 'Mag Drill', category: 'Drill', vibrationMagnitude: 2.50, isActive: 1 },
+    ];
+    for (const tool of seedTools) {
+        tool.createdAt = new Date().toISOString();
+        await MiiDB.save('tools', tool);
+    }
+    localStorage.setItem('mii_tools_seeded', 'true');
 }
 
 function populateToolDropdown() {
