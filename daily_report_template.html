@@ -328,6 +328,8 @@
         .checklist .col-check { width: 26px; text-align: center; }
         .checklist .col-na { width: 26px; text-align: center; }
         .checklist .col-forms { width: 90px; font-size: 0.8rem; color: var(--ref-text); }
+        .checklist .col-forms a { color: #0078d4; text-decoration: none; font-weight: 600; }
+        .checklist .col-forms a:hover { text-decoration: underline; }
         .checklist .col-notes { width: 180px; }
 
         /* Checkbox styling */
@@ -1151,7 +1153,7 @@
                         <div class="detail">Hazards/incidents reported, HAVs feedback, workplace acceptable [take photo], tools returned to stores</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">SF 013C<br>SF 049E</td>
+                    <td class="col-forms"><a href="havs.html">HAVs Tracker</a><br><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&route=shorturl" target="_blank">SHEQ Obs</a></td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Issues raised:" /></td>
                 </tr>
                 <tr>
@@ -1159,7 +1161,7 @@
                     <td class="duty-text">Daily progress, attendance &amp; programme impacts recorded</td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">Work File<br>Timesheet</td>
+                    <td class="col-forms">—</td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
                 <tr>
@@ -1168,7 +1170,7 @@
                         <div class="detail">Isolations &amp; lockout procedures completed</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms">PTW forms</td>
+                    <td class="col-forms">—</td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
             </tbody>
@@ -1241,17 +1243,17 @@
 <script>
 (function() {
     var token = localStorage.getItem('mii_token');
-    if (!token) { window.location.href = 'index.html'; return; }
+    if (!token) { window.location.href = 'hub.html'; return; }
     try {
         var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
         if (!payload.exp || payload.exp * 1000 < Date.now()) {
             localStorage.removeItem('mii_token');
             localStorage.removeItem('mii_user');
-            window.location.href = 'index.html';
+            window.location.href = 'hub.html';
         }
     } catch(e) {
         localStorage.removeItem('mii_token');
-        window.location.href = 'index.html';
+        window.location.href = 'hub.html';
     }
 })();
 </script>
