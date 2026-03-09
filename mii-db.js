@@ -17,7 +17,7 @@
   'use strict';
 
   const DB_NAME = 'mii-hub';
-  const DB_VERSION = 3;
+  const DB_VERSION = 4;
 
   // IndexedDB store name → localStorage key mapping
   const STORE_LS_MAP = {
@@ -30,6 +30,8 @@
     near_miss: 'mii_near_miss',
     hot_work: 'mii_hot_work',
     daily_reports: 'mii_daily_reports',
+    tools: 'mii_tools',
+    havs_entries: 'mii_havs_entries',
     checklist_state: 'mii_supervisor_checklist_v4',
   };
 
@@ -44,6 +46,8 @@
     'near_miss',
     'hot_work',
     'daily_reports',
+    'tools',
+    'havs_entries',
   ];
 
   // Reference data stores (pulled from server, not pushed via sync_queue)
@@ -79,6 +83,13 @@
           drStore.createIndex('report_date', 'reportDate', { unique: false });
           drStore.createIndex('supervisor_name', 'supervisorName', { unique: false });
           drStore.createIndex('client_id', 'clientId', { unique: true });
+        }
+
+        // havs_entries indexes for date and worker lookups
+        if (!db.objectStoreNames.contains('havs_entries')) {
+          const havsStore = db.createObjectStore('havs_entries', { keyPath: 'id' });
+          havsStore.createIndex('date', 'date', { unique: false });
+          havsStore.createIndex('workerId', 'workerId', { unique: false });
         }
 
         // Reference data stores (keyed by employee_number)

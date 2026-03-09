@@ -12,7 +12,7 @@ const CACHE_VERSION = 'mii-hub-v1';
 
 const APP_SHELL = [
   './',
-  './hub.html',
+  './index.html',
   './daily_report_template.html',
   './inspection.html',
   './inspections.html',
@@ -26,6 +26,7 @@ const APP_SHELL = [
   './toolbox_sign.html',
   './ssw.html',
   './training_matrix.html',
+  './havs.html',
   './mii-db.js',
   './employees.json',
   './employees.js',

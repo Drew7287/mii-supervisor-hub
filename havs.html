@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAVs Exposure Tracker — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px 32px;
+        }
+
+        /* ===== SECTION CARDS ===== */
+        .section {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .section h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section h2 .icon { font-size: 1.2rem; }
+
+        /* ===== FORM ELEMENTS ===== */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .form-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+        .form-field label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .form-field input,
+        .form-field select {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .form-field input:focus,
+        .form-field select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 9px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn.green { background: var(--success); }
+        .btn.blue { background: var(--accent); }
+        .btn.red { background: var(--danger); }
+        .btn.outline {
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--text);
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ===== LIVE PREVIEW ===== */
+        .preview-box {
+            background: #f8f9fb;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .preview-box .pv-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+        }
+        .preview-box .pv-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        /* ===== TABLE ===== */
+        .entries-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .entries-table th {
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            padding: 8px 10px;
+            border-bottom: 2px solid var(--border);
+        }
+        .entries-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        .entries-table .btn-del {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 6px;
+        }
+        .entries-table .btn-del:hover { opacity: 0.7; }
+        .entries-table .empty-row td {
+            text-align: center;
+            color: var(--text-light);
+            padding: 24px;
+        }
+
+        /* ===== A(8) SUMMARY ===== */
+        .a8-summary {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .a8-big {
+            font-size: 2.8rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .a8-details { flex: 1; min-width: 200px; }
+        .a8-bar-track {
+            height: 18px;
+            background: #e9ecef;
+            border-radius: 9px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .a8-bar-fill {
+            height: 100%;
+            border-radius: 9px;
+            transition: width 0.4s ease, background 0.3s;
+        }
+        .a8-bar-markers {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.68rem;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+        .a8-bar-markers .eav-mark,
+        .a8-bar-markers .elv-mark { font-weight: 700; }
+        .a8-pill {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            margin-top: 6px;
+        }
+        .a8-pill.green { background: #e6f7ec; color: var(--success); }
+        .a8-pill.amber { background: #fff6e0; color: #b07d00; }
+        .a8-pill.red { background: #fde8ea; color: var(--danger); }
+        .a8-meta {
+            font-size: 0.82rem;
+            color: var(--text-light);
+            margin-top: 6px;
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .stat-value.green { color: var(--success); }
+        .stat-value.amber { color: var(--warning); }
+        .stat-value.red { color: var(--danger); }
+
+        /* ===== WORKER CARDS ===== */
+        .worker-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-left: 5px solid var(--success);
+        }
+        .worker-card.amber { border-left-color: var(--warning); }
+        .worker-card.red { border-left-color: var(--danger); }
+        .worker-card .wc-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            flex: 1;
+        }
+        .worker-card .wc-a8 {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+        .worker-card .wc-meta {
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .form-row.three-col { grid-template-columns: 1fr; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .a8-summary { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>HAVs Exposure Tracker</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<div class="container">
+
+    <!-- SECTION 1: Date & Worker -->
+    <div class="section">
+        <h2><span class="icon">&#9995;</span> Log Vibration Exposure</h2>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Date</label>
+                <input type="date" id="havs-date" onchange="onDateWorkerChange()">
+            </div>
+            <div class="form-field">
+                <label>Worker</label>
+                <select id="havs-worker" onchange="onDateWorkerChange()">
+                    <option value="">— Select worker —</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: Add Tool Exposure -->
+    <div class="section" id="add-section" style="display:none">
+        <h2><span class="icon">&#128295;</span> Add Tool Exposure</h2>
+        <div class="form-row three-col">
+            <div class="form-field">
+                <label>Tool</label>
+                <select id="havs-tool" onchange="onToolChange()">
+                    <option value="">— Select tool —</option>
+                    <option value="__manual">Enter manually</option>
+                </select>
+            </div>
+            <div class="form-field" id="manual-mag-field" style="display:none">
+                <label>Vibration Magnitude (m/s&sup2;)</label>
+                <input type="number" id="havs-manual-mag" step="0.01" min="0" placeholder="e.g. 3.50" oninput="updatePreview()">
+            </div>
+            <div class="form-field">
+                <label>Duration (minutes)</label>
+                <input type="number" id="havs-duration" min="1" max="480" placeholder="e.g. 45" oninput="updatePreview()">
+            </div>
+        </div>
+        <div class="preview-box" id="preview-box" style="display:none">
+            <div>
+                <div class="pv-label">Partial A(8)</div>
+                <div class="pv-value" id="preview-partial">—</div>
+            </div>
+            <div>
+                <div class="pv-label">Magnitude</div>
+                <div class="pv-value" id="preview-mag" style="font-size:1rem;font-weight:600">—</div>
+            </div>
+        </div>
+        <div style="margin-top:12px">
+            <button class="btn green" id="btn-add-entry" onclick="addEntry()" disabled>Add Entry</button>
+        </div>
+    </div>
+
+    <!-- SECTION 3: Entries Table -->
+    <div class="section" id="entries-section" style="display:none">
+        <h2><span class="icon">&#128203;</span> Today's Entries for <span id="entries-worker-name">—</span></h2>
+        <table class="entries-table">
+            <thead>
+                <tr>
+                    <th>Tool</th>
+                    <th>m/s&sup2;</th>
+                    <th>Mins</th>
+                    <th>Partial A(8)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="entries-body">
+                <tr class="empty-row"><td colspan="5">No entries yet</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 4: A(8) Summary -->
+    <div class="section" id="a8-section" style="display:none">
+        <h2><span class="icon">&#128200;</span> A(8) Summary</h2>
+        <div class="a8-summary">
+            <div class="a8-big" id="a8-value">0.00</div>
+            <div class="a8-details">
+                <div class="a8-bar-track">
+                    <div class="a8-bar-fill" id="a8-bar" style="width:0%;background:var(--success)"></div>
+                </div>
+                <div class="a8-bar-markers">
+                    <span>0</span>
+                    <span class="eav-mark">EAV 2.5</span>
+                    <span class="elv-mark">ELV 5.0</span>
+                </div>
+                <div id="a8-pill-container"></div>
+                <div class="a8-meta" id="a8-meta"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: All Workers Dashboard -->
+    <div class="section">
+        <h2><span class="icon">&#128101;</span> All Workers — <span id="dash-date-label">Today</span></h2>
+        <div class="stats-bar" id="dash-stats">
+            <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Workers Logged</div></div>
+            <div class="stat-card"><div class="stat-value amber">0</div><div class="stat-label">Above EAV</div></div>
+            <div class="stat-card"><div class="stat-value red">0</div><div class="stat-label">Above ELV</div></div>
+            <div class="stat-card"><div class="stat-value green">0</div><div class="stat-label">Within Limits</div></div>
+        </div>
+        <div id="dash-workers"></div>
+    </div>
+
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HSE A(8) CALCULATION
+// ═══════════════════════════════════════════════════════════════
+function calculateA8(entries) {
+    let sum = 0;
+    for (const e of entries) {
+        sum += (e.vibrationMagnitude ** 2) * (e.durationMinutes / 480);
+    }
+    const a8 = Math.sqrt(sum);
+    const status = a8 >= 5 ? 'red' : a8 >= 2.5 ? 'amber' : 'green';
+    return { a8, status };
+}
+
+function statusLabel(status) {
+    if (status === 'red') return 'ABOVE ELV';
+    if (status === 'amber') return 'Above EAV';
+    return 'Below EAV';
+}
+
+function statusColor(status) {
+    if (status === 'red') return 'var(--danger)';
+    if (status === 'amber') return 'var(--warning)';
+    return 'var(--success)';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let allTools = [];
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+async function init() {
+    await MiiDB.ready();
+
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('havs-date').value = today;
+
+    // Populate worker dropdown
+    const pairs = await MiiDB.getEmployeePairs();
+    const workerSelect = document.getElementById('havs-worker');
+    pairs.forEach(([id, name]) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = name;
+        workerSelect.appendChild(opt);
+    });
+
+    // Auto-select logged-in user if they're in the list
+    const userJson = localStorage.getItem('mii_user');
+    if (userJson) {
+        const user = JSON.parse(userJson);
+        if (user.employee_number) {
+            workerSelect.value = user.employee_number;
+        }
+    }
+
+    // Load tools for dropdown
+    allTools = await MiiDB.getAll('tools');
+    populateToolDropdown();
+
+    // Trigger initial load
+    onDateWorkerChange();
+    renderDashboard();
+}
+
+function populateToolDropdown() {
+    const sel = document.getElementById('havs-tool');
+    // Clear existing tool options (keep first two: placeholder + manual)
+    while (sel.options.length > 2) sel.remove(2);
+
+    const sorted = [...allTools]
+        .filter(t => t.isActive !== 0)
+        .sort((a, b) => a.description.localeCompare(b.description));
+
+    sorted.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = `${t.description} (${(t.vibrationMagnitude || 0).toFixed(2)} m/s\u00B2)`;
+        opt.dataset.mag = t.vibrationMagnitude || 0;
+        opt.dataset.desc = t.description;
+        sel.appendChild(opt);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════════
+function onDateWorkerChange() {
+    const workerId = document.getElementById('havs-worker').value;
+    const date = document.getElementById('havs-date').value;
+
+    const show = workerId && date;
+    document.getElementById('add-section').style.display = show ? '' : 'none';
+    document.getElementById('entries-section').style.display = show ? '' : 'none';
+    document.getElementById('a8-section').style.display = show ? '' : 'none';
+
+    if (show) {
+        const sel = document.getElementById('havs-worker');
+        const name = sel.options[sel.selectedIndex].textContent;
+        document.getElementById('entries-worker-name').textContent = name;
+        renderEntries();
+    }
+    renderDashboard();
+}
+
+function onToolChange() {
+    const val = document.getElementById('havs-tool').value;
+    const manualField = document.getElementById('manual-mag-field');
+
+    if (val === '__manual') {
+        manualField.style.display = '';
+        document.getElementById('havs-manual-mag').value = '';
+    } else {
+        manualField.style.display = 'none';
+    }
+    updatePreview();
+}
+
+function getSelectedMagnitude() {
+    const sel = document.getElementById('havs-tool');
+    const val = sel.value;
+    if (!val) return null;
+    if (val === '__manual') {
+        const v = parseFloat(document.getElementById('havs-manual-mag').value);
+        return isNaN(v) ? null : v;
+    }
+    const opt = sel.options[sel.selectedIndex];
+    return parseFloat(opt.dataset.mag);
+}
+
+function getSelectedToolDescription() {
+    const sel = document.getElementById('havs-tool');
+    const val = sel.value;
+    if (!val) return '';
+    if (val === '__manual') return 'Manual entry';
+    return sel.options[sel.selectedIndex].dataset.desc || '';
+}
+
+function updatePreview() {
+    const mag = getSelectedMagnitude();
+    const dur = parseInt(document.getElementById('havs-duration').value);
+    const box = document.getElementById('preview-box');
+    const btn = document.getElementById('btn-add-entry');
+
+    if (mag > 0 && dur > 0) {
+        const partial = Math.sqrt((mag ** 2) * (dur / 480));
+        const status = partial >= 5 ? 'red' : partial >= 2.5 ? 'amber' : 'green';
+        document.getElementById('preview-partial').textContent = partial.toFixed(2) + ' m/s\u00B2';
+        document.getElementById('preview-partial').style.color = statusColor(status);
+        document.getElementById('preview-mag').textContent = mag.toFixed(2) + ' m/s\u00B2 \u00D7 ' + dur + ' min';
+        box.style.display = '';
+        btn.disabled = false;
+    } else {
+        box.style.display = 'none';
+        btn.disabled = true;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ADD / DELETE ENTRIES
+// ═══════════════════════════════════════════════════════════════
+async function addEntry() {
+    const date = document.getElementById('havs-date').value;
+    const workerId = document.getElementById('havs-worker').value;
+    const workerSel = document.getElementById('havs-worker');
+    const workerName = workerSel.options[workerSel.selectedIndex].textContent;
+
+    const mag = getSelectedMagnitude();
+    const dur = parseInt(document.getElementById('havs-duration').value);
+    if (!mag || !dur) return;
+
+    const toolSel = document.getElementById('havs-tool');
+    const toolVal = toolSel.value;
+    const toolId = (toolVal && toolVal !== '__manual') ? toolVal : null;
+    const toolDesc = getSelectedToolDescription();
+
+    const partialExposure = Math.sqrt((mag ** 2) * (dur / 480));
+
+    // Get logged-in user info
+    const userJson = localStorage.getItem('mii_user');
+    const user = userJson ? JSON.parse(userJson) : {};
+
+    const entry = {
+        id: 'HV-' + Date.now().toString().slice(-6),
+        date,
+        workerId,
+        workerName,
+        toolId,
+        toolDescription: toolDesc,
+        vibrationMagnitude: mag,
+        durationMinutes: dur,
+        partialExposure: parseFloat(partialExposure.toFixed(4)),
+        loggedBy: user.employee_number || '',
+        loggedByName: user.username || '',
+        createdAt: new Date().toISOString(),
+    };
+
+    await MiiDB.save('havs_entries', entry);
+
+    // Reset form fields
+    document.getElementById('havs-tool').value = '';
+    document.getElementById('havs-duration').value = '';
+    document.getElementById('havs-manual-mag').value = '';
+    document.getElementById('manual-mag-field').style.display = 'none';
+    document.getElementById('preview-box').style.display = 'none';
+    document.getElementById('btn-add-entry').disabled = true;
+
+    renderEntries();
+    renderDashboard();
+}
+
+async function deleteEntry(id) {
+    await MiiDB.remove('havs_entries', id);
+    renderEntries();
+    renderDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ENTRIES TABLE + A(8) SUMMARY
+// ═══════════════════════════════════════════════════════════════
+async function renderEntries() {
+    const date = document.getElementById('havs-date').value;
+    const workerId = document.getElementById('havs-worker').value;
+    if (!date || !workerId) return;
+
+    const all = await MiiDB.getAll('havs_entries');
+    const entries = all.filter(e => e.date === date && e.workerId === workerId);
+
+    const tbody = document.getElementById('entries-body');
+
+    if (!entries.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No entries yet</td></tr>';
+        renderA8Summary(entries);
+        return;
+    }
+
+    tbody.innerHTML = entries.map(e => `
+        <tr>
+            <td>${e.toolDescription || '—'}</td>
+            <td>${(e.vibrationMagnitude || 0).toFixed(2)}</td>
+            <td>${e.durationMinutes}</td>
+            <td style="font-weight:700;color:${statusColor(calculateA8([e]).status)}">${e.partialExposure.toFixed(2)}</td>
+            <td><button class="btn-del" onclick="deleteEntry('${e.id}')" title="Delete">&times;</button></td>
+        </tr>
+    `).join('');
+
+    renderA8Summary(entries);
+}
+
+function renderA8Summary(entries) {
+    const { a8, status } = calculateA8(entries);
+    const color = statusColor(status);
+
+    document.getElementById('a8-value').textContent = a8.toFixed(2);
+    document.getElementById('a8-value').style.color = color;
+
+    // Progress bar: scale to 7 m/s^2 max
+    const pct = Math.min((a8 / 7) * 100, 100);
+    const bar = document.getElementById('a8-bar');
+    bar.style.width = pct + '%';
+    bar.style.background = color;
+
+    // Pill
+    document.getElementById('a8-pill-container').innerHTML =
+        `<span class="a8-pill ${status}">${statusLabel(status)}</span>`;
+
+    // Meta
+    const totalMins = entries.reduce((s, e) => s + e.durationMinutes, 0);
+    const toolCount = new Set(entries.map(e => e.toolDescription)).size;
+    document.getElementById('a8-meta').textContent =
+        `${totalMins} minutes total \u2022 ${toolCount} tool${toolCount !== 1 ? 's' : ''} \u2022 ${entries.length} entr${entries.length !== 1 ? 'ies' : 'y'}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ALL WORKERS DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+async function renderDashboard() {
+    const date = document.getElementById('havs-date').value;
+    if (!date) return;
+
+    // Update label
+    const d = new Date(date + 'T00:00:00');
+    document.getElementById('dash-date-label').textContent =
+        d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+    const all = await MiiDB.getAll('havs_entries');
+    const dayEntries = all.filter(e => e.date === date);
+
+    // Group by worker
+    const byWorker = {};
+    for (const e of dayEntries) {
+        if (!byWorker[e.workerId]) {
+            byWorker[e.workerId] = { name: e.workerName, entries: [] };
+        }
+        byWorker[e.workerId].entries.push(e);
+    }
+
+    const workers = Object.entries(byWorker).map(([id, w]) => {
+        const { a8, status } = calculateA8(w.entries);
+        const totalMins = w.entries.reduce((s, e) => s + e.durationMinutes, 0);
+        return { id, name: w.name, a8, status, totalMins, entryCount: w.entries.length };
+    });
+
+    // Sort: red first, then amber, then green, then by a8 desc
+    const order = { red: 0, amber: 1, green: 2 };
+    workers.sort((a, b) => (order[a.status] - order[b.status]) || (b.a8 - a.a8));
+
+    // Stats
+    const aboveEAV = workers.filter(w => w.status === 'amber').length;
+    const aboveELV = workers.filter(w => w.status === 'red').length;
+    const within = workers.filter(w => w.status === 'green').length;
+
+    document.getElementById('dash-stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${workers.length}</div><div class="stat-label">Workers Logged</div></div>
+        <div class="stat-card"><div class="stat-value amber">${aboveEAV}</div><div class="stat-label">Above EAV</div></div>
+        <div class="stat-card"><div class="stat-value red">${aboveELV}</div><div class="stat-label">Above ELV</div></div>
+        <div class="stat-card"><div class="stat-value green">${within}</div><div class="stat-label">Within Limits</div></div>
+    `;
+
+    const container = document.getElementById('dash-workers');
+    if (!workers.length) {
+        container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-light)">No exposure logged for this date</div>';
+        return;
+    }
+
+    container.innerHTML = workers.map(w => `
+        <div class="worker-card ${w.status}">
+            <div class="wc-name">${w.name}</div>
+            <div style="text-align:right">
+                <div class="wc-a8" style="color:${statusColor(w.status)}">${w.a8.toFixed(2)} m/s&sup2;</div>
+                <div class="wc-meta">${w.totalMins} min \u2022 ${w.entryCount} entr${w.entryCount !== 1 ? 'ies' : 'y'}</div>
+            </div>
+            <span class="a8-pill ${w.status}" style="margin:0">${statusLabel(w.status)}</span>
+        </div>
+    `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+init();
+</script>
+
+</body>
+</html>

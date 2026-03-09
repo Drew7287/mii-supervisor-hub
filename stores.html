@@ -584,6 +584,7 @@
     <button class="tab-btn active" onclick="switchTab('requisitions')">Requisitions</button>
     <button class="tab-btn" onclick="switchTab('booking')">Booking In/Out</button>
     <button class="tab-btn" onclick="switchTab('goods')">Goods Inward</button>
+    <button class="tab-btn" onclick="switchTab('tools')">Tools Register</button>
 </div>
 
 <!-- ===== TAB 1: REQUISITIONS ===== -->
@@ -719,6 +720,70 @@
         </div>
     </div>
     <div class="card-list" id="goods-list"></div>
+</div>
+
+<!-- ===== TAB 4: TOOLS REGISTER ===== -->
+<div class="tab-content" id="tab-tools">
+    <div class="stats-bar" id="tools-stats"></div>
+    <div class="filter-bar">
+        <input type="text" id="tools-search" placeholder="Search tools..." oninput="renderTools()">
+        <select id="tools-category" onchange="renderTools()">
+            <option value="">All Categories</option>
+            <option value="Grinder">Grinder</option>
+            <option value="Drill">Drill</option>
+            <option value="Impact Wrench">Impact Wrench</option>
+            <option value="Saw">Saw</option>
+            <option value="Other">Other</option>
+        </select>
+        <button class="btn-new" onclick="toggleToolForm()">+ Add Tool</button>
+    </div>
+    <div class="inline-form" id="tool-form" style="display:none">
+        <div class="inline-form-card">
+            <h3 id="tool-form-title">Add Tool</h3>
+            <input type="hidden" id="tool-edit-id">
+            <div class="form-grid">
+                <div class="form-field">
+                    <label>Identity Number</label>
+                    <input type="text" id="tool-identity" placeholder="e.g. GRN-001">
+                </div>
+                <div class="form-field">
+                    <label>Description *</label>
+                    <input type="text" id="tool-desc" placeholder='e.g. 5" Grinder'>
+                </div>
+                <div class="form-field">
+                    <label>Category</label>
+                    <select id="tool-cat">
+                        <option value="Grinder">Grinder</option>
+                        <option value="Drill">Drill</option>
+                        <option value="Impact Wrench">Impact Wrench</option>
+                        <option value="Saw">Saw</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Manufacturer</label>
+                    <input type="text" id="tool-manufacturer" placeholder="e.g. Makita">
+                </div>
+                <div class="form-field">
+                    <label>Model</label>
+                    <input type="text" id="tool-model" placeholder="e.g. GA5030">
+                </div>
+                <div class="form-field">
+                    <label>Vibration Magnitude (m/s&sup2;) *</label>
+                    <input type="number" id="tool-vibration" step="0.01" min="0" placeholder="e.g. 2.15">
+                </div>
+                <div class="form-field">
+                    <label>Last Tested Date</label>
+                    <input type="date" id="tool-tested">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-cancel" onclick="toggleToolForm()">Cancel</button>
+                <button class="btn-action green" onclick="saveTool()">Save Tool</button>
+            </div>
+        </div>
+    </div>
+    <div class="card-list" id="tools-list"></div>
 </div>
 
 <script src="mii-db.js"></script>
@@ -982,7 +1047,8 @@ function switchTab(tab) {
         btn.classList.toggle('active',
             (tab === 'requisitions' && i === 0) ||
             (tab === 'booking' && i === 1) ||
-            (tab === 'goods' && i === 2)
+            (tab === 'goods' && i === 2) ||
+            (tab === 'tools' && i === 3)
         );
     });
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -990,7 +1056,8 @@ function switchTab(tab) {
 
     if (tab === 'requisitions') renderRequisitions();
     else if (tab === 'booking') renderBookings();
-    else renderGoods();
+    else if (tab === 'goods') renderGoods();
+    else if (tab === 'tools') renderTools();
 }
 
 // =====================================================================
@@ -1574,6 +1641,187 @@ function submitGir() {
     document.getElementById('gir-form').style.display = 'none';
 
     renderGoods();
+}
+
+// =====================================================================
+// TAB 4: TOOLS REGISTER
+// =====================================================================
+const TOOLS_SEEDED_KEY = 'mii_tools_seeded';
+
+async function seedToolsData() {
+    if (localStorage.getItem(TOOLS_SEEDED_KEY)) return;
+
+    const seedTools = [
+        { id: 'TL-SEED-01', description: '4.5" Grinder', category: 'Grinder', vibrationMagnitude: 2.15, isActive: 1 },
+        { id: 'TL-SEED-02', description: '5" Grinder', category: 'Grinder', vibrationMagnitude: 1.78, isActive: 1 },
+        { id: 'TL-SEED-03', description: '7" Grinder', category: 'Grinder', vibrationMagnitude: 3.30, isActive: 1 },
+        { id: 'TL-SEED-04', description: '9" Grinder', category: 'Grinder', vibrationMagnitude: 1.60, isActive: 1 },
+        { id: 'TL-SEED-05', description: 'Internal/Die Grinder', category: 'Grinder', vibrationMagnitude: 0.50, isActive: 1 },
+        { id: 'TL-SEED-06', description: 'Tec Gun', category: 'Other', vibrationMagnitude: 0.50, isActive: 1 },
+        { id: 'TL-SEED-07', description: '1/2" Impact Wrench', category: 'Impact Wrench', vibrationMagnitude: 3.85, isActive: 1 },
+        { id: 'TL-SEED-08', description: '3/4" Impact Wrench', category: 'Impact Wrench', vibrationMagnitude: 11.40, isActive: 1 },
+        { id: 'TL-SEED-09', description: 'Chop Saw', category: 'Saw', vibrationMagnitude: 1.00, isActive: 1 },
+        { id: 'TL-SEED-10', description: 'Pistol Drill (Metal)', category: 'Drill', vibrationMagnitude: 0.50, isActive: 1 },
+        { id: 'TL-SEED-11', description: 'Pistol Drill (Concrete)', category: 'Drill', vibrationMagnitude: 14.70, isActive: 1 },
+        { id: 'TL-SEED-12', description: 'SDS Hammer Drill', category: 'Drill', vibrationMagnitude: 4.40, isActive: 1 },
+        { id: 'TL-SEED-13', description: 'Reciprocating Saw', category: 'Saw', vibrationMagnitude: 16.90, isActive: 1 },
+        { id: 'TL-SEED-14', description: 'Mag Drill', category: 'Drill', vibrationMagnitude: 2.50, isActive: 1 },
+    ];
+
+    for (const tool of seedTools) {
+        tool.createdAt = new Date().toISOString();
+        await MiiDB.save('tools', tool);
+    }
+    localStorage.setItem(TOOLS_SEEDED_KEY, 'true');
+}
+
+function vibColor(mag) {
+    if (mag >= 5) return 'red';
+    if (mag >= 2.5) return 'amber';
+    return 'green';
+}
+
+async function renderToolStats() {
+    const tools = await MiiDB.getAll('tools');
+    const active = tools.filter(t => t.isActive !== 0);
+    const high = active.filter(t => t.vibrationMagnitude >= 5).length;
+    document.getElementById('tools-stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${tools.length}</div><div class="stat-label">Total Tools</div></div>
+        <div class="stat-card"><div class="stat-value green">${active.length}</div><div class="stat-label">Active</div></div>
+        <div class="stat-card"><div class="stat-value red">${high}</div><div class="stat-label">High Vibration (&ge;5)</div></div>
+        <div class="stat-card"><div class="stat-value blue">${active.length - high}</div><div class="stat-label">Within Limits</div></div>
+    `;
+}
+
+async function renderTools() {
+    await seedToolsData();
+    await renderToolStats();
+    const tools = await MiiDB.getAll('tools');
+
+    const search = (document.getElementById('tools-search').value || '').toLowerCase();
+    const cat = document.getElementById('tools-category').value;
+
+    const filtered = tools.filter(t => {
+        if (cat && t.category !== cat) return false;
+        if (search) {
+            const hay = (t.id + ' ' + t.description + ' ' + (t.manufacturer || '') + ' ' + (t.model || '') + ' ' + (t.identityNo || '')).toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    }).sort((a, b) => (b.vibrationMagnitude || 0) - (a.vibrationMagnitude || 0));
+
+    const list = document.getElementById('tools-list');
+    if (!filtered.length) {
+        list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-light)">No tools found</div>';
+        return;
+    }
+
+    list.innerHTML = filtered.map(t => {
+        const vc = vibColor(t.vibrationMagnitude || 0);
+        const accentCss = vc === 'red' ? 'var(--danger)' : vc === 'amber' ? 'var(--warning)' : 'var(--success)';
+        const mag = (t.vibrationMagnitude || 0).toFixed(2);
+        return `
+        <div class="s-card" onclick="toggleCard('tool-${t.id}')">
+            <div class="s-accent" style="background:${accentCss}"></div>
+            <div class="s-body" style="flex:1;padding:14px 16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <strong style="font-size:0.95rem">${t.description}</strong>
+                        <span style="font-size:0.78rem;color:var(--text-light);margin-left:8px">${t.category || ''}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <span style="font-size:1rem;font-weight:700;color:${accentCss}">${mag} m/s&sup2;</span>
+                        <span class="expand-arrow" style="font-size:0.8rem;color:var(--text-light)">&#9660;</span>
+                    </div>
+                </div>
+                <div class="s-expand" id="tool-${t.id}">
+                    <div style="padding-top:10px;font-size:0.82rem;color:var(--text-light);display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;">
+                        <div><strong>Identity No:</strong> ${t.identityNo || '—'}</div>
+                        <div><strong>Manufacturer:</strong> ${t.manufacturer || '—'}</div>
+                        <div><strong>Model:</strong> ${t.model || '—'}</div>
+                        <div><strong>Last Tested:</strong> ${t.lastTestedDate || '—'}</div>
+                        <div><strong>Status:</strong> ${t.isActive !== 0 ? 'Active' : 'Inactive'}</div>
+                    </div>
+                    <div style="display:flex;gap:6px;margin-top:10px">
+                        <button class="btn-action blue" onclick="event.stopPropagation();toggleToolForm('${t.id}')">Edit</button>
+                        <button class="btn-action red" onclick="event.stopPropagation();deleteTool('${t.id}')">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleToolForm(editId) {
+    const form = document.getElementById('tool-form');
+    const titleEl = document.getElementById('tool-form-title');
+    const editIdField = document.getElementById('tool-edit-id');
+
+    if (editId) {
+        // Edit mode — populate from IndexedDB
+        MiiDB.get('tools', editId).then(tool => {
+            if (!tool) return;
+            editIdField.value = editId;
+            titleEl.textContent = 'Edit Tool';
+            document.getElementById('tool-identity').value = tool.identityNo || '';
+            document.getElementById('tool-desc').value = tool.description || '';
+            document.getElementById('tool-cat').value = tool.category || 'Other';
+            document.getElementById('tool-manufacturer').value = tool.manufacturer || '';
+            document.getElementById('tool-model').value = tool.model || '';
+            document.getElementById('tool-vibration').value = tool.vibrationMagnitude || '';
+            document.getElementById('tool-tested').value = tool.lastTestedDate || '';
+            form.style.display = '';
+        });
+        return;
+    }
+
+    // Toggle add form
+    if (form.style.display === 'none' || !form.style.display) {
+        editIdField.value = '';
+        titleEl.textContent = 'Add Tool';
+        document.getElementById('tool-identity').value = '';
+        document.getElementById('tool-desc').value = '';
+        document.getElementById('tool-cat').value = 'Grinder';
+        document.getElementById('tool-manufacturer').value = '';
+        document.getElementById('tool-model').value = '';
+        document.getElementById('tool-vibration').value = '';
+        document.getElementById('tool-tested').value = '';
+        form.style.display = '';
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+async function saveTool() {
+    const desc = document.getElementById('tool-desc').value.trim();
+    const vib = parseFloat(document.getElementById('tool-vibration').value);
+    if (!desc) { alert('Description is required.'); return; }
+    if (isNaN(vib) || vib < 0) { alert('Valid vibration magnitude is required.'); return; }
+
+    const editId = document.getElementById('tool-edit-id').value;
+    const tool = editId ? await MiiDB.get('tools', editId) : {};
+
+    tool.id = editId || ('TL-' + Date.now().toString().slice(-6));
+    tool.identityNo = document.getElementById('tool-identity').value.trim();
+    tool.description = desc;
+    tool.category = document.getElementById('tool-cat').value;
+    tool.manufacturer = document.getElementById('tool-manufacturer').value.trim();
+    tool.model = document.getElementById('tool-model').value.trim();
+    tool.vibrationMagnitude = vib;
+    tool.lastTestedDate = document.getElementById('tool-tested').value || null;
+    tool.isActive = 1;
+    if (!editId) tool.createdAt = new Date().toISOString();
+    tool.updatedAt = new Date().toISOString();
+
+    await MiiDB.save('tools', tool);
+    document.getElementById('tool-form').style.display = 'none';
+    renderTools();
+}
+
+async function deleteTool(id) {
+    if (!confirm('Delete this tool from the register?')) return;
+    await MiiDB.remove('tools', id);
+    renderTools();
 }
 
 // ===== SHARED =====
