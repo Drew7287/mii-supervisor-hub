@@ -224,6 +224,12 @@
             color: var(--text-mid);
             white-space: pre-line;
         }
+        .cell-forms a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .cell-forms a:hover { text-decoration: underline; }
         .cell-notes {
             font-size: 0.78rem;
             color: var(--text-light);
@@ -503,14 +509,14 @@ if ('serviceWorker' in navigator) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Checklist Data — Rev4 (POWRA moved, de-brief added, 21 daily)
+// Checklist Data — Rev5 (permits moved to top, photos consolidated, DSUM renamed)
 // ═══════════════════════════════════════════════════════════════
 const DATA = [
   {t:"major", text:"DAILY DUTIES"},
   {t:"sub", text:"Start of Shift"},
-  {t:"data", r:"1", freq:"Daily", cat:"Planning", duty:"Attend DSUM. Review daily work plan and task allocations against programme", ims:"IMSP 001B", forms:"Work File / Lookahead", notes:"Check previous day\u2019s progress, adjust priorities"},
-  {t:"data", r:"2", freq:"Daily", cat:"H&S", duty:"Deliver information from DSUM, deliver daily briefing to team e.g. RAMS Briefing, job specific hazards (toolbox talk), customer meeting outputs, site coordination", ims:"IMSP 008\nIMSP 011", forms:"SF 012B\nJMS / RAMS", notes:"Record attendance and topic. Cover task-specific hazards, not standard forms. Rescue plans"},
   {t:"data", r:"3", freq:"Daily", cat:"H&S / Permits", duty:"Obtain all relevant permits to work before commencing activities", ims:"IMSP 001B\nIMSP 015", forms:"Permit to Work forms\nWI (S01)", notes:"Check isolations, air monitoring, confined space if applicable"},
+  {t:"data", r:"1", freq:"Daily", cat:"Planning", duty:"Attend Daily Briefing Meeting. Review daily work plan and task allocations against programme", ims:"IMSP 001B", forms:"Work File / Lookahead", notes:"Check previous day\u2019s progress, adjust priorities"},
+  {t:"data", r:"2", freq:"Daily", cat:"H&S", duty:"Deliver information from Daily Briefing Meeting, deliver daily briefing to team e.g. RAMS Briefing, job specific hazards (toolbox talk), customer meeting outputs, site coordination", ims:"IMSP 008\nIMSP 011", forms:"SF 012B\nJMS / RAMS", notes:"Record attendance and topic. Cover task-specific hazards, not standard forms. Rescue plans"},
   {t:"data", r:"4", freq:"Daily", cat:"Competence", duty:"Confirm all personnel are competent for today\u2019s assigned tasks", ims:"IMSP 008\nIMSP 012", forms:"SF 021A\nSF 045F", notes:"Check qualifications, tickets, site inductions are current"},
   {t:"data", r:"5", freq:"Daily", cat:"H&S", duty:"Confirm correct PPE is available, worn and in good condition", ims:"IMSP 007A", forms:"SF 042 / SF 046C/E", notes:"Task-specific PPE per RAMS (RPE, harness, face fit etc.)"},
   {t:"data", r:"6", freq:"Daily", cat:"Equipment", duty:"Ensure pre-use equipment inspections completed before work starts (telehandler, MEWPs, lifting equipment, power tools)", ims:"IMSP 006A\nIMSP 006B\nIMSP 006C", forms:"SSW (E06/E07/E08)\nSF 019", notes:"Electrical (PAT), lifting (LOLER), hand tools, power tools, calibration"},
@@ -526,11 +532,11 @@ const DATA = [
   {t:"data", r:"14", freq:"Daily", cat:"Contractor Mgmt", duty:"Ensure subcontractor activities are compliant with all relevant site rules and MII Procedures", ims:"IMSP 016", forms:"IMSP 016\nIMSP 007A", notes:"Ensure contractor RAMS in place, permits held, personnel inducted"},
 
   {t:"sub", text:"End of Shift"},
-  {t:"data", r:"15", freq:"Daily", cat:"H&S / Team", duty:"Conduct end-of-shift team de-brief: confirm all hazards or incidents have been reported, collect HAVs exposure feedback from workforce, verify workplace left in acceptable condition, and ensure all tools and equipment returned to stores", ims:"IMSP 001B\nIMSP 003\nIMSP 023", forms:"SF 013C\nSF 049E\nSF 019", notes:"Brief stand-down before team disperses. Capture any unreported issues on the day."},
-  {t:"data", r:"16", freq:"Daily", cat:"Records", duty:"Record daily progress, attendance and impacts to programme", ims:"IMSP 001B", forms:"Work File\nTimesheet\nAllocation Sheet", notes:"Against programme activities \u2014 actual vs planned"},
+  {t:"data", r:"15", freq:"Daily", cat:"H&S / Team", duty:"Conduct end-of-shift team de-brief: confirm all hazards or incidents have been reported, collect HAVs exposure feedback from workforce, verify workplace left in acceptable condition [take photo], and ensure all tools and equipment returned to stores", ims:"IMSP 001B\nIMSP 003\nIMSP 023", forms:'<a href="havs.html">HAVs Exposure Tracker</a>\n<a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&route=shorturl" target="_blank">SHEQ Observations</a>', notes:"Brief stand-down before team disperses. Capture any unreported issues on the day."},
+  {t:"data", r:"16", freq:"Daily", cat:"Records", duty:"Record daily progress, attendance and impacts to programme", ims:"IMSP 001B", forms:"Allocation Sheet", notes:"Against programme activities \u2014 actual vs planned"},
   {t:"data", r:"17", freq:"Daily", cat:"Records", duty:"Complete and update site registers (personnel register, equipment register, permit log) as per project requirements", ims:"IMSP 001B", forms:"SF 057\nSF 019 a-e", notes:"Keep registers current at all times"},
-  {t:"data", r:"18", freq:"Daily", cat:"H&S / Permits", duty:"Ensure all permits to work returned, cancelled or suspended for the day. Confirm all isolation and lockout procedures completed", ims:"IMSP 001B\nIMSP 015", forms:"Permit to Work forms", notes:"Never leave live permits open overnight unattended"},
-  {t:"data", r:"19", freq:"Daily", cat:"Housekeeping", duty:"Ensure work areas left in acceptable condition. Take photographs of work area condition", ims:"IMSP 022\nIMSP 001B", forms:"\u2014", notes:"Clean as you go. Waste cleared, materials stored safely"},
+  {t:"data", r:"18", freq:"Daily", cat:"H&S / Permits", duty:"Ensure all permits to work returned, cancelled or suspended for the day. Confirm all isolation and lockout procedures completed", ims:"IMSP 001B\nIMSP 015", forms:"\u2014", notes:"Never leave live permits open overnight unattended"},
+  {t:"data", r:"19", freq:"Daily", cat:"Housekeeping", duty:"Ensure work areas left in acceptable condition", ims:"IMSP 022\nIMSP 001B", forms:"\u2014", notes:"Clean as you go. Waste cleared, materials stored safely"},
   {t:"data", r:"20", freq:"Daily", cat:"Reporting", duty:"Report daily progress and any issues to Construction Manager", ims:"IMSP 017\nIMSP 014", forms:"Daily Progress Report\nSF 042B", notes:"Productivity data, resource utilisation, upcoming risks"},
   {t:"data", r:"21", freq:"Daily", cat:"Planning", duty:"Review next day\u2019s work plan and confirm resource and material requirements (consumables, tooling, spares)", ims:"IMSP 001B", forms:"Lookahead / Work File", notes:"Flag potential delays, resource issues or permit requirements early"},
 
@@ -563,20 +569,19 @@ const DATA = [
   {t:"data", r:"36", freq:"Per Job", cat:"CDM", duty:"Welfare facilities adequate, site secure", ims:"IMSP 015", forms:"F10\nSF 004B\nSF 057", notes:""},
   {t:"sub", text:"During Job Execution"},
   {t:"data", r:"37", freq:"Per Task", cat:"Commercial", duty:"Record and confirm any additional/varied work with customer before proceeding", ims:"IMSP 001B\nIMSP 021", forms:"Additional Contract Spend form\nTQ Form", notes:"Get written instruction. Verbal agreements are not enough."},
-  {t:"data", r:"38", freq:"Per Task", cat:"Materials", duty:"Receive materials \u2014 check condition, PO, certs, traceability markings", ims:"IMSP 004\nIMSP 004A", forms:"Delivery Notes\nMaterial Certs\nIMSP 004B", notes:"Quarantine non-conforming items. Raise NCR if required."},
+  {t:"data", r:"38", freq:"Per Task", cat:"Materials", duty:"Receive materials directly delivered to site \u2014 check condition, PO, certs, traceability markings", ims:"IMSP 004\nIMSP 004A", forms:"Delivery Notes\nMaterial Certs\nIMSP 004B", notes:"Quarantine non-conforming items. Raise NCR if required."},
   {t:"sub", text:"Job Completion / Demobilisation"},
   {t:"data", r:"39", freq:"Per Job", cat:"Quality", duty:"Carry out final inspection of the work before handover", ims:"IMSP 001B\nIMSP 001D", forms:"SF 010D\nSF 001B", notes:"Against drawings, spec, ITP. Snagging complete."},
   {t:"data", r:"40", freq:"Per Job", cat:"Environment", duty:"Ensure work area left in acceptable condition \u2014 waste cleared, site restored", ims:"IMSP 022\nIMSP 001B", forms:"Waste Transfer Notes", notes:"Waste segregated and removed via licensed carrier"},
-  {t:"data", r:"41", freq:"Per Job", cat:"Permits", duty:"Ensure all permits to work are cleared/cancelled and site registers updated", ims:"IMSP 001B\nIMSP 015", forms:"Permit to Work forms\nSF 057", notes:"No live permits left open after demob"},
-  {t:"data", r:"42", freq:"Per Job", cat:"Equipment", duty:"Return all equipment, tools and hired plant. Update asset registers.", ims:"IMSP 004\nIMSP 006C", forms:"SF 019\nSF 019B", notes:"Off-hire hired equipment. Report damaged items."},
+  {t:"data", r:"41", freq:"Per Job", cat:"Equipment", duty:"Return all equipment, tools and hired plant. Update asset registers.", ims:"IMSP 004\nIMSP 006C", forms:"SF 019\nSF 019B", notes:"Off-hire hired equipment. Report damaged items."},
 
   {t:"major", text:"PER INCIDENT DUTIES"},
   {t:"sub", text:"Immediate Response (within minutes)"},
-  {t:"data", r:"43", freq:"Per Incident", cat:"Response", duty:"Make area safe. Administer or locate first aid. Call emergency services if needed.", ims:"IMSP 003B", forms:"Emergency Plans", notes:"Priority: people, then scene preservation"},
-  {t:"data", r:"44", freq:"Per Incident", cat:"Reporting", duty:"Communicate details of incident to CM ASAP", ims:"IMSP 003\nIMSP 003A", forms:"SF 013A / SF 013C", notes:"Phone call first, then paperwork. Obtain NCR number."},
-  {t:"data", r:"45", freq:"Per Incident", cat:"Response", duty:"Take immediate corrective action to prevent recurrence", ims:"IMSP 003", forms:"\u2014", notes:"Stop work if necessary. Do not restart until safe to do so."},
-  {t:"data", r:"46", freq:"Per Incident", cat:"Evidence", duty:"Secure the scene \u2014 quarantine equipment, preserve evidence", ims:"IMSP 003A", forms:"Equipment Records", notes:"Do not disturb scene. Do not allow cleanup until authorised."},
-  {t:"data", r:"47", freq:"Per Incident", cat:"Evidence", duty:"Take photographs of scene and any relevant items. Sketch layout if helpful.", ims:"IMSP 003A", forms:"Photographs / Sketches", notes:"Before anything is moved or cleaned up"}
+  {t:"data", r:"42", freq:"Per Incident", cat:"Response", duty:"Make area safe. Administer or locate first aid. Call emergency services if needed \u2014 adhere to any specific site rules in terms of contacting emergency services.", ims:"IMSP 003B", forms:"Emergency Plans", notes:"Priority: people, then scene preservation"},
+  {t:"data", r:"43", freq:"Per Incident", cat:"Reporting", duty:"Communicate details of incident to CM ASAP", ims:"IMSP 003\nIMSP 003A", forms:"SF 013A / SF 013C", notes:"Phone call first, then paperwork. Obtain NCR number."},
+  {t:"data", r:"44", freq:"Per Incident", cat:"Response", duty:"Take immediate corrective action to prevent recurrence", ims:"IMSP 003", forms:"\u2014", notes:"Stop work if necessary. Do not restart until safe to do so."},
+  {t:"data", r:"45", freq:"Per Incident", cat:"Evidence", duty:"Secure the scene \u2014 quarantine equipment, preserve evidence", ims:"IMSP 003A", forms:"Equipment Records", notes:"Do not disturb scene. Do not allow cleanup until authorised."},
+  {t:"data", r:"46", freq:"Per Incident", cat:"Evidence", duty:"Take photographs of scene and any relevant items. Sketch layout if helpful.", ims:"IMSP 003A", forms:"Photographs / Sketches", notes:"Before anything is moved or cleaned up"}
 ];
 
 // ═══════════════════════════════════════════════════════════════
