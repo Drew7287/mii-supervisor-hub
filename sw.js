@@ -8,7 +8,7 @@
  *  - Activate:             Clean up old cache versions
  */
 
-const CACHE_VERSION = 'mii-hub-v3';
+const CACHE_VERSION = 'mii-hub-v4';
 
 const APP_SHELL = [
   './',
@@ -79,7 +79,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Everything else (app shell, static) → cache-first
+  // HTML pages → network-first (always get latest, fall back to cache offline)
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
+
+  // Static assets (JS, CSS, images) → cache-first
   event.respondWith(cacheFirst(event.request));
 });
 
