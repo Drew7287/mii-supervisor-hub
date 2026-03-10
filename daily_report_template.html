@@ -1064,7 +1064,7 @@
                         <div class="detail">Before starting, on return to area, after any change</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="https://forms.office.com/Pages/ResponsePage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUNVhJQ1NWVE1FSDMwUlREVU4zNjZUOERINyQlQCN0PWcu" target="_blank" style="color:var(--accent);text-decoration:underline;">POWRA Form</a></td>
+                    <td class="col-forms"><a href="powra.html" onclick="openPowra(event)" style="color:var(--accent);text-decoration:underline;">POWRA Form</a></td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Count:" /></td>
                 </tr>
                 <tr>
@@ -1243,17 +1243,17 @@
 <script>
 (function() {
     var token = localStorage.getItem('mii_token');
-    if (!token) { window.location.href = 'hub.html'; return; }
+    if (!token) { window.location.href = 'index.html'; return; }
     try {
         var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
         if (!payload.exp || payload.exp * 1000 < Date.now()) {
             localStorage.removeItem('mii_token');
             localStorage.removeItem('mii_user');
-            window.location.href = 'hub.html';
+            window.location.href = 'index.html';
         }
     } catch(e) {
         localStorage.removeItem('mii_token');
-        window.location.href = 'hub.html';
+        window.location.href = 'index.html';
     }
 })();
 </script>
@@ -1366,6 +1366,8 @@ if ('serviceWorker' in navigator) {
     function handleNameSelect(sel) {
         handleOtherSelect(sel, 'Enter person name:');
     }
+    window.handleOtherSelect = handleOtherSelect;
+    window.handleNameSelect = handleNameSelect;
 
     // ===== PROGRAMME TASKS (P6 export) =====
     const PROGRAMME_TASKS = window._PROGRAMME_TASKS || [];
@@ -1576,6 +1578,7 @@ if ('serviceWorker' in navigator) {
         }
         tbody.appendChild(tr);
     }
+    window.addWorkRow = addWorkRow;
 
     // ===== EMPLOYEE LIST =====
     // Fallback: employees.js sets window._MII_EMPLOYEES as [[id, name], ...] pairs
@@ -1592,7 +1595,9 @@ if ('serviceWorker' in navigator) {
         // Remove all options except first and last
         while (supSel.options.length > 2) supSel.remove(1);
         // Insert employee names before "Other..."
-        EMPLOYEES.forEach(([num, name]) => {
+        EMPLOYEES.forEach(emp => {
+            const num = Array.isArray(emp) ? emp[0] : emp.employee_number;
+            const name = Array.isArray(emp) ? emp[1] : emp.name;
             const opt = document.createElement('option');
             opt.value = name;
             opt.textContent = num ? num + ' — ' + name : name;
@@ -1625,7 +1630,9 @@ if ('serviceWorker' in navigator) {
     // Build just the <option> tags from current EMPLOYEES array
     function buildNameOptions(selectedName) {
         let html = '<option value="">— Select —</option>';
-        EMPLOYEES.forEach(([num, name]) => {
+        EMPLOYEES.forEach(emp => {
+            const num = Array.isArray(emp) ? emp[0] : emp.employee_number;
+            const name = Array.isArray(emp) ? emp[1] : emp.name;
             const label = num ? `${num} — ${name}` : name;
             html += `<option value="${name}"${name === selectedName ? ' selected' : ''}>${label}</option>`;
         });
@@ -1682,24 +1689,31 @@ if ('serviceWorker' in navigator) {
 
     // Add manning row (blank or pre-filled)
     function addManningRow(name, trade, planned, actual, taskId, notes) {
-        const tbody = document.getElementById('manning-body');
-        const tr = document.createElement('tr');
-        const p = planned ?? '';
-        const a = actual ?? '';
-        const v = (p !== '' && a !== '') ? a - p : '';
-        const vColor = v < 0 ? '#dc3545' : v > 0 ? '#28a745' : '#1a1a1a';
-        const vText = v === '' ? '' : v === 0 ? '0' : (v > 0 ? '+' + v : v);
-        tr.innerHTML = `
-            <td>${buildNameSelect(name || '')}</td>
-            <td>${buildTradeSelect(trade || '')}</td>
-            <td class="center"><input type="number" min="0" ${p !== '' ? 'value="'+p+'"' : ''} class="manning-planned" oninput="calcVariance(this)" /></td>
-            <td class="center"><input type="number" min="0" ${a !== '' ? 'value="'+a+'"' : ''} class="manning-actual" oninput="calcVariance(this)" /></td>
-            <td class="center variance-cell" style="color:${vColor}">${vText}</td>
-            <td><select class="manning-task-select">${buildTaskIdOptions(taskId || '')}</select></td>
-            <td><input type="text" value="${notes || ''}" /></td>
-        `;
-        tbody.appendChild(tr);
+        try {
+            const tbody = document.getElementById('manning-body');
+            const tr = document.createElement('tr');
+            const p = planned ?? '';
+            const a = actual ?? '';
+            const v = (p !== '' && a !== '') ? a - p : '';
+            const vColor = v < 0 ? '#dc3545' : v > 0 ? '#28a745' : '#1a1a1a';
+            const vText = v === '' ? '' : v === 0 ? '0' : (v > 0 ? '+' + v : v);
+            tr.innerHTML = `
+                <td>${buildNameSelect(name || '')}</td>
+                <td>${buildTradeSelect(trade || '')}</td>
+                <td class="center"><input type="number" min="0" ${p !== '' ? 'value="'+p+'"' : ''} class="manning-planned" oninput="calcVariance(this)" /></td>
+                <td class="center"><input type="number" min="0" ${a !== '' ? 'value="'+a+'"' : ''} class="manning-actual" oninput="calcVariance(this)" /></td>
+                <td class="center variance-cell" style="color:${vColor}">${vText}</td>
+                <td><select class="manning-task-select">${buildTaskIdOptions(taskId || '')}</select></td>
+                <td><input type="text" value="${notes || ''}" /></td>
+            `;
+            tbody.appendChild(tr);
+            updateManningTotals();
+        } catch (e) {
+            console.error('addManningRow error:', e);
+            alert('Error adding row: ' + e.message);
+        }
     }
+    window.addManningRow = addManningRow;
 
     // Seed empty work plan rows
     for (let i = 0; i < 5; i++) addWorkRow();
@@ -1748,6 +1762,7 @@ if ('serviceWorker' in navigator) {
         }
         updateManningTotals();
     }
+    window.calcVariance = calcVariance;
 
     function updateManningTotals() {
         let totalPlanned = 0, totalActual = 0;
@@ -1810,6 +1825,17 @@ if ('serviceWorker' in navigator) {
         const params = new URLSearchParams();
         if (names.length) params.set('crew', names.join(','));
         window.open('training_matrix.html?' + params.toString(), '_blank');
+    }
+
+    // ===== POWRA: Collect crew from manning tracker → POWRA form =====
+    function openPowra(e) {
+        e.preventDefault();
+        const names = getActiveCrew();
+        const supervisor = getSupervisorName();
+        const params = new URLSearchParams();
+        if (names.length) params.set('crew', names.join(','));
+        if (supervisor) params.set('assessor', supervisor);
+        window.open('powra.html?' + params.toString(), '_blank');
     }
 
     // ===== PRE-USE INSPECTIONS: Open inspection form with inspector pre-filled =====

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>POWRA — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; padding-bottom: 90px; }
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+        .form-header { max-width: 700px; margin: 0 auto; padding: 20px 20px 0; }
+        .form-ref { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--success); }
+        .form-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin: 2px 0 6px; }
+        .form-desc { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; margin-bottom: 8px; }
+        .form-body { max-width: 700px; margin: 0 auto; padding: 12px 20px; }
+        .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); padding: 14px 0 8px; border-bottom: 2px solid var(--primary); margin-bottom: 12px; }
+        .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .field label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 3px; }
+        .field input, .field select, .field textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
+        .field textarea { min-height: 80px; resize: vertical; }
+        .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+        .field.full { grid-column: 1 / -1; }
+
+        /* Checklist */
+        .checklist-warning { background: #fff3cd; border: 1.5px solid var(--warning); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.85rem; font-weight: 600; color: #664d03; display: flex; align-items: center; gap: 8px; }
+        .checklist-warning .warn-icon { font-size: 1.3rem; }
+
+        .check-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .check-row:last-child { border-bottom: none; }
+        .check-num { min-width: 28px; height: 28px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--text-light); flex-shrink: 0; margin-top: 2px; }
+        .check-text { flex: 1; font-size: 0.85rem; line-height: 1.4; padding-top: 3px; }
+        .check-pills { display: flex; gap: 4px; flex-shrink: 0; }
+        .pill { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 20px; background: var(--white); font-size: 0.78rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; }
+        .pill:hover { border-color: #999; }
+        .pill.sel-yes { border-color: var(--success); background: #e6f7ec; color: var(--success); }
+        .pill.sel-no { border-color: var(--danger); background: #fde8ea; color: var(--danger); }
+        .pill.sel-na { border-color: var(--text-light); background: #f0f2f5; color: var(--text-light); }
+
+        .check-row.failed { background: #fde8ea; border-radius: 6px; padding: 10px 8px; margin: 2px -8px; }
+
+        .fail-banner { display: none; background: var(--danger); color: var(--white); border-radius: 8px; padding: 14px 18px; margin: 12px 0; font-size: 0.9rem; font-weight: 700; text-align: center; }
+        .fail-banner.show { display: block; }
+
+        /* Lockout section */
+        .toggle-group { display: flex; gap: 0; margin-bottom: 12px; }
+        .toggle-btn { flex: 1; padding: 10px 8px; border: 1.5px solid var(--border); background: var(--white); font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; text-align: center; transition: all 0.15s; }
+        .toggle-btn:first-child { border-radius: 6px 0 0 6px; }
+        .toggle-btn:last-child { border-radius: 0 6px 6px 0; }
+        .toggle-btn.selected.yes { border-color: var(--success); background: #e6f7ec; color: var(--success); }
+        .toggle-btn.selected.no { border-color: var(--danger); background: #fde8ea; color: var(--danger); }
+        .toggle-btn.selected.na { border-color: var(--text-light); background: #f0f2f5; color: var(--text-light); }
+
+        .conditional { display: none; }
+        .conditional.show { display: block; }
+
+        .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
+        .submit-status { font-size: 0.82rem; color: var(--text-light); }
+        .btn-submit { padding: 10px 24px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; color: var(--white); background: var(--success); transition: opacity 0.15s; }
+        .btn-submit:hover { opacity: 0.9; }
+
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
+        .overlay.show { display: flex; }
+        .overlay-card { background: var(--white); border-radius: 12px; padding: 32px 28px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .overlay-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 14px; background: #e6f7ec; color: var(--success); }
+        .overlay-icon.warn { background: #fde8ea; color: var(--danger); }
+        .overlay-card h3 { font-size: 1.15rem; color: var(--primary); margin-bottom: 6px; }
+        .overlay-card .report-id { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+        .overlay-card p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+        .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+        .overlay-actions button { padding: 9px 20px; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+
+        .crew-picker { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
+        .crew-chip { display:flex; align-items:center; gap:5px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; background:var(--white); font-size:0.82rem; cursor:pointer; transition:all 0.15s; user-select:none; }
+        .crew-chip:hover { border-color:var(--accent); }
+        .crew-chip.selected { background:#e6f7ec; border-color:var(--success); color:var(--success); font-weight:600; }
+        .crew-chip input { display:none; }
+
+        @media (max-width: 600px) { .fields { grid-template-columns: 1fr; } .check-row { flex-wrap: wrap; } .check-pills { width: 100%; justify-content: flex-end; } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>POWRA</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<div class="form-header">
+    <div class="form-ref">IMSP 011 &mdash; Point of Work Risk Assessment</div>
+    <h2>Point of Work Risk Assessment</h2>
+    <div class="form-desc">Complete a POWRA before starting any task. All 17 checks must be answered. If any answer is NO, work must NOT proceed until the issue is resolved.</div>
+</div>
+
+<div class="form-body">
+    <div class="section-title">Assessment Details</div>
+    <div class="fields">
+        <div class="field">
+            <label>Assessor Name</label>
+            <input type="text" id="f-name" placeholder="Your name">
+        </div>
+        <div class="field">
+            <label>Date</label>
+            <input type="date" id="f-date">
+        </div>
+        <div class="field">
+            <label>Time</label>
+            <input type="time" id="f-time">
+        </div>
+        <div class="field">
+            <label>Site</label>
+            <input type="text" id="f-site" value="Enabling Works — Port Talbot">
+        </div>
+        <div class="field">
+            <label>Task / Activity</label>
+            <input type="text" id="f-task" placeholder="e.g. Steel erection Bay 4">
+        </div>
+        <div class="field">
+            <label>Location</label>
+            <input type="text" id="f-location" placeholder="e.g. Bay 4, Level 2">
+        </div>
+        <div class="field full">
+            <label>Party Members</label>
+            <textarea id="f-party" placeholder="Names of workers in the party..." style="min-height:60px"></textarea>
+        </div>
+        <div class="field">
+            <label>Party Count</label>
+            <input type="number" id="f-party-count" placeholder="0" min="1">
+        </div>
+    </div>
+
+    <div class="section-title">Hazard Checklist</div>
+    <div class="checklist-warning">
+        <span class="warn-icon">&#9888;</span>
+        STOP &mdash; Do NOT start work if any answer is NO
+    </div>
+
+    <div id="checklist"></div>
+    <div class="fail-banner" id="fail-banner">STOP &mdash; One or more checks have failed. Work must NOT proceed.</div>
+
+    <div class="section-title">Portable Lockout Box</div>
+    <label style="display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-light); margin-bottom:6px;">Lockout box required?</label>
+    <div class="toggle-group" id="lockout-toggle">
+        <button class="toggle-btn yes" onclick="setLockout('Yes', this)">Yes</button>
+        <button class="toggle-btn no" onclick="setLockout('No', this)">No</button>
+        <button class="toggle-btn na selected" onclick="setLockout('N/A', this)">N/A</button>
+    </div>
+
+    <div class="conditional" id="lockout-section">
+        <label style="display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-light); margin-bottom:6px;">All personnel locked on?</label>
+        <div class="toggle-group" id="locked-on-toggle">
+            <button class="toggle-btn yes" onclick="setLockedOn('Yes', this)">Yes</button>
+            <button class="toggle-btn no" onclick="setLockedOn('No', this)">No</button>
+        </div>
+
+        <label style="display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-light); margin-bottom:6px;">All keys in safe keeping?</label>
+        <div class="toggle-group" id="keys-safe-toggle">
+            <button class="toggle-btn yes" onclick="setKeysSafe('Yes', this)">Yes</button>
+            <button class="toggle-btn no" onclick="setKeysSafe('No', this)">No</button>
+        </div>
+
+        <div class="conditional" id="lockout-comments-section">
+            <div class="fields">
+                <div class="field full">
+                    <label>Lockout Comments (if No to any above)</label>
+                    <textarea id="f-lockout-comments" placeholder="Explain..." style="min-height:60px"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">Comments</div>
+    <div class="fields">
+        <div class="field full">
+            <label>Additional Hazards / Controls</label>
+            <textarea id="f-comments" placeholder="Any additional hazards identified or controls required..." style="min-height:70px"></textarea>
+        </div>
+    </div>
+</div>
+
+<div class="submit-bar">
+    <div class="submit-status">IMSP 011 &mdash; POWRA</div>
+    <button class="btn-submit" onclick="submitPowra()">Submit POWRA</button>
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-icon" id="overlay-icon">&#10003;</div>
+        <h3 id="overlay-title">POWRA Submitted</h3>
+        <div class="report-id" id="overlay-id"></div>
+        <p id="overlay-msg">Your Point of Work Risk Assessment has been recorded. Work may proceed.</p>
+        <div class="overlay-actions">
+            <button class="btn-outline" onclick="window.location.href='index.html'">Back to Hub</button>
+            <button class="btn-primary" onclick="location.reload()">Submit Another</button>
+        </div>
+    </div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+var QUESTIONS = [
+    'Have you read, understood and signed the relevant Risk Assessment?',
+    'Are you competent to carry out the work ahead of you?',
+    'Have you signed on the isolations/permits or confirmed with your supervisor?',
+    'Do you have the correct PPE/RPE for the job, as stated in your Risk Assessment?',
+    'Are housekeeping standards acceptable? Is the work area free from hazards?',
+    'Are you aware of other activities/people in the area (above, below, adjacent)?',
+    'Are you aware of the access and egress routes to and from your work area?',
+    'Are lighting levels adequate throughout the work area?',
+    'Hot Work — Have you obtained permission/permit before starting any hot work?',
+    'Is your equipment fit for purpose, free from damage and in compliance?',
+    'To prevent hand injuries, have you identified potential pinch/trap points?',
+    'Are materials and equipment stored so they cannot move, slide or fall?',
+    'Have working platforms been inspected and open edges protected?',
+    'If manual handling is unavoidable, is the load weight known and safe?',
+    'Has a suitable lift plan been created and communicated for all planned lifts?',
+    'If hazardous substances are used/created, have suitable controls been implemented?',
+    'Can work proceed in current weather conditions (wind speeds etc.)?'
+];
+
+var answers = {};
+var lockoutBoxRequired = 'N/A';
+var allLockedOn = '';
+var allKeysSafe = '';
+
+// Pre-fill defaults
+document.getElementById('f-date').valueAsDate = new Date();
+(function() {
+    var now = new Date();
+    var hh = String(now.getHours()).padStart(2, '0');
+    var mm = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('f-time').value = hh + ':' + mm;
+})();
+
+// Pre-fill name from user
+try {
+    var user = JSON.parse(localStorage.getItem('mii_user') || '{}');
+    if (user.username) document.getElementById('f-name').value = user.username;
+} catch(_) {}
+
+// Pre-populate crew from daily report ?crew param
+(function prePopulateCrew() {
+    var params = new URLSearchParams(window.location.search);
+    var crewStr = params.get('crew');
+    if (!crewStr) return;
+
+    var names = crewStr.split(',').map(function(n) { return n.trim(); }).filter(Boolean);
+    if (!names.length) return;
+
+    // Pre-fill assessor if passed
+    var assessor = params.get('assessor');
+    if (assessor) document.getElementById('f-name').value = assessor;
+
+    // Build crew picker above textarea
+    var partyField = document.getElementById('f-party').parentElement;
+    var picker = document.createElement('div');
+    picker.className = 'crew-picker';
+    picker.id = 'crew-picker';
+
+    names.forEach(function(name) {
+        var chip = document.createElement('label');
+        chip.className = 'crew-chip';
+        chip.innerHTML = '<input type="checkbox" value="' + name.replace(/"/g, '&quot;') + '"> ' + name;
+        chip.querySelector('input').addEventListener('change', syncCrewToParty);
+        picker.appendChild(chip);
+    });
+
+    partyField.insertBefore(picker, document.getElementById('f-party'));
+    document.getElementById('f-party').placeholder = 'Additional members not listed above...';
+})();
+
+function syncCrewToParty() {
+    var picker = document.getElementById('crew-picker');
+    if (!picker) return;
+    var checked = [];
+    picker.querySelectorAll('input:checked').forEach(function(cb) {
+        checked.push(cb.value);
+        cb.parentElement.classList.add('selected');
+    });
+    picker.querySelectorAll('input:not(:checked)').forEach(function(cb) {
+        cb.parentElement.classList.remove('selected');
+    });
+    document.getElementById('f-party').dataset.crewSelected = checked.join(', ');
+
+    // Update party count
+    var manual = document.getElementById('f-party').value.trim();
+    var manualCount = manual ? manual.split(/[\n,]/).filter(function(s) { return s.trim(); }).length : 0;
+    document.getElementById('f-party-count').value = checked.length + manualCount;
+}
+
+// Build checklist
+(function buildChecklist() {
+    var container = document.getElementById('checklist');
+    QUESTIONS.forEach(function(q, i) {
+        var num = i + 1;
+        var row = document.createElement('div');
+        row.className = 'check-row';
+        row.id = 'check-row-' + num;
+        row.innerHTML =
+            '<div class="check-num">' + num + '</div>' +
+            '<div class="check-text">' + q + '</div>' +
+            '<div class="check-pills">' +
+                '<button class="pill" onclick="setAnswer(' + num + ',\'Yes\',this)">Yes</button>' +
+                '<button class="pill" onclick="setAnswer(' + num + ',\'No\',this)">No</button>' +
+                '<button class="pill" onclick="setAnswer(' + num + ',\'N/A\',this)">N/A</button>' +
+            '</div>';
+        container.appendChild(row);
+    });
+})();
+
+function setAnswer(num, val, btn) {
+    answers[num] = val;
+    var row = document.getElementById('check-row-' + num);
+    row.querySelectorAll('.pill').forEach(function(p) {
+        p.classList.remove('sel-yes', 'sel-no', 'sel-na');
+    });
+    if (val === 'Yes') btn.classList.add('sel-yes');
+    else if (val === 'No') btn.classList.add('sel-no');
+    else btn.classList.add('sel-na');
+
+    // Highlight failed row
+    row.classList.toggle('failed', val === 'No');
+
+    // Show/hide fail banner
+    var hasNo = false;
+    for (var k in answers) { if (answers[k] === 'No') { hasNo = true; break; } }
+    document.getElementById('fail-banner').classList.toggle('show', hasNo);
+}
+
+function setLockout(val, btn) {
+    lockoutBoxRequired = val;
+    btn.parentElement.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    document.getElementById('lockout-section').classList.toggle('show', val === 'Yes');
+}
+
+function setLockedOn(val, btn) {
+    allLockedOn = val;
+    btn.parentElement.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    checkLockoutComments();
+}
+
+function setKeysSafe(val, btn) {
+    allKeysSafe = val;
+    btn.parentElement.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    checkLockoutComments();
+}
+
+function checkLockoutComments() {
+    var showComments = (allLockedOn === 'No' || allKeysSafe === 'No');
+    document.getElementById('lockout-comments-section').classList.toggle('show', showComments);
+}
+
+function submitPowra() {
+    var name = document.getElementById('f-name').value.trim();
+    if (!name) { alert('Please enter your name.'); return; }
+    var task = document.getElementById('f-task').value.trim();
+    if (!task) { alert('Please enter the task / activity.'); return; }
+
+    // Check all 17 answered
+    var unanswered = [];
+    for (var i = 1; i <= 17; i++) {
+        if (!answers[i]) unanswered.push(i);
+    }
+    if (unanswered.length > 0) {
+        alert('Please answer all 17 checklist questions. Missing: Q' + unanswered.join(', Q'));
+        return;
+    }
+
+    var allPassed = true;
+    var checklist = [];
+    for (var j = 1; j <= 17; j++) {
+        if (answers[j] === 'No') allPassed = false;
+        checklist.push({ questionNumber: j, answer: answers[j] });
+    }
+
+    var id = 'PWR-' + String(Date.now()).slice(-6);
+    var now = new Date();
+    var record = {
+        id: id,
+        assessorName: name,
+        date: document.getElementById('f-date').value,
+        time: document.getElementById('f-time').value,
+        task: task,
+        location: document.getElementById('f-location').value.trim(),
+        site: document.getElementById('f-site').value.trim(),
+        partyMembers: (function() {
+            var crew = (document.getElementById('f-party').dataset.crewSelected || '');
+            var manual = document.getElementById('f-party').value.trim();
+            if (crew && manual) return crew + ', ' + manual;
+            return crew || manual;
+        })(),
+        partyCount: parseInt(document.getElementById('f-party-count').value) || 0,
+        checklist: checklist,
+        lockoutBoxRequired: lockoutBoxRequired,
+        allLockedOn: lockoutBoxRequired === 'Yes' ? allLockedOn : '',
+        allKeysSafe: lockoutBoxRequired === 'Yes' ? allKeysSafe : '',
+        lockoutComments: document.getElementById('f-lockout-comments') ? document.getElementById('f-lockout-comments').value.trim() : '',
+        comments: document.getElementById('f-comments').value.trim(),
+        allPassed: allPassed,
+        status: allPassed ? 'Passed' : 'Failed',
+        submittedAt: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0, 5)
+    };
+
+    var records = JSON.parse(localStorage.getItem('mii_powra') || '[]');
+    records.push(record);
+    localStorage.setItem('mii_powra', JSON.stringify(records));
+    MiiDB.save('powra', record);
+
+    // Update overlay
+    document.getElementById('overlay-id').textContent = id;
+    var iconEl = document.getElementById('overlay-icon');
+    var titleEl = document.getElementById('overlay-title');
+    var msgEl = document.getElementById('overlay-msg');
+    if (allPassed) {
+        iconEl.className = 'overlay-icon';
+        iconEl.innerHTML = '&#10003;';
+        titleEl.textContent = 'POWRA Submitted — PASSED';
+        msgEl.textContent = 'All checks passed. Work may proceed.';
+    } else {
+        iconEl.className = 'overlay-icon warn';
+        iconEl.innerHTML = '&#9888;';
+        titleEl.textContent = 'POWRA Submitted — FAILED';
+        msgEl.textContent = 'One or more checks failed. Work must NOT proceed until issues are resolved. This assessment has been recorded.';
+    }
+    document.getElementById('overlay').classList.add('show');
+}
+
+// ── Seed mock data ──
+(function seedPowra() {
+    if (localStorage.getItem('mii_powra_seeded')) return;
+    function makeChecklist(failQ) {
+        var cl = [];
+        for (var i = 1; i <= 17; i++) {
+            cl.push({ questionNumber: i, answer: (i === failQ ? 'No' : (i === 9 ? 'N/A' : 'Yes')) });
+        }
+        return cl;
+    }
+    var seed = [
+        { id: 'PWR-100001', assessorName: 'Andrew Drew', date: '2026-03-08', time: '07:30', task: 'Steel erection Bay 3', location: 'Bay 3, Level 1', site: 'Enabling Works — Port Talbot', partyMembers: 'John Smith, Mike Jones, Sarah Williams', partyCount: 4, checklist: makeChecklist(0), lockoutBoxRequired: 'N/A', allLockedOn: '', allKeysSafe: '', lockoutComments: '', comments: '', allPassed: true, status: 'Passed', submittedAt: '2026-03-08 07:35' },
+        { id: 'PWR-100002', assessorName: 'John Smith', date: '2026-03-09', time: '08:00', task: 'Concrete pour foundation F7', location: 'Foundation F7', site: 'Enabling Works — Port Talbot', partyMembers: 'Mike Jones, Dave Brown', partyCount: 3, checklist: makeChecklist(0), lockoutBoxRequired: 'Yes', allLockedOn: 'Yes', allKeysSafe: 'Yes', lockoutComments: '', comments: 'Exclusion zone set up around pour area.', allPassed: true, status: 'Passed', submittedAt: '2026-03-09 08:05' },
+        { id: 'PWR-100003', assessorName: 'Mike Jones', date: '2026-03-10', time: '07:45', task: 'Scaffold modification north elevation', location: 'North elevation, Level 3', site: 'Enabling Works — Port Talbot', partyMembers: 'Sarah Williams', partyCount: 2, checklist: makeChecklist(13), lockoutBoxRequired: 'N/A', allLockedOn: '', allKeysSafe: '', lockoutComments: '', comments: 'Platform inspection incomplete — scaffolder to attend before work starts.', allPassed: false, status: 'Failed', submittedAt: '2026-03-10 07:50' }
+    ];
+    localStorage.setItem('mii_powra', JSON.stringify(seed));
+    seed.forEach(function(r) { MiiDB.save('powra', r); });
+    localStorage.setItem('mii_powra_seeded', 'true');
+})();
+</script>
+</body>
+</html>
