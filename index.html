@@ -1,918 +1,1470 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MII Engineering — Supervisor Hub</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MII Site Manager - Prototype</title>
+<style>
+  :root {
+    --primary: #003366;
+    --primary-light: #004d99;
+    --accent: #0078d4;
+    --success: #28a745;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #333333;
+    --text-light: #6c757d;
+    --border: #dee2e6;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
 
-        :root {
-            --primary: #003366;
-            --primary-light: #004d99;
-            --accent: #0078d4;
-            --success: #28a745;
-            --warning: #e6a000;
-            --danger: #dc3545;
-            --bg: #f0f2f5;
-            --white: #ffffff;
-            --border: #d0d5dd;
-            --text: #1a1a1a;
-            --text-light: #667085;
-            --shadow: 0 2px 8px rgba(0,0,0,0.08);
-            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
-        }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            color: var(--text);
-            background: var(--bg);
-            min-height: 100vh;
-        }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 1024px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+    min-height: 100vh;
+  }
 
-        /* ===== TOP BAR ===== */
-        .topbar {
-            background: var(--primary);
-            color: var(--white);
-            padding: 16px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .topbar h1 {
-            font-size: 1.35rem;
-            font-weight: 700;
-            letter-spacing: -0.3px;
-        }
-        .topbar .user-info {
-            font-size: 0.85rem;
-            opacity: 0.85;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .topbar .user-avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.8rem;
-        }
+  /* ===== TOP BAR ===== */
+  .topbar {
+    background: var(--primary);
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-logo {
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+  }
+  .topbar-logo span { color: #66b3ff; font-weight: 400; }
+  .topbar-site {
+    font-size: 12px;
+    opacity: 0.8;
+    background: rgba(255,255,255,0.15);
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-avatar {
+    width: 32px; height: 32px;
+    background: #66b3ff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px;
+  }
+  .topbar-bell {
+    position: relative;
+    cursor: pointer;
+    font-size: 20px;
+  }
+  .topbar-bell .badge {
+    position: absolute;
+    top: -4px; right: -6px;
+    background: var(--danger);
+    color: white;
+    font-size: 10px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
 
-        /* ===== GREETING ===== */
-        .greeting {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 32px 24px 8px;
-        }
-        .greeting h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        .greeting p {
-            color: var(--text-light);
-            font-size: 0.95rem;
-            margin-top: 4px;
-        }
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1024px;
+    background: white;
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+  }
+  .nav-item {
+    flex: 1;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-top: 3px solid transparent;
+    color: var(--text-light);
+  }
+  .nav-item.active {
+    color: var(--accent);
+    border-top-color: var(--accent);
+    background: #f0f7ff;
+  }
+  .nav-item:hover { background: #f8f9fa; }
+  .nav-icon { font-size: 22px; display: block; }
+  .nav-label { font-size: 10px; margin-top: 2px; font-weight: 500; }
 
-        /* ===== CARD GRID ===== */
-        .card-grid {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 24px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
+  /* ===== SCREENS ===== */
+  .screen { display: none; padding: 16px; }
+  .screen.active { display: block; }
 
-        .card {
-            background: var(--white);
-            border-radius: 10px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-        }
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-hover);
-        }
-        .card:active {
-            transform: translateY(-1px);
-        }
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  .card-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .badge-green { background: #d4edda; color: #155724; }
+  .badge-amber { background: #fff3cd; color: #856404; }
+  .badge-red { background: #f8d7da; color: #721c24; }
+  .badge-blue { background: #d1ecf1; color: #0c5460; }
 
-        .card-accent {
-            height: 6px;
-            width: 100%;
-        }
-        .card-accent.blue { background: var(--accent); }
-        .card-accent.green { background: var(--success); }
-        .card-accent.amber { background: var(--warning); }
-        .card-accent.red { background: var(--danger); }
+  /* ===== DASHBOARD ===== */
+  .greeting {
+    margin-bottom: 16px;
+  }
+  .greeting h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .greeting p {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
 
-        .card-body {
-            padding: 20px 22px 24px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 12px 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-number {
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .stat-number.green { color: var(--success); }
+  .stat-number.amber { color: #e6a800; }
+  .stat-number.red { color: var(--danger); }
+  .stat-number.blue { color: var(--accent); }
 
-        .card-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 14px;
-        }
-        .card-icon.blue { background: #e8f2fc; color: var(--accent); }
-        .card-icon.green { background: #e6f7ec; color: var(--success); }
-        .card-icon.amber { background: #fff6e0; color: var(--warning); }
-        .card-icon.red { background: #fde8ea; color: var(--danger); }
+  /* Programme activities */
+  .activity-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 12px;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-zone {
+    background: var(--primary);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    min-width: 42px;
+    text-align: center;
+  }
+  .activity-info { flex: 1; }
+  .activity-name { font-size: 13px; font-weight: 500; }
+  .activity-detail { font-size: 11px; color: var(--text-light); margin-top: 1px; }
+  .activity-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .status-todo { background: #e9ecef; color: #495057; }
+  .status-active { background: #cce5ff; color: #004085; }
+  .status-done { background: #d4edda; color: #155724; }
 
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 6px;
-        }
-        .card-desc {
-            font-size: 0.88rem;
-            color: var(--text-light);
-            line-height: 1.5;
-            flex: 1;
-        }
+  /* ===== DAILY REPORT FORM ===== */
+  .section-header {
+    background: var(--primary);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header.danger { background: var(--danger); }
+  .section-header .toggle { font-size: 18px; transition: transform 0.2s; }
+  .section-header .toggle.collapsed { transform: rotate(-90deg); }
+  .section-body {
+    background: white;
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .section-body.collapsed { display: none; }
 
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 16px;
-            padding-top: 12px;
-            border-top: 1px solid #f0f0f0;
-        }
-        .card-tag {
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 3px 8px;
-            border-radius: 4px;
-        }
-        .card-tag.daily { background: #e8f2fc; color: var(--accent); }
-        .card-tag.event { background: #e6f7ec; color: var(--success); }
-        .card-tag.weekly { background: #fff6e0; color: #b07d00; }
+  .check-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid #f8f8f8;
+    gap: 10px;
+  }
+  .check-row:last-child { border-bottom: none; }
 
-        .card-arrow {
-            font-size: 1.1rem;
-            color: var(--border);
-            transition: color 0.15s ease, transform 0.15s ease;
-        }
-        .card:hover .card-arrow {
-            color: var(--accent);
-            transform: translateX(3px);
-        }
+  .check-box {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 16px;
+    color: transparent;
+    margin-top: 1px;
+  }
+  .check-box.checked {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+  }
+  .check-box.na {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    color: #6c757d;
+    font-size: 10px;
+    font-weight: 700;
+  }
 
-        /* ===== COMING SOON OVERLAY ===== */
-        .card.coming-soon {
-            position: relative;
-        }
-        .card.coming-soon .card-body { opacity: 0.55; }
-        .coming-soon-badge {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: var(--primary);
-            color: var(--white);
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            padding: 3px 10px;
-            border-radius: 4px;
-        }
+  .check-content { flex: 1; }
+  .check-text { font-size: 13px; line-height: 1.4; }
+  .check-ref { font-size: 10px; color: #adb5bd; margin-top: 2px; }
+  .check-note {
+    margin-top: 6px;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    resize: none;
+    display: none;
+  }
+  .check-note.visible { display: block; }
 
-        /* ===== QUICK STATS BAR ===== */
-        .stats-bar {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 0 24px 24px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-        }
-        .stat-card {
-            background: var(--white);
-            border-radius: 8px;
-            padding: 14px 18px;
-            box-shadow: var(--shadow);
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            margin-top: 2px;
-        }
-        .stat-value.green { color: var(--success); }
-        .stat-value.amber { color: var(--warning); }
-        .stat-value.red { color: var(--danger); }
+  .check-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .btn-na {
+    font-size: 9px;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    color: var(--text-light);
+  }
+  .btn-na.active {
+    background: #e9ecef;
+    color: #495057;
+    font-weight: 600;
+  }
+  .btn-note {
+    font-size: 14px;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    color: var(--text-light);
+  }
 
-        /* ===== FOOTER ===== */
-        .hub-footer {
-            text-align: center;
-            padding: 32px 24px;
-            font-size: 0.78rem;
-            color: var(--text-light);
-        }
+  /* Progress entry */
+  .progress-entry {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .progress-entry label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .progress-entry input, .progress-entry textarea, .progress-entry select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .progress-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
 
-        /* ===== LOGIN OVERLAY ===== */
-        .login-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: var(--bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .login-overlay.hidden { display: none; }
-        .login-box {
-            background: var(--white);
-            max-width: 400px;
-            width: 90%;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-            padding: 40px 32px;
-        }
-        .login-box h2 {
-            font-size: 1.4rem;
-            color: var(--primary);
-            margin-bottom: 4px;
-        }
-        .login-box .login-subtitle {
-            font-size: 0.9rem;
-            color: var(--text-light);
-            margin-bottom: 24px;
-        }
-        .login-box label {
-            display: block;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 4px;
-        }
-        .login-box input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 6px;
-            font-size: 1rem;
-            font-family: inherit;
-            margin-bottom: 16px;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-        .login-box input:focus {
-            border-color: var(--accent);
-        }
-        .login-box button {
-            width: 100%;
-            padding: 11px;
-            background: var(--primary);
-            color: var(--white);
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        .login-box button:hover { background: var(--primary-light); }
-        .login-box button:disabled { opacity: 0.6; cursor: not-allowed; }
-        .login-error {
-            color: var(--danger);
-            font-size: 0.85rem;
-            margin-bottom: 12px;
-            min-height: 1.2em;
-        }
-        .login-view { display: block; }
-        .login-view.hidden { display: none; }
+  /* Incident Y/N */
+  .yn-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .yn-row:last-child { border-bottom: none; }
+  .yn-text { font-size: 13px; flex: 1; }
+  .yn-buttons { display: flex; gap: 4px; }
+  .yn-btn {
+    padding: 4px 14px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    transition: all 0.15s;
+  }
+  .yn-btn.yes-active { background: var(--danger); border-color: var(--danger); color: white; }
+  .yn-btn.no-active { background: var(--success); border-color: var(--success); color: white; }
 
-        /* ===== LOGOUT BUTTON ===== */
-        .topbar .btn-logout {
-            background: transparent;
-            border: 1.5px solid rgba(255,255,255,0.4);
-            color: var(--white);
-            padding: 5px 14px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: border-color 0.15s, background 0.15s;
-        }
-        .topbar .btn-logout:hover {
-            border-color: var(--white);
-            background: rgba(255,255,255,0.1);
-        }
-    </style>
+  /* Labour table */
+  .labour-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 0.8fr;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .labour-row input {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+  .labour-header {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+  }
+  .add-row-btn {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 6px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    margin-top: 4px;
+  }
+
+  /* Submit bar */
+  .submit-bar {
+    position: sticky;
+    bottom: 68px;
+    background: white;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    gap: 8px;
+    border-radius: 12px 12px 0 0;
+    margin: 0 -16px;
+  }
+  .btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: #e9ecef; color: var(--text); flex: 0.5; }
+
+  /* ===== FORMS LIBRARY ===== */
+  .form-card {
+    display: flex;
+    align-items: center;
+    padding: 14px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    gap: 12px;
+  }
+  .form-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  .form-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .form-info { flex: 1; }
+  .form-name { font-size: 14px; font-weight: 600; }
+  .form-desc { font-size: 11px; color: var(--text-light); margin-top: 1px; }
+  .form-ref { font-size: 10px; color: #adb5bd; }
+  .form-arrow { color: var(--border); font-size: 18px; }
+
+  .form-category {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-light);
+    margin: 16px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .search-box {
+    width: 100%;
+    padding: 10px 14px 10px 36px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 16px;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23adb5bd' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 12px center;
+  }
+
+  /* ===== MANAGEMENT DASHBOARD ===== */
+  .mgmt-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .mgmt-stat {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .mgmt-stat .number { font-size: 28px; font-weight: 700; }
+  .mgmt-stat .label { font-size: 11px; color: var(--text-light); }
+
+  .report-row {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 6px;
+    gap: 12px;
+  }
+  .report-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px; color: white;
+  }
+  .report-info { flex: 1; }
+  .report-name { font-size: 13px; font-weight: 600; }
+  .report-detail { font-size: 11px; color: var(--text-light); }
+
+  .progress-bar-bg {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  .compliance-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .compliance-item:last-child { border-bottom: none; }
+  .compliance-label { font-size: 13px; }
+  .compliance-pct { font-size: 13px; font-weight: 700; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .mgmt-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Prototype watermark */
+  .prototype-banner {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+    color: #333;
+    text-align: center;
+    padding: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+</style>
 </head>
 <body>
 
-    <!-- LOGIN OVERLAY -->
-    <div class="login-overlay" id="login-overlay">
-        <div class="login-box">
-            <!-- Login form -->
-            <div id="login-view" class="login-view">
-                <h2>Supervisor Hub</h2>
-                <p class="login-subtitle">Sign in with your employee number and PIN</p>
-                <div id="login-error" class="login-error"></div>
-                <label for="login-emp">Employee Number</label>
-                <input type="text" id="login-emp" placeholder="e.g. MII001" autocomplete="username" autofocus>
-                <label for="login-pin">PIN</label>
-                <input type="password" id="login-pin" placeholder="4-6 digit PIN" inputmode="numeric" maxlength="6" autocomplete="current-password">
-                <button id="btn-login" onclick="doLogin()">Sign In</button>
-            </div>
-            <!-- PIN setup form -->
-            <div id="pin-setup-view" class="login-view hidden">
-                <h2>Set Your PIN</h2>
-                <p class="login-subtitle" id="pin-setup-welcome">Welcome! Create a PIN to secure your account.</p>
-                <div id="pin-setup-error" class="login-error"></div>
-                <label for="setup-pin">New PIN (4-6 digits)</label>
-                <input type="password" id="setup-pin" placeholder="Enter PIN" inputmode="numeric" maxlength="6">
-                <label for="setup-pin-confirm">Confirm PIN</label>
-                <input type="password" id="setup-pin-confirm" placeholder="Confirm PIN" inputmode="numeric" maxlength="6">
-                <button id="btn-set-pin" onclick="doSetPin()">Set PIN &amp; Sign In</button>
-            </div>
+<div class="prototype-banner">PROTOTYPE - MII Site Manager App Concept</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">MII <span>Site Manager</span></div>
+    <div class="topbar-site">INV-YARD</div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-bell">
+      &#128276;
+      <div class="badge">3</div>
+    </div>
+    <div class="topbar-avatar">SD</div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: DASHBOARD ===== -->
+<div class="screen active" id="screen-dashboard">
+  <div class="greeting">
+    <h2>Morning, Steve</h2>
+    <p>Tuesday 25 February 2026 &bull; INV-YARD &bull; Zone 12</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number blue">4</div>
+      <div class="stat-label">Activities</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number green">12</div>
+      <div class="stat-label">Crew</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number amber">2</div>
+      <div class="stat-label">Permits</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number red">1</div>
+      <div class="stat-label">Expiring</div>
+    </div>
+  </div>
+
+  <!-- Today's Programme (from P6) -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">&#128197; Today's Programme</div>
+      <div class="card-badge badge-blue">From P6</div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-zone">Z12</div>
+      <div class="activity-info">
+        <div class="activity-name">Install lower pipe modules</div>
+        <div class="activity-detail">YARD MECH x5 &bull; 250T Crane &bull; MEWP</div>
+      </div>
+      <div class="activity-status status-active">In Progress</div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-zone">Z12</div>
+      <div class="activity-info">
+        <div class="activity-name">Erect access scaffold to lower level</div>
+        <div class="activity-detail">SCAFF4A &bull; Telehandler</div>
+      </div>
+      <div class="activity-status status-active">In Progress</div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-zone">Z6</div>
+      <div class="activity-info">
+        <div class="activity-name">Site welding of butts</div>
+        <div class="activity-detail">YARD MECH x5 &bull; MEWP</div>
+      </div>
+      <div class="activity-status status-todo">Planned</div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-zone">Z6</div>
+      <div class="activity-info">
+        <div class="activity-name">Strike access scaffolding</div>
+        <div class="activity-detail">SCAFF4A &bull; 100T Crane</div>
+      </div>
+      <div class="activity-status status-todo">Planned</div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">&#9888;&#65039; Alerts</div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-zone" style="background:#dc3545;">!</div>
+      <div class="activity-info">
+        <div class="activity-name">CSCS Card Expiry - J. Williams</div>
+        <div class="activity-detail">Expires 28 Feb 2026 &bull; 3 days remaining</div>
+      </div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-zone" style="background:#ffc107; color:#333;">i</div>
+      <div class="activity-info">
+        <div class="activity-name">NCR-0042 still open</div>
+        <div class="activity-detail">Weld defect Z8 lower module &bull; Raised 21 Feb</div>
+      </div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-zone" style="background:#ffc107; color:#333;">i</div>
+      <div class="activity-info">
+        <div class="activity-name">Workplace Inspection due</div>
+        <div class="activity-detail">IMSP 007A &bull; Last completed 19 Feb</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Quick Actions</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div class="form-card" onclick="showScreen('screen-report')" style="margin:0; justify-content:center;">
+        <div class="form-icon" style="background:#e8f0fe;">&#128203;</div>
+        <div class="form-name" style="font-size:12px;">Start Daily Report</div>
+      </div>
+      <div class="form-card" style="margin:0; justify-content:center;">
+        <div class="form-icon" style="background:#fce8e6;">&#128680;</div>
+        <div class="form-name" style="font-size:12px;">Report Incident</div>
+      </div>
+      <div class="form-card" style="margin:0; justify-content:center;">
+        <div class="form-icon" style="background:#e6f4ea;">&#9989;</div>
+        <div class="form-name" style="font-size:12px;">POWRA</div>
+      </div>
+      <div class="form-card" style="margin:0; justify-content:center;">
+        <div class="form-icon" style="background:#fff8e1;">&#128247;</div>
+        <div class="form-name" style="font-size:12px;">Photo Record</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: DAILY REPORT ===== -->
+<div class="screen" id="screen-report">
+  <div class="greeting">
+    <h2>Daily Report</h2>
+    <p>Tuesday 25 February 2026 &bull; INV-YARD</p>
+  </div>
+
+  <!-- Progress completion indicator -->
+  <div class="card" style="padding:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <span style="font-size:12px; font-weight:600;">Report Progress</span>
+      <span style="font-size:12px; font-weight:700; color:var(--accent);">2 / 10 sections</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width:20%; background:var(--accent);"></div>
+    </div>
+  </div>
+
+  <!-- Section 1: Start of Day -->
+  <div style="margin-bottom:12px;">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>&#9728;&#65039; 3. Start of Day Checks</span>
+      <span class="toggle">&#9660;</span>
+    </div>
+    <div class="section-body">
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Site register completed — all personnel signed in</div>
+          <div class="check-ref">SF 057 / IMSP 001B</div>
         </div>
+        <div class="check-actions">
+          <div class="btn-na" onclick="toggleNA(this)">N/A</div>
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Permits to work obtained / renewed for today's activities</div>
+          <div class="check-ref">WI (S01) / IMSP 001B</div>
+          <textarea class="check-note visible" rows="2" placeholder="Permit numbers...">PTW-2026-0142 (Hot Work Z12), PTW-2026-0143 (Confined Space)</textarea>
+        </div>
+        <div class="check-actions">
+          <div class="btn-na" onclick="toggleNA(this)">N/A</div>
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <div class="check-box checked" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">POWRAs completed for all tasks commencing today</div>
+          <div class="check-ref">SF 011D/E/F / IMSP 011</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-na" onclick="toggleNA(this)">N/A</div>
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <div class="check-box checked" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Toolbox talk / method statement briefing delivered and signed</div>
+          <div class="check-ref">SF 012B / IMSP 008</div>
+          <textarea class="check-note visible" rows="1" placeholder="Topic...">Working at Height - scaffold access Z12</textarea>
+        </div>
+        <div class="check-actions">
+          <div class="btn-na" onclick="toggleNA(this)">N/A</div>
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <div class="check-box checked" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">All personnel competent and hold required qualifications</div>
+          <div class="check-ref">SF 021A / IMSP 001B</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-na" onclick="toggleNA(this)">N/A</div>
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Correct drawings / work instructions issued at workface</div>
+          <div class="check-ref">IMSP 001D/E</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-na" onclick="toggleNA(this)">N/A</div>
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <div class="check-box na" onclick="toggleCheck(this)">N/A</div>
+        <div class="check-content">
+          <div class="check-text">Contractor briefed with relevant instruction (if applicable)</div>
+          <div class="check-ref">IMSP 016</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-na active" onclick="toggleNA(this)">N/A</div>
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: H&S Monitoring -->
+  <div style="margin-bottom:12px;">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>&#128737;&#65039; 6. H&S & Environment Monitoring</span>
+      <span class="toggle collapsed">&#9660;</span>
+    </div>
+    <div class="section-body collapsed">
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">PPE compliance observed — all personnel wearing correct PPE</div>
+          <div class="check-ref">SF 042 / SF 046C/E</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Work being carried out in accordance with RAMS</div>
+          <div class="check-ref">IMSP 007A / IMSP 001B</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Work area secure — only authorised persons</div>
+          <div class="check-ref">SF 004B / IMSP 015</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Housekeeping acceptable</div>
+          <div class="check-ref">IMSP 007A</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">No violations observed</div>
+          <div class="check-ref">IMSP 007A / IMSP 012</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Incidents -->
+  <div style="margin-bottom:12px;">
+    <div class="section-header danger" onclick="toggleSection(this)">
+      <span>&#128680; 9. Incidents & Issues</span>
+      <span class="toggle collapsed">&#9660;</span>
+    </div>
+    <div class="section-body collapsed">
+      <div class="yn-row">
+        <div class="yn-text">Any incidents, accidents or near misses?</div>
+        <div class="yn-buttons">
+          <div class="yn-btn" onclick="toggleYN(this, 'yes')">Y</div>
+          <div class="yn-btn no-active" onclick="toggleYN(this, 'no')">N</div>
+        </div>
+      </div>
+      <div class="yn-row">
+        <div class="yn-text">Any stop-work interventions?</div>
+        <div class="yn-buttons">
+          <div class="yn-btn" onclick="toggleYN(this, 'yes')">Y</div>
+          <div class="yn-btn no-active" onclick="toggleYN(this, 'no')">N</div>
+        </div>
+      </div>
+      <div class="yn-row">
+        <div class="yn-text">Any NCRs raised?</div>
+        <div class="yn-buttons">
+          <div class="yn-btn" onclick="toggleYN(this, 'yes')">Y</div>
+          <div class="yn-btn no-active" onclick="toggleYN(this, 'no')">N</div>
+        </div>
+      </div>
+      <div class="yn-row">
+        <div class="yn-text">Equipment quarantined?</div>
+        <div class="yn-buttons">
+          <div class="yn-btn" onclick="toggleYN(this, 'yes')">Y</div>
+          <div class="yn-btn no-active" onclick="toggleYN(this, 'no')">N</div>
+        </div>
+      </div>
+      <div class="yn-row">
+        <div class="yn-text">Any environmental incidents?</div>
+        <div class="yn-buttons">
+          <div class="yn-btn" onclick="toggleYN(this, 'yes')">Y</div>
+          <div class="yn-btn no-active" onclick="toggleYN(this, 'no')">N</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: End of Day -->
+  <div style="margin-bottom:12px;">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>&#127769; 10. End of Day Checks</span>
+      <span class="toggle collapsed">&#9660;</span>
+    </div>
+    <div class="section-body collapsed">
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">All permits cleared / cancelled</div>
+          <div class="check-ref">IMSP 001B</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Site registers updated (sign-out)</div>
+          <div class="check-ref">SF 057</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Work area left in acceptable condition</div>
+          <div class="check-ref">IMSP 022</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="check-box" onclick="toggleCheck(this)">&#10003;</div>
+        <div class="check-content">
+          <div class="check-text">Plant and vehicles returned / secured</div>
+          <div class="check-ref">IMSP 006D</div>
+        </div>
+        <div class="check-actions">
+          <div class="btn-note" onclick="toggleNote(this)">&#128221;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Progress Notes -->
+  <div style="margin-bottom:12px;">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>&#128200; 11. Progress Summary</span>
+      <span class="toggle collapsed">&#9660;</span>
+    </div>
+    <div class="section-body collapsed">
+      <div class="progress-entry">
+        <label>Summary of today's progress</label>
+        <textarea rows="3" placeholder="What was achieved vs what was planned..."></textarea>
+      </div>
+      <div class="progress-entry">
+        <label>Issues / delays / blockers</label>
+        <textarea rows="2" placeholder="Anything that held up progress..."></textarea>
+      </div>
+      <div class="progress-entry">
+        <label>Actions for tomorrow</label>
+        <textarea rows="2" placeholder="What needs to happen tomorrow..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <div class="submit-bar">
+    <div class="btn btn-secondary">Save Draft</div>
+    <div class="btn btn-primary">Submit Report</div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: FORMS LIBRARY ===== -->
+<div class="screen" id="screen-forms">
+  <div class="greeting">
+    <h2>Forms</h2>
+    <p>IMS controlled documents &bull; Digital completion</p>
+  </div>
+
+  <input type="text" class="search-box" placeholder="Search forms...">
+
+  <div class="form-category">Daily Operations</div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#e8f0fe;">&#128203;</div>
+    <div class="form-info">
+      <div class="form-name">Daily Site Report</div>
+      <div class="form-desc">Complete daily supervisor report with R&R checklist</div>
+      <div class="form-ref">SF-DR-001 &bull; IMSP 001B / Appendix 04</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#e6f4ea;">&#9989;</div>
+    <div class="form-info">
+      <div class="form-name">Point of Work Risk Assessment (POWRA)</div>
+      <div class="form-desc">Task-specific risk assessment before commencing work</div>
+      <div class="form-ref">SF 011D/E/F &bull; IMSP 011</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#fff8e1;">&#128218;</div>
+    <div class="form-info">
+      <div class="form-name">Toolbox Talk Record</div>
+      <div class="form-desc">Record of toolbox talk delivery and attendee signatures</div>
+      <div class="form-ref">SF 012B &bull; IMSP 008</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-category">Health & Safety</div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#fce8e6;">&#128680;</div>
+    <div class="form-info">
+      <div class="form-name">Incident Report</div>
+      <div class="form-desc">Report accidents, near misses, unsafe acts/conditions</div>
+      <div class="form-ref">SF 013A/C &bull; IMSP 003</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#f3e5f5;">&#128269;</div>
+    <div class="form-info">
+      <div class="form-name">Workplace Inspection</div>
+      <div class="form-desc">Formal workplace inspection record</div>
+      <div class="form-ref">SF 042 / SF 046C &bull; IMSP 007A</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#e8f0fe;">&#128737;</div>
+    <div class="form-info">
+      <div class="form-name">Permit to Work</div>
+      <div class="form-desc">Request and manage permits for controlled work</div>
+      <div class="form-ref">WI (S01) &bull; IMSP 001B</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-category">Quality</div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#e0f2f1;">&#128200;</div>
+    <div class="form-info">
+      <div class="form-name">Inspection Record</div>
+      <div class="form-desc">Stage and final inspection sign-off</div>
+      <div class="form-ref">SF 010D/E &bull; IMSP 001D/E</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#fff3e0;">&#128295;</div>
+    <div class="form-info">
+      <div class="form-name">Non-Conformance Report</div>
+      <div class="form-desc">Record and track quality non-conformances</div>
+      <div class="form-ref">SF 013C &bull; IMSP 003</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-category">Equipment & Plant</div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#e3f2fd;">&#128668;</div>
+    <div class="form-info">
+      <div class="form-name">Vehicle / Plant Inspection</div>
+      <div class="form-desc">Daily pre-use check for vehicles and plant</div>
+      <div class="form-ref">SF 056E &bull; IMSP 006D</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#fce4ec;">&#9878;</div>
+    <div class="form-info">
+      <div class="form-name">Lifting Equipment Check</div>
+      <div class="form-desc">Pre-use inspection of lifting accessories</div>
+      <div class="form-ref">SF 019 &bull; IMSP 006B</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-category">Materials & Stores</div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#e8eaf6;">&#128230;</div>
+    <div class="form-info">
+      <div class="form-name">Goods Received</div>
+      <div class="form-desc">Check deliveries against PO, material certs</div>
+      <div class="form-ref">IMSP 004A &bull; IMSP 005</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: MANAGEMENT ===== -->
+<div class="screen" id="screen-management">
+  <div class="greeting">
+    <h2>Management View</h2>
+    <p>Project INV-YARD &bull; All supervisors</p>
+  </div>
+
+  <div class="mgmt-grid">
+    <div class="mgmt-stat">
+      <div class="number green">94%</div>
+      <div class="label">Reports Submitted</div>
+    </div>
+    <div class="mgmt-stat">
+      <div class="number blue">87%</div>
+      <div class="label">R&R Compliance</div>
+    </div>
+    <div class="mgmt-stat">
+      <div class="number" style="color:var(--primary);">48</div>
+      <div class="label">Crew On Site</div>
+    </div>
+    <div class="mgmt-stat">
+      <div class="number amber">3</div>
+      <div class="label">Open NCRs</div>
+    </div>
+  </div>
+
+  <!-- Today's reports -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Today's Reports</div>
+      <div class="card-badge badge-amber">2 of 4 submitted</div>
     </div>
 
-    <!-- TOP BAR -->
-    <div class="topbar">
-        <h1>MII Engineering — Supervisor Hub</h1>
-        <div class="user-info">
-            <span>Enabling Works, Port Talbot</span>
-            <span id="user-name"></span>
-            <div class="user-avatar" id="user-avatar"></div>
-            <button class="btn-logout" id="btn-logout" onclick="logout()" style="display:none">Sign Out</button>
-        </div>
+    <div class="report-row">
+      <div class="report-avatar" style="background:#28a745;">SD</div>
+      <div class="report-info">
+        <div class="report-name">Steve Davies - Zone 12</div>
+        <div class="report-detail">Submitted 16:42 &bull; 12 crew &bull; 0 incidents</div>
+      </div>
+      <div class="card-badge badge-green">Complete</div>
     </div>
 
-    <!-- GREETING -->
-    <div class="greeting">
-        <h2 id="greeting-text">Good morning</h2>
-        <p id="date-text"></p>
+    <div class="report-row">
+      <div class="report-avatar" style="background:#28a745;">MJ</div>
+      <div class="report-info">
+        <div class="report-name">Mark Jones - Zone 6</div>
+        <div class="report-detail">Submitted 16:55 &bull; 8 crew &bull; 0 incidents</div>
+      </div>
+      <div class="card-badge badge-green">Complete</div>
     </div>
 
-    <!-- QUICK STATS -->
-    <div class="stats-bar">
-        <div class="stat-card">
-            <div class="stat-value">32</div>
-            <div class="stat-label">Manning Today</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value green">7</div>
-            <div class="stat-label">Active Tasks</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value amber">1</div>
-            <div class="stat-label">Open CEs</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value red">2</div>
-            <div class="stat-label">Actions Due</div>
-        </div>
+    <div class="report-row">
+      <div class="report-avatar" style="background:#ffc107;">RP</div>
+      <div class="report-info">
+        <div class="report-name">Rhys Price - Zone 10</div>
+        <div class="report-detail">Draft saved 14:20 &bull; 6 sections incomplete</div>
+      </div>
+      <div class="card-badge badge-amber">Draft</div>
     </div>
 
-    <!-- CARD GRID -->
-    <div class="card-grid">
+    <div class="report-row">
+      <div class="report-avatar" style="background:#dc3545;">TW</div>
+      <div class="report-info">
+        <div class="report-name">Tom Williams - Zone 8</div>
+        <div class="report-detail">Not started</div>
+      </div>
+      <div class="card-badge badge-red">Missing</div>
+    </div>
+  </div>
 
-        <!-- MANAGEMENT DASHBOARD (role-gated) -->
-        <a class="card" href="dashboard.html" id="card-dashboard" style="display:none">
-            <div class="card-accent blue"></div>
-            <div class="card-body">
-                <div class="card-icon blue">&#128202;</div>
-                <div class="card-title">Management Dashboard</div>
-                <div class="card-desc">
-                    Live KPIs across safety, compliance &amp; operations.
-                    Defects, HAVs, manning, inspections and trend charts.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Live</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- DAILY REPORT -->
-        <a class="card" href="daily_report_template.html">
-            <div class="card-accent blue"></div>
-            <div class="card-body">
-                <div class="card-icon blue">&#128203;</div>
-                <div class="card-title">Daily Report</div>
-                <div class="card-desc">
-                    Work plan, manning tracker, R&R checklist, progress narrative.
-                    Maps to Supervisor R&R items 1–20. Feeds CE detection pipeline.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag daily">Daily</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- SHEQ OBSERVATIONS -->
-        <a class="card" href="sheq_observations.html">
-            <div class="card-accent green"></div>
-            <div class="card-body">
-                <div class="card-icon green">&#128065;</div>
-                <div class="card-title">SHEQ Observations</div>
-                <div class="card-desc">
-                    Log safety, health, environment &amp; quality observations on site.
-                    Positive and negative. SF 042B observation report.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Per Event</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- POWRA -->
-        <a class="card" href="powra.html">
-            <div class="card-accent green"></div>
-            <div class="card-body">
-                <div class="card-icon green">&#9888;</div>
-                <div class="card-title">Point of Work Risk Assessment</div>
-                <div class="card-desc">
-                    Complete a POWRA before starting any task. 17-point hazard checklist
-                    with portable lockout box section.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag weekly">Per Task</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- POWRA REGISTER -->
-        <a class="card" href="powra_register.html">
-            <div class="card-accent green"></div>
-            <div class="card-body">
-                <div class="card-icon green">&#128203;</div>
-                <div class="card-title">POWRA Register</div>
-                <div class="card-desc">
-                    Search and review completed Point of Work Risk Assessments.
-                    View pass/fail status, checklist answers and assessor details.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Live</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- SSW / TOOLBOX TALKS -->
-        <a class="card" href="ssw.html">
-            <div class="card-accent red"></div>
-            <div class="card-body">
-                <div class="card-icon red">&#128214;</div>
-                <div class="card-title">SSW / Toolbox Talks</div>
-                <div class="card-desc">
-                    Full library of 90 Safe Systems of Work. Search by topic or ref code.
-                    Links direct to SharePoint PDFs. Use for daily briefings (R&R 2).
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Reference</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- TRAINING MATRIX -->
-        <a class="card" href="training_matrix.html">
-            <div class="card-accent blue"></div>
-            <div class="card-body">
-                <div class="card-icon blue">&#127891;</div>
-                <div class="card-title">Training Matrix</div>
-                <div class="card-desc">
-                    Read-only view of 657 employees, 4,084 training records.
-                    Search by name, filter by status. Synced from RAMSBuilder DB.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag daily">Reference</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- TRAINING ADMIN -->
-        <a class="card" href="training_admin.html">
-            <div class="card-accent amber"></div>
-            <div class="card-body">
-                <div class="card-icon amber">&#128221;</div>
-                <div class="card-title">Training Admin</div>
-                <div class="card-desc">
-                    Add/edit training records, manage types, monitor expiring certs.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Live</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- PRE-USE INSPECTIONS -->
-        <a class="card" href="inspections.html">
-            <div class="card-accent amber"></div>
-            <div class="card-body">
-                <div class="card-icon amber">&#128270;</div>
-                <div class="card-title">Pre-Use Inspections</div>
-                <div class="card-desc">
-                    Digital pre-use checklists: FLT, Telehandler, Oxy-Fuel.
-                    Pass/Fail with photo evidence. Defects flag to supervisor.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag daily">Per Use</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- DEFECT TRACKER -->
-        <a class="card" href="defects.html">
-            <div class="card-accent red"></div>
-            <div class="card-body">
-                <div class="card-icon red">&#9888;</div>
-                <div class="card-title">Defect Tracker</div>
-                <div class="card-desc">
-                    Register of open defects from pre-use inspections. Assign, track
-                    and resolve. Inspection log for KPI compliance.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Live</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- ACTION TRACKER -->
-        <a class="card" href="action_tracker.html">
-            <div class="card-accent red"></div>
-            <div class="card-body">
-                <div class="card-icon red">&#128203;</div>
-                <div class="card-title">Action Tracker</div>
-                <div class="card-desc">
-                    External audit actions from Excel imports. View, filter and close
-                    actions. Shared live with desktop app.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Live</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- STORES REQUISITION -->
-        <a class="card" href="stores_requisition.html">
-            <div class="card-accent amber"></div>
-            <div class="card-body">
-                <div class="card-icon amber">&#128230;</div>
-                <div class="card-title">Stores Requisition</div>
-                <div class="card-desc">
-                    Request materials and consumables from stores. Submit requisition
-                    for storeman review and authorisation. SF 017B digital form.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Per Event</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- STORES MANAGEMENT -->
-        <a class="card" href="stores.html">
-            <div class="card-accent green"></div>
-            <div class="card-body">
-                <div class="card-icon green">&#127970;</div>
-                <div class="card-title">Stores Management</div>
-                <div class="card-desc">
-                    Process requisitions, book tools in/out, inspect goods inward.
-                    Storeman dashboard with full stock tracking. SF 019 &amp; SF 019K.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Live</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- WORKPLACE INSPECTIONS -->
-        <a class="card" href="workplace_inspection.html">
-            <div class="card-accent amber"></div>
-            <div class="card-body">
-                <div class="card-icon amber">&#128269;</div>
-                <div class="card-title">Workplace Inspections</div>
-                <div class="card-desc">
-                    Formal weekly workplace inspection. 20-item checklist with
-                    corrective actions. SF 046E digital form. Maps to R&R item 21.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag weekly">Weekly</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- HAVs EXPOSURE -->
-        <a class="card" href="havs.html">
-            <div class="card-accent red"></div>
-            <div class="card-body">
-                <div class="card-icon red">&#9995;</div>
-                <div class="card-title">HAVs Exposure</div>
-                <div class="card-desc">
-                    Log daily hand-arm vibration exposure. Auto-calculates A(8)
-                    with EAV/ELV alerts. HSE-compliant tracking.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag daily">Daily</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- NEAR MISS REPORT -->
-        <a class="card" href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&amp;route=shorturl" target="_blank">
-            <div class="card-accent red"></div>
-            <div class="card-body">
-                <div class="card-icon red">&#9888;</div>
-                <div class="card-title">Near Miss / Hazard</div>
-                <div class="card-desc">
-                    Report near misses, hazards or positive observations.
-                    Opens MS Forms. Reviewed by SHEQ and management.
-                </div>
-                <div class="card-footer">
-                    <span class="card-tag event">Per Event</span>
-                    <span class="card-arrow">&#8594;</span>
-                </div>
-            </div>
-        </a>
-
-
-
+  <!-- R&R Compliance -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">R&R Compliance (This Week)</div>
+      <div class="card-badge badge-blue">IMS Procedures</div>
     </div>
 
-    <!-- FOOTER -->
-    <div class="hub-footer">
-        MII Engineering Ltd &mdash; Supervisor Digital Toolkit &mdash; Prototype v0.1
+    <div class="compliance-item">
+      <div class="compliance-label">POWRAs completed daily</div>
+      <div class="compliance-pct" style="color:var(--success);">96%</div>
+    </div>
+    <div class="compliance-item">
+      <div class="compliance-label">Permits obtained before work</div>
+      <div class="compliance-pct" style="color:var(--success);">100%</div>
+    </div>
+    <div class="compliance-item">
+      <div class="compliance-label">Toolbox talks delivered</div>
+      <div class="compliance-pct" style="color:#e6a800;">82%</div>
+    </div>
+    <div class="compliance-item">
+      <div class="compliance-label">Pre-use equipment checks</div>
+      <div class="compliance-pct" style="color:var(--success);">91%</div>
+    </div>
+    <div class="compliance-item">
+      <div class="compliance-label">End-of-day permits cleared</div>
+      <div class="compliance-pct" style="color:#e6a800;">78%</div>
+    </div>
+    <div class="compliance-item">
+      <div class="compliance-label">Site register sign-out</div>
+      <div class="compliance-pct" style="color:var(--danger);">65%</div>
+    </div>
+    <div class="compliance-item">
+      <div class="compliance-label">Workplace inspections (weekly)</div>
+      <div class="compliance-pct" style="color:var(--success);">100%</div>
+    </div>
+  </div>
+
+  <!-- Programme vs Actual -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Programme vs Actual (from reports)</div>
     </div>
 
-<script src="mii-db.js"></script>
+    <div style="margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+        <span>Zone 12 - Lower Modules</span>
+        <span style="font-weight:600; color:var(--success);">On track</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:45%; background:var(--success);"></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+        <span>Zone 6 - Welding</span>
+        <span style="font-weight:600; color:#e6a800;">1 day behind</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:30%; background:#ffc107;"></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+        <span>Zone 10 - Scaffold</span>
+        <span style="font-weight:600; color:var(--danger);">3 days behind</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:15%; background:var(--danger);"></div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+        <span>Zone 8 - Install Trestles</span>
+        <span style="font-weight:600; color:var(--success);">Ahead</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:60%; background:var(--success);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hours Tracker -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Hours This Week (from daily reports)</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center;">
+      <div>
+        <div style="font-size:22px; font-weight:700; color:var(--primary);">482</div>
+        <div style="font-size:10px; color:var(--text-light);">MII Labour</div>
+      </div>
+      <div>
+        <div style="font-size:22px; font-weight:700; color:var(--accent);">124</div>
+        <div style="font-size:10px; color:var(--text-light);">Scaffold</div>
+      </div>
+      <div>
+        <div style="font-size:22px; font-weight:700; color:#6c757d;">86</div>
+        <div style="font-size:10px; color:var(--text-light);">Plant Hours</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: MORE ===== -->
+<div class="screen" id="screen-more">
+  <div class="greeting">
+    <h2>More</h2>
+    <p>Settings, exports & admin</p>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#e8f0fe;">&#128100;</div>
+    <div class="form-info">
+      <div class="form-name">My Profile</div>
+      <div class="form-desc">Steve Davies &bull; Supervisor &bull; Zone 12</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#e6f4ea;">&#128197;</div>
+    <div class="form-info">
+      <div class="form-name">Report History</div>
+      <div class="form-desc">View and export past daily reports</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#fff8e1;">&#128202;</div>
+    <div class="form-info">
+      <div class="form-name">Export to Excel / PDF</div>
+      <div class="form-desc">Generate formatted reports for clients</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#f3e5f5;">&#128279;</div>
+    <div class="form-info">
+      <div class="form-name">P6 Programme Sync</div>
+      <div class="form-desc">Last synced: 25 Feb 2026 06:00</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-icon" style="background:#fce8e6;">&#128272;</div>
+    <div class="form-info">
+      <div class="form-name">Admin Panel</div>
+      <div class="form-desc">Users, roles, project setup</div>
+    </div>
+    <div class="form-arrow">&#8250;</div>
+  </div>
+
+  <div class="card" style="margin-top:20px; text-align:center;">
+    <div style="font-size:12px; color:var(--text-light);">
+      <strong>MII Site Manager</strong> v0.1 Prototype<br>
+      Built on MII IMS Procedures &bull; Appendix 04 Issue 7<br>
+      18 IMS procedures &bull; 296 supervisor responsibilities mapped
+    </div>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="showScreen('screen-dashboard')">
+    <span class="nav-icon">&#127968;</span>
+    <span class="nav-label">Dashboard</span>
+  </div>
+  <div class="nav-item" onclick="showScreen('screen-report')">
+    <span class="nav-icon">&#128203;</span>
+    <span class="nav-label">Daily Report</span>
+  </div>
+  <div class="nav-item" onclick="showScreen('screen-forms')">
+    <span class="nav-icon">&#128196;</span>
+    <span class="nav-label">Forms</span>
+  </div>
+  <div class="nav-item" onclick="showScreen('screen-management')">
+    <span class="nav-icon">&#128202;</span>
+    <span class="nav-label">Management</span>
+  </div>
+  <div class="nav-item" onclick="showScreen('screen-more')">
+    <span class="nav-icon">&#9776;</span>
+    <span class="nav-label">More</span>
+  </div>
+</div>
+
 <script>
-    // Service Worker — only register on hosted site, not file://
-    if ('serviceWorker' in navigator) {
-        if (location.protocol === 'file:') {
-            // Unregister any stale SW on local file access
-            navigator.serviceWorker.getRegistrations().then(function(regs) {
-                regs.forEach(function(r) { r.unregister(); });
-            });
-        } else {
-            navigator.serviceWorker.register('sw.js').catch(function(err) {
-                console.log('SW registration failed:', err);
-            });
-        }
-    }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
 
-    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+function toggleCheck(el) {
+  if (el.classList.contains('na')) {
+    el.classList.remove('na');
+    el.textContent = '\u2713';
+    // Also untoggle the N/A button
+    const row = el.closest('.check-row');
+    const naBtn = row.querySelector('.btn-na');
+    if (naBtn) naBtn.classList.remove('active');
+  }
+  el.classList.toggle('checked');
+}
 
-    // ───── Auth helpers ─────
+function toggleNA(el) {
+  const row = el.closest('.check-row');
+  const box = row.querySelector('.check-box');
+  el.classList.toggle('active');
+  if (el.classList.contains('active')) {
+    box.classList.remove('checked');
+    box.classList.add('na');
+    box.textContent = 'N/A';
+  } else {
+    box.classList.remove('na');
+    box.textContent = '\u2713';
+  }
+}
 
-    let _pendingSetupUserId = null;
+function toggleNote(el) {
+  const row = el.closest('.check-row');
+  let note = row.querySelector('.check-note');
+  if (!note) {
+    note = document.createElement('textarea');
+    note.className = 'check-note visible';
+    note.rows = 2;
+    note.placeholder = 'Add notes...';
+    row.querySelector('.check-content').appendChild(note);
+  } else {
+    note.classList.toggle('visible');
+  }
+}
 
-    function decodeJwtPayload(token) {
-        try {
-            const parts = token.split('.');
-            if (parts.length !== 3) return null;
-            const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-            return JSON.parse(atob(payload));
-        } catch { return null; }
-    }
+function toggleSection(el) {
+  const body = el.nextElementSibling;
+  const toggle = el.querySelector('.toggle');
+  body.classList.toggle('collapsed');
+  toggle.classList.toggle('collapsed');
+}
 
-    function isTokenValid(token) {
-        if (!token) return false;
-        const payload = decodeJwtPayload(token);
-        if (!payload || !payload.exp) return false;
-        return payload.exp * 1000 > Date.now();
-    }
-
-    function showLoginOverlay() {
-        document.getElementById('login-overlay').classList.remove('hidden');
-        document.getElementById('login-view').classList.remove('hidden');
-        document.getElementById('pin-setup-view').classList.add('hidden');
-        document.getElementById('login-error').textContent = '';
-        document.getElementById('login-emp').value = '';
-        document.getElementById('login-pin').value = '';
-    }
-
-    function hideLoginOverlay() {
-        document.getElementById('login-overlay').classList.add('hidden');
-    }
-
-    function checkAuth() {
-        const token = localStorage.getItem('mii_token');
-        if (!token || !isTokenValid(token)) {
-            localStorage.removeItem('mii_token');
-            localStorage.removeItem('mii_user');
-            showLoginOverlay();
-            return;
-        }
-        hideLoginOverlay();
-        applyUserInfo();
-    }
-
-    function applyUserInfo() {
-        const userJson = localStorage.getItem('mii_user');
-        const user = userJson ? JSON.parse(userJson) : null;
-        const nameEl = document.getElementById('user-name');
-        const avatarEl = document.getElementById('user-avatar');
-        const logoutBtn = document.getElementById('btn-logout');
-
-        if (user && user.username) {
-            nameEl.textContent = user.username;
-            const parts = user.username.trim().split(/\s+/);
-            const initials = parts.length >= 2
-                ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-                : user.username.substring(0, 2).toUpperCase();
-            avatarEl.textContent = initials;
-            logoutBtn.style.display = '';
-
-            // Show dashboard card for ADMIN/SUPERVISOR
-            const dashCard = document.getElementById('card-dashboard');
-            if (dashCard) {
-                dashCard.style.display = (user.role === 'ADMIN' || user.role === 'SUPERVISOR') ? '' : 'none';
-            }
-
-            // Update greeting with name
-            const firstName = parts[0];
-            const hour = new Date().getHours();
-            let greeting = 'Good evening';
-            if (hour < 12) greeting = 'Good morning';
-            else if (hour < 17) greeting = 'Good afternoon';
-            document.getElementById('greeting-text').textContent = greeting + ', ' + firstName;
-        } else {
-            nameEl.textContent = '';
-            avatarEl.textContent = '';
-            logoutBtn.style.display = 'none';
-        }
-    }
-
-    async function doLogin() {
-        const emp = document.getElementById('login-emp').value.trim();
-        const pin = document.getElementById('login-pin').value.trim();
-        const errEl = document.getElementById('login-error');
-        const btn = document.getElementById('btn-login');
-
-        errEl.textContent = '';
-        if (!emp || !pin) { errEl.textContent = 'Enter employee number and PIN.'; return; }
-
-        btn.disabled = true;
-        btn.textContent = 'Signing in…';
-        try {
-            const res = await fetch(MII_API + '/auth/pin-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employee_number: emp, pin: pin }),
-            });
-            const data = await res.json();
-
-            if (data.needs_pin_setup) {
-                _pendingSetupUserId = data.user_id;
-                document.getElementById('login-view').classList.add('hidden');
-                document.getElementById('pin-setup-view').classList.remove('hidden');
-                document.getElementById('pin-setup-welcome').textContent =
-                    'Welcome, ' + (data.username || '') + '! Create a PIN to secure your account.';
-                document.getElementById('setup-pin').value = '';
-                document.getElementById('setup-pin-confirm').value = '';
-                document.getElementById('pin-setup-error').textContent = '';
-                return;
-            }
-
-            if (!res.ok) {
-                errEl.textContent = data.error || 'Login failed.';
-                return;
-            }
-
-            localStorage.setItem('mii_token', data.token);
-            localStorage.setItem('mii_user', JSON.stringify(data.user));
-            onLoginSuccess(data.token);
-        } catch (e) {
-            errEl.textContent = 'Network error. Check your connection.';
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Sign In';
-        }
-    }
-
-    async function doSetPin() {
-        const pin = document.getElementById('setup-pin').value.trim();
-        const confirm = document.getElementById('setup-pin-confirm').value.trim();
-        const errEl = document.getElementById('pin-setup-error');
-        const btn = document.getElementById('btn-set-pin');
-
-        errEl.textContent = '';
-        if (!pin || !confirm) { errEl.textContent = 'Enter and confirm your PIN.'; return; }
-        if (pin !== confirm) { errEl.textContent = 'PINs do not match.'; return; }
-        if (!/^\d{4,6}$/.test(pin)) { errEl.textContent = 'PIN must be 4-6 digits.'; return; }
-
-        btn.disabled = true;
-        btn.textContent = 'Setting PIN…';
-        try {
-            const res = await fetch(MII_API + '/auth/set-pin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: _pendingSetupUserId, pin: pin }),
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-                errEl.textContent = data.error || 'Failed to set PIN.';
-                return;
-            }
-
-            localStorage.setItem('mii_token', data.token);
-            localStorage.setItem('mii_user', JSON.stringify(data.user));
-            onLoginSuccess(data.token);
-        } catch (e) {
-            errEl.textContent = 'Network error. Check your connection.';
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Set PIN & Sign In';
-        }
-    }
-
-    function onLoginSuccess(token) {
-        _pendingSetupUserId = null;
-        hideLoginOverlay();
-        applyUserInfo();
-
-        // Post JWT to Service Worker for authenticated fetches
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'config',
-                apiBase: MII_API,
-                jwt: token,
-            });
-        }
-    }
-
-    function logout() {
-        localStorage.removeItem('mii_token');
-        localStorage.removeItem('mii_user');
-        showLoginOverlay();
-        applyUserInfo();
-    }
-
-    // Allow Enter key to submit login / PIN setup
-    document.getElementById('login-pin').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') doLogin();
-    });
-    document.getElementById('setup-pin-confirm').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') doSetPin();
-    });
-
-    // ───── Greeting + date ─────
-
-    const hour = new Date().getHours();
-    const greetEl = document.getElementById('greeting-text');
-    if (hour < 12) greetEl.textContent = 'Good morning';
-    else if (hour < 17) greetEl.textContent = 'Good afternoon';
-    else greetEl.textContent = 'Good evening';
-
-    const now = new Date();
-    const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-    document.getElementById('date-text').textContent = now.toLocaleDateString('en-GB', opts);
-
-    // ───── Auth check on load ─────
-    checkAuth();
+function toggleYN(el, type) {
+  const btns = el.parentElement.querySelectorAll('.yn-btn');
+  btns.forEach(b => { b.classList.remove('yes-active', 'no-active'); });
+  if (type === 'yes') el.classList.add('yes-active');
+  else el.classList.add('no-active');
+}
 </script>
 
 </body>

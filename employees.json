@@ -97,7 +97,7 @@
   },
   {
     "employee_number": "L927",
-    "name": "Andew Hathaway",
+    "name": "Andrew Hathaway",
     "trade": "",
     "is_active": true
   },
@@ -607,7 +607,7 @@
   },
   {
     "employee_number": "M351",
-    "name": "Dan Evans",
+    "name": "Daniel Evans",
     "trade": "",
     "is_active": true
   },
@@ -859,7 +859,7 @@
   },
   {
     "employee_number": "AGY0076",
-    "name": "Gary Devonald",
+    "name": "Gareth Devonald",
     "trade": "Fitter",
     "is_active": true
   },
@@ -1987,7 +1987,7 @@
   },
   {
     "employee_number": "AGY0175",
-    "name": "Mike Osborn",
+    "name": "Michael Osborn",
     "trade": "",
     "is_active": true
   },
@@ -2821,7 +2821,7 @@
   },
   {
     "employee_number": "AGY0250",
-    "name": "Steve Hewitson",
+    "name": "Steven Hewitson",
     "trade": "",
     "is_active": true
   },
@@ -3045,6 +3045,36 @@
     "employee_number": "AGY0267",
     "name": "Wayne Murphy",
     "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0268",
+    "name": "Steven Stickler",
+    "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0269",
+    "name": "Lewis Coles",
+    "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0270",
+    "name": "Sam Diaz",
+    "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0271",
+    "name": "Jordan Piontecki",
+    "trade": "",
+    "is_active": true
+  },
+  {
+    "employee_number": "AGY0272",
+    "name": "Phillip Keith Williams",
+    "trade": "Supervisor",
     "is_active": true
   }
 ]
