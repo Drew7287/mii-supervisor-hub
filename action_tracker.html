@@ -670,7 +670,8 @@ function renderActions(actions, total) {
         const preview = truncate(a.action_text, 80);
         const targetStr = a.target_date || '—';
         const assignedStr = a.assigned_to || '—';
-        const closeBtn = a.status === 'open'
+        const isOpen = a.status === 'open' || a.status === 'Open' || a.is_overdue;
+        const closeBtn = isOpen
             ? `<button class="btn-header-close" onclick="event.stopPropagation(); openCloseModal('${a.id}')">Close</button>`
             : '';
 
@@ -737,7 +738,7 @@ function renderTimeline(logs) {
 }
 
 function renderClosedBanner(a) {
-    if (a.status === 'closed' || a.status === 'not_applicable') {
+    if (a.status === 'closed' || a.status === 'Closed' || a.status === 'not_applicable' || a.status === 'Not Applicable') {
         return `
         <div class="closed-banner">
             <span class="check">&#10003;</span>
