@@ -433,7 +433,7 @@
 const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
 
 function authHeaders() {
-    const token = localStorage.getItem('mii_auth_token');
+    const token = localStorage.getItem('mii_token');
     return {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + (token || ''),
@@ -441,7 +441,7 @@ function authHeaders() {
 }
 
 function checkAuth() {
-    const token = localStorage.getItem('mii_auth_token');
+    const token = localStorage.getItem('mii_token');
     if (!token) {
         window.location.href = 'hub.html';
         return false;
