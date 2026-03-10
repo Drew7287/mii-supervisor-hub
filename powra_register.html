@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POWRA Register — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .stat-value.red { color: var(--danger); }
+        .stat-value.amber { color: var(--warning); }
+        .stat-value.green { color: var(--success); }
+        .stat-value.blue { color: var(--accent); }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-bar input,
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-bar input[type="text"] { flex: 1; min-width: 180px; }
+        .filter-bar input[type="date"] { min-width: 130px; }
+        .filter-bar select { min-width: 140px; }
+        .filter-bar input:focus,
+        .filter-bar select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* ===== POWRA CARDS ===== */
+        .powra-list {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+        }
+        .powra-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            transition: box-shadow 0.15s;
+        }
+        .powra-card:hover { box-shadow: var(--shadow-hover); }
+        .powra-accent {
+            width: 5px;
+            flex-shrink: 0;
+        }
+        .powra-accent.passed { background: var(--success); }
+        .powra-accent.failed { background: var(--danger); }
+        .powra-accent.open { background: var(--warning); }
+
+        .powra-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .powra-header {
+            padding: 14px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .powra-header:hover { background: #fafbfc; }
+
+        .status-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .status-badge.passed { background: #e6f7ec; color: var(--success); }
+        .status-badge.failed { background: #fde8ea; color: var(--danger); }
+        .status-badge.open { background: #fff6e0; color: #b07d00; }
+
+        .powra-assessor {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .powra-task {
+            font-size: 0.88rem;
+            color: var(--text);
+            flex: 1;
+            min-width: 120px;
+        }
+        .powra-meta {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .expand-arrow {
+            font-size: 0.8rem;
+            color: var(--border);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .powra-card.expanded .expand-arrow { transform: rotate(180deg); }
+
+        /* EXPANDED DETAIL */
+        .powra-detail {
+            display: none;
+            border-top: 1px solid #f0f0f0;
+            padding: 16px;
+        }
+        .powra-card.expanded .powra-detail { display: block; }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .detail-item label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 2px;
+        }
+        .detail-item span {
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+
+        /* CHECKLIST */
+        .checklist-grid { margin-top: 14px; }
+        .checklist-grid h4 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .cl-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .cl-row:last-child { border-bottom: none; }
+        .cl-num {
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-light);
+            flex-shrink: 0;
+        }
+        .cl-text {
+            flex: 1;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+        .cl-answer {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .cl-answer.yes { background: #e6f7ec; color: var(--success); }
+        .cl-answer.no { background: #fde8ea; color: var(--danger); }
+        .cl-answer.na { background: #f0f2f5; color: var(--text-light); }
+
+        /* LOCKOUT SECTION */
+        .lockout-section {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .lockout-section h4 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        /* MS FORMS BADGE */
+        .source-badge {
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: #e8f0fe;
+            color: #1a73e8;
+            flex-shrink: 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-light);
+        }
+        .empty-state h3 { font-size: 1rem; margin-bottom: 4px; color: var(--text); }
+        .empty-state p { font-size: 0.85rem; }
+
+        @media (max-width: 600px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; }
+            .filter-bar select,
+            .filter-bar input[type="date"] { min-width: 100%; }
+            .powra-header { flex-wrap: wrap; gap: 6px; }
+            .powra-meta { width: 100%; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>POWRA Register</h1>
+    <div style="display:flex;align-items:center;gap:16px;">
+        <button id="btn-import" onclick="document.getElementById('file-input').click()"
+            style="padding:6px 14px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;
+            background:transparent;color:rgba(255,255,255,0.9);font-size:0.8rem;cursor:pointer;">
+            Import Excel
+        </button>
+        <a href="index.html">&larr; Supervisor Hub</a>
+    </div>
+</div>
+<input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
+
+<div class="stats-bar" id="powra-stats"></div>
+
+<div class="filter-bar">
+    <input type="text" id="filter-search" placeholder="Search assessor, task, location, ID..." oninput="renderPowras()">
+    <input type="date" id="filter-from" onchange="renderPowras()">
+    <input type="date" id="filter-to" onchange="renderPowras()">
+    <select id="filter-status" onchange="renderPowras()">
+        <option value="">All Statuses</option>
+        <option value="Passed">Passed</option>
+        <option value="Failed">Failed</option>
+        <option value="Open">Open</option>
+    </select>
+    <select id="filter-assessor" onchange="renderPowras()">
+        <option value="">All Assessors</option>
+    </select>
+</div>
+
+<div class="powra-list" id="powra-list"></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+// ===== CHECKLIST QUESTIONS (must match powra.html) =====
+var QUESTIONS = [
+    'Have you read, understood and signed the relevant Risk Assessment?',
+    'Are you competent to carry out the work ahead of you?',
+    'Have you signed on the isolations/permits or confirmed with your supervisor?',
+    'Do you have the correct PPE/RPE for the job, as stated in your Risk Assessment?',
+    'Are housekeeping standards acceptable? Is the work area free from hazards?',
+    'Are you aware of other activities/people in the area (above, below, adjacent)?',
+    'Are you aware of the access and egress routes to and from your work area?',
+    'Are lighting levels adequate throughout the work area?',
+    'Hot Work \u2014 Have you obtained permission/permit before starting any hot work?',
+    'Is your equipment fit for purpose, free from damage and in compliance?',
+    'To prevent hand injuries, have you identified potential pinch/trap points?',
+    'Are materials and equipment stored so they cannot move, slide or fall?',
+    'Have working platforms been inspected and open edges protected?',
+    'If manual handling is unavoidable, is the load weight known and safe?',
+    'Has a suitable lift plan been created and communicated for all planned lifts?',
+    'If hazardous substances are used/created, have suitable controls been implemented?',
+    'Can work proceed in current weather conditions (wind speeds etc.)?'
+];
+
+// ===== DATA =====
+var powraData = [];
+
+async function loadPowras() {
+    try {
+        await MiiDB.ready();
+        powraData = await MiiDB.getAll('powra');
+    } catch (e) {
+        // Fallback to localStorage
+        powraData = JSON.parse(localStorage.getItem('mii_powra') || '[]');
+    }
+    populateAssessorFilter();
+    renderPowras();
+}
+
+function populateAssessorFilter() {
+    var sel = document.getElementById('filter-assessor');
+    var names = {};
+    powraData.forEach(function(p) {
+        var name = p.assessorName || p.assessor_name || '';
+        if (name) names[name] = true;
+    });
+    var assessors = Object.keys(names).sort();
+    sel.innerHTML = '<option value="">All Assessors</option>';
+    assessors.forEach(function(name) {
+        var opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+    });
+}
+
+// ===== FIELD HELPERS (handle camelCase + snake_case) =====
+function f(record, camel, snake) {
+    return record[camel] || record[snake] || '';
+}
+
+// ===== STATS =====
+function renderStats(filtered) {
+    var total = powraData.length;
+    var passed = powraData.filter(function(p) { return p.status === 'Passed'; }).length;
+    var failed = powraData.filter(function(p) { return p.status === 'Failed'; }).length;
+
+    var today = new Date();
+    var weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    var thisWeek = powraData.filter(function(p) {
+        return new Date(p.date) >= weekAgo;
+    }).length;
+
+    var failColor = failed > 0 ? 'red' : 'green';
+
+    document.getElementById('powra-stats').innerHTML =
+        '<div class="stat-card"><div class="stat-value">' + total + '</div><div class="stat-label">Total POWRAs</div></div>' +
+        '<div class="stat-card"><div class="stat-value green">' + passed + '</div><div class="stat-label">Passed</div></div>' +
+        '<div class="stat-card"><div class="stat-value ' + failColor + '">' + failed + '</div><div class="stat-label">Failed</div></div>' +
+        '<div class="stat-card"><div class="stat-value blue">' + thisWeek + '</div><div class="stat-label">This Week</div></div>';
+}
+
+// ===== RENDER =====
+function renderPowras() {
+    renderStats();
+
+    var search = document.getElementById('filter-search').value.toLowerCase();
+    var status = document.getElementById('filter-status').value;
+    var assessor = document.getElementById('filter-assessor').value;
+    var dateFrom = document.getElementById('filter-from').value;
+    var dateTo = document.getElementById('filter-to').value;
+
+    var filtered = powraData.filter(function(p) {
+        if (status && p.status !== status) return false;
+        var name = f(p, 'assessorName', 'assessor_name');
+        if (assessor && name !== assessor) return false;
+        if (dateFrom && p.date < dateFrom) return false;
+        if (dateTo && p.date > dateTo) return false;
+        if (search) {
+            var hay = (p.id + ' ' + name + ' ' + (p.task || '') + ' ' + (p.location || '') + ' ' + (p.site || '')).toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    // Sort: Failed first, then Open, then Passed; within group by date desc
+    var statusOrder = { 'Failed': 0, 'Open': 1, 'Passed': 2 };
+    filtered.sort(function(a, b) {
+        var so = (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
+        if (so !== 0) return so;
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    var list = document.getElementById('powra-list');
+    if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state"><h3>No POWRAs found</h3><p>Try adjusting your filters or <a href="powra.html">submit a new POWRA</a></p></div>';
+        return;
+    }
+
+    list.innerHTML = filtered.map(function(p) {
+        return renderPowraCard(p);
+    }).join('');
+}
+
+function renderPowraCard(p) {
+    var statusClass = p.status.toLowerCase();
+    var name = f(p, 'assessorName', 'assessor_name');
+    var loc = p.location || '';
+
+    return '<div class="powra-card" id="card-' + p.id + '">' +
+        '<div class="powra-accent ' + statusClass + '"></div>' +
+        '<div class="powra-body">' +
+            '<div class="powra-header" onclick="toggleCard(\'' + p.id + '\')">' +
+                '<span class="status-badge ' + statusClass + '">' + p.status + '</span>' +
+                (p._source === 'ms_forms' ? '<span class="source-badge">MS Forms</span>' : '') +
+                '<span class="powra-assessor">' + esc(name) + '</span>' +
+                '<span class="powra-task">' + esc(p.task || '') + '</span>' +
+                '<span class="powra-meta">' +
+                    (loc ? '<span>' + esc(loc) + '</span>' : '') +
+                    '<span>' + (p.date || '') + ' ' + (p.time || '') + '</span>' +
+                '</span>' +
+                '<span class="expand-arrow">&#9660;</span>' +
+            '</div>' +
+            '<div class="powra-detail">' + renderDetail(p) + '</div>' +
+        '</div>' +
+    '</div>';
+}
+
+function renderDetail(p) {
+    var name = f(p, 'assessorName', 'assessor_name');
+    var partyCount = p.partyCount || p.party_count || '';
+    var partyMembers = p.partyMembers || p.party_members || '';
+
+    var html = '<div class="detail-grid">' +
+        detailItem('POWRA ID', p.id) +
+        detailItem('Site', p.site || '') +
+        detailItem('Assessor', name) +
+        detailItem('Date / Time', (p.date || '') + ' ' + (p.time || '')) +
+        detailItem('Location', p.location || '') +
+        detailItem('Party Count', partyCount) +
+    '</div>';
+
+    // Party members
+    if (partyMembers) {
+        html += '<div style="margin-bottom:14px;">' +
+            '<label style="display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-light);margin-bottom:2px;">Party Members</label>' +
+            '<span style="font-size:0.85rem;color:var(--text);line-height:1.5;white-space:pre-line;">' + esc(partyMembers) + '</span>' +
+        '</div>';
+    }
+
+    // Checklist
+    var checklist = p.checklist || [];
+    if (checklist.length > 0) {
+        html += '<div class="checklist-grid"><h4>Hazard Checklist</h4>';
+        html += checklist.map(function(c) {
+            var qNum = c.questionNumber || c.question_number;
+            var ansClass = c.answer === 'Yes' ? 'yes' : (c.answer === 'No' ? 'no' : 'na');
+            var qText = QUESTIONS[qNum - 1] || 'Question ' + qNum;
+            return '<div class="cl-row">' +
+                '<div class="cl-num">' + qNum + '</div>' +
+                '<div class="cl-text">' + esc(qText) + '</div>' +
+                '<span class="cl-answer ' + ansClass + '">' + c.answer + '</span>' +
+            '</div>';
+        }).join('');
+        html += '</div>';
+    }
+
+    // Lockout section
+    var lockoutReq = p.lockoutBoxRequired || p.lockout_box_required || 'N/A';
+    if (lockoutReq && lockoutReq !== 'N/A') {
+        var lockedOn = f(p, 'allLockedOn', 'all_locked_on') || '\u2014';
+        var keysSafe = f(p, 'allKeysSafe', 'all_keys_safe') || '\u2014';
+        var lockComments = p.lockoutComments || p.lockout_comments || '';
+
+        html += '<div class="lockout-section"><h4>Portable Lockout Box</h4>' +
+            '<div class="detail-grid">' +
+            detailItem('Lockout Required', lockoutReq) +
+            detailItem('All Locked On', lockedOn) +
+            detailItem('All Keys Safe', keysSafe) +
+            '</div>';
+        if (lockComments) {
+            html += '<p style="font-size:0.82rem;color:var(--text);line-height:1.45;">' + esc(lockComments) + '</p>';
+        }
+        html += '</div>';
+    }
+
+    // Additional comments
+    var comments = p.comments || '';
+    if (comments) {
+        html += '<div style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0;">' +
+            '<label style="display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-light);margin-bottom:4px;">Additional Comments</label>' +
+            '<p style="font-size:0.85rem;color:var(--text);line-height:1.5;">' + esc(comments) + '</p>' +
+        '</div>';
+    }
+
+    return html;
+}
+
+function detailItem(label, value) {
+    return '<div class="detail-item"><label>' + label + '</label><span>' + esc(value || '\u2014') + '</span></div>';
+}
+
+function esc(str) {
+    var div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+}
+
+function toggleCard(id) {
+    document.getElementById('card-' + id).classList.toggle('expanded');
+}
+
+// ===== EXCEL IMPORT =====
+function importExcel(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+            var ws = wb.Sheets[wb.SheetNames[0]];
+            var rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            processExcelRows(rows);
+        } catch (err) {
+            alert('Failed to read Excel file: ' + err.message);
+        }
+    };
+    reader.readAsArrayBuffer(file);
+    input.value = '';
+}
+
+async function processExcelRows(rows) {
+    if (!rows.length) { alert('No data rows found.'); return; }
+
+    var headers = Object.keys(rows[0]);
+    var checklistCols = identifyChecklistColumns(headers);
+
+    var imported = 0;
+    var skipped = 0;
+
+    for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var msId = String(r['Id'] || r['ID'] || r['id'] || (i + 1));
+        var recordId = 'MSPWR-' + msId;
+
+        // Skip if already exists
+        if (powraData.some(function(p) { return p.id === recordId; })) {
+            skipped++;
+            continue;
+        }
+
+        var dateVal = findField(r, ['Date of POWRA', 'Date']) || r['Start time'] || '';
+        var timeVal = findField(r, ['Time of POWRA', 'Time']) || '';
+        var parsedDate = parseExcelDate(dateVal);
+        var parsedTime = parseExcelTime(timeVal, dateVal);
+
+        // Build checklist
+        var checklist = [];
+        var allPassed = true;
+        for (var q = 0; q < checklistCols.length && q < 17; q++) {
+            var answer = String(r[checklistCols[q]] || '').trim();
+            if (!answer) answer = 'N/A';
+            if (answer.toLowerCase().startsWith('yes')) answer = 'Yes';
+            else if (answer.toLowerCase().startsWith('no')) answer = 'No';
+            else answer = 'N/A';
+            if (answer === 'No') allPassed = false;
+            checklist.push({ questionNumber: q + 1, answer: answer });
+        }
+
+        // Lockout
+        var lockoutReq = findField(r, ['Does your permit require', 'Portable Lockout Box']) || 'N/A';
+        if (lockoutReq && lockoutReq.length > 5) {
+            lockoutReq = lockoutReq.toLowerCase().indexOf('yes') >= 0 ? 'Yes' :
+                         lockoutReq.toLowerCase().indexOf('no') >= 0 ? 'No' : 'N/A';
+        }
+
+        var record = {
+            id: recordId,
+            assessorName: findField(r, ['Name', 'Name1']) || findField(r, ['Email']) || 'Unknown',
+            date: parsedDate,
+            time: parsedTime,
+            task: findField(r, ['Task']) || '',
+            location: findField(r, ['Working Location', 'Location', 'Area']) || '',
+            site: findField(r, ['Customer', 'Site Name']) || 'Enabling Works \u2014 Port Talbot',
+            partyMembers: findField(r, ['Additional members', 'working party']) || '',
+            partyCount: parseInt(findField(r, ['How many members', 'party count'])) || 1,
+            checklist: checklist,
+            lockoutBoxRequired: lockoutReq,
+            allLockedOn: normalizeYesNo(findField(r, ['locked on to the Portable'])),
+            allKeysSafe: normalizeYesNo(findField(r, ['key safely on their person'])),
+            lockoutComments: findField(r, ['answered "No"', 'comment further actions']) || '',
+            comments: findField(r, ['Comments']) || '',
+            allPassed: allPassed,
+            status: allPassed ? 'Passed' : 'Failed',
+            submittedAt: parsedDate + ' ' + parsedTime,
+            _source: 'ms_forms'
+        };
+
+        await MiiDB.save('powra', record);
+        imported++;
+    }
+
+    await loadPowras();
+    alert('Imported ' + imported + ' POWRA(s)' + (skipped ? ', ' + skipped + ' already existed' : ''));
+}
+
+function findField(row, keywords) {
+    var keys = Object.keys(row);
+    for (var k = 0; k < keywords.length; k++) {
+        var kw = keywords[k].toLowerCase();
+        for (var j = 0; j < keys.length; j++) {
+            if (keys[j].toLowerCase().indexOf(kw) >= 0) {
+                var val = row[keys[j]];
+                if (val !== '' && val !== null && val !== undefined) return String(val);
+            }
+        }
+    }
+    return '';
+}
+
+function identifyChecklistColumns(headers) {
+    var questionFragments = [
+        'risk assessment', 'competent', 'isolations', 'PPE', 'housekeeping',
+        'activities/people', 'access and egress', 'lighting', 'hot work',
+        'equipment fit for purpose', 'hand injuries', 'materials and equipment',
+        'working platforms', 'manual handling', 'lift plan', 'hazardous substances',
+        'weather conditions'
+    ];
+    var cols = [];
+    for (var i = 0; i < questionFragments.length; i++) {
+        var frag = questionFragments[i].toLowerCase();
+        for (var j = 0; j < headers.length; j++) {
+            if (headers[j].toLowerCase().indexOf(frag) >= 0) {
+                cols.push(headers[j]);
+                break;
+            }
+        }
+    }
+    if (cols.length < 17) {
+        cols = headers.slice(11, 28);
+    }
+    return cols;
+}
+
+function parseExcelDate(val) {
+    if (!val) return '';
+    var d = val instanceof Date ? val : new Date(val);
+    if (isNaN(d.getTime())) return '';
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function parseExcelTime(timeVal, dateVal) {
+    if (timeVal) {
+        if (timeVal instanceof Date) return timeVal.toTimeString().slice(0, 5);
+        var t = String(timeVal).match(/(\d{1,2}):(\d{2})/);
+        if (t) return t[0];
+    }
+    if (dateVal instanceof Date) return dateVal.toTimeString().slice(0, 5);
+    return '';
+}
+
+function normalizeYesNo(val) {
+    if (!val) return '';
+    val = val.toLowerCase().trim();
+    if (val.indexOf('yes') >= 0) return 'Yes';
+    if (val.indexOf('no') >= 0) return 'No';
+    return 'N/A';
+}
+
+// ===== INIT =====
+loadPowras();
+</script>
+
+</body>
+</html>

@@ -8,11 +8,11 @@
  *  - Activate:             Clean up old cache versions
  */
 
-const CACHE_VERSION = 'mii-hub-v1';
+const CACHE_VERSION = 'mii-hub-v2';
 
 const APP_SHELL = [
   './',
-  './index.html',
+  './hub.html',
   './daily_report_template.html',
   './inspection.html',
   './inspections.html',
@@ -27,6 +27,10 @@ const APP_SHELL = [
   './ssw.html',
   './training_matrix.html',
   './havs.html',
+  './dashboard.html',
+  './sheq_observations.html',
+  './powra.html',
+  './powra_register.html',
   './mii-db.js',
   './employees.json',
   './employees.js',

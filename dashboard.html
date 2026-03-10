@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Management Dashboard — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== DATE RANGE BAR ===== */
+        .date-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .pill {
+            padding: 7px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            background: var(--white);
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .pill:hover { border-color: var(--accent); color: var(--accent); }
+        .pill.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+        .date-bar input[type="date"] {
+            padding: 6px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            color: var(--text);
+            outline: none;
+        }
+        .date-bar input[type="date"]:focus { border-color: var(--accent); }
+        .btn-refresh {
+            padding: 7px 14px;
+            border: 1.5px solid var(--accent);
+            border-radius: 6px;
+            background: var(--accent);
+            color: var(--white);
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-refresh:hover { background: var(--primary-light); border-color: var(--primary-light); }
+
+        /* ===== SECTION HEADERS ===== */
+        .section {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 20px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+        .section-header .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .section-header .dot.red { background: var(--danger); }
+        .section-header .dot.blue { background: var(--accent); }
+        .section-header .dot.green { background: var(--success); }
+        .section-header .dot.amber { background: var(--warning); }
+        .section-header h2 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text);
+        }
+
+        /* ===== STAT CARDS ===== */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .stat-sub {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+        .stat-value.green { color: var(--success); }
+        .stat-value.amber { color: var(--warning); }
+        .stat-value.red { color: var(--danger); }
+
+        /* ===== TREND CHARTS ===== */
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .chart-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+        .chart-card h3 {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+        .chart-area {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 120px;
+        }
+        .chart-day {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            height: 100%;
+            justify-content: flex-end;
+        }
+        .chart-bars {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            width: 100%;
+            justify-content: center;
+            flex: 1;
+        }
+        .chart-bar {
+            width: 12px;
+            border-radius: 3px 3px 0 0;
+            min-height: 2px;
+            transition: height 0.3s ease;
+        }
+        .chart-bar.blue { background: var(--accent); opacity: 0.5; }
+        .chart-bar.green { background: var(--success); }
+        .chart-bar.red { background: var(--danger); opacity: 0.7; }
+        .chart-bar.amber { background: var(--warning); }
+        .chart-day-label {
+            font-size: 0.65rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+            justify-content: center;
+        }
+        .chart-legend span {
+            font-size: 0.68rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .chart-legend .swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        /* ===== OFFLINE BANNER ===== */
+        .offline-banner {
+            display: none;
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 32px;
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .offline-banner h2 {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .offline-banner p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* ===== LOADING ===== */
+        .loading-overlay {
+            display: none;
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 32px;
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== FOOTER ===== */
+        .hub-footer {
+            text-align: center;
+            padding: 32px 24px;
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .chart-row { grid-template-columns: 1fr; }
+            .date-bar { gap: 6px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <h1>Management Dashboard</h1>
+        <a href="index.html">&larr; Back to Hub</a>
+    </div>
+
+    <!-- DATE RANGE -->
+    <div class="date-bar">
+        <button class="pill" data-range="today">Today</button>
+        <button class="pill active" data-range="7">Last 7 Days</button>
+        <button class="pill" data-range="30">Last 30 Days</button>
+        <input type="date" id="date-from">
+        <span style="color:var(--text-light); font-size:0.82rem;">to</span>
+        <input type="date" id="date-to">
+        <button class="btn-refresh" id="btn-refresh">Refresh</button>
+    </div>
+
+    <!-- OFFLINE BANNER -->
+    <div class="offline-banner" id="offline-banner">
+        <h2>No Connection</h2>
+        <p>Dashboard requires an internet connection to load live data.</p>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading-overlay" id="loading">
+        <span class="spinner"></span> Loading dashboard data...
+    </div>
+
+    <!-- DASHBOARD CONTENT (hidden until loaded) -->
+    <div id="dashboard-content" style="display:none;">
+
+        <!-- SAFETY -->
+        <div class="section">
+            <div class="section-header">
+                <div class="dot red"></div>
+                <h2>Safety</h2>
+            </div>
+            <div class="stats-bar" id="safety-stats"></div>
+        </div>
+
+        <!-- COMPLIANCE -->
+        <div class="section">
+            <div class="section-header">
+                <div class="dot blue"></div>
+                <h2>Compliance</h2>
+            </div>
+            <div class="stats-bar" id="compliance-stats"></div>
+            <div class="stats-bar" id="powra-compliance-stats" style="margin-top: 0;"></div>
+            <div id="powra-assessor-summary" style="max-width: 960px; margin: 0 auto; padding: 0 24px 12px;"></div>
+        </div>
+
+        <!-- OPERATIONS -->
+        <div class="section">
+            <div class="section-header">
+                <div class="dot green"></div>
+                <h2>Operations</h2>
+            </div>
+            <div class="stats-bar" id="operations-stats"></div>
+        </div>
+
+        <!-- TRENDS -->
+        <div class="section">
+            <div class="section-header">
+                <div class="dot amber"></div>
+                <h2>Trends</h2>
+            </div>
+            <div class="chart-row">
+                <div class="chart-card">
+                    <h3>Manning (Planned vs Actual)</h3>
+                    <div class="chart-area" id="chart-manning"></div>
+                    <div class="chart-legend">
+                        <span><span class="swatch" style="background:var(--accent);opacity:0.5;"></span> Planned</span>
+                        <span><span class="swatch" style="background:var(--success);"></span> Actual</span>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Safety Events</h3>
+                    <div class="chart-area" id="chart-safety"></div>
+                    <div class="chart-legend">
+                        <span><span class="swatch" style="background:var(--danger);opacity:0.7;"></span> Near Misses</span>
+                        <span><span class="swatch" style="background:var(--warning);"></span> Defects Raised</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hub-footer">
+        MII Engineering Ltd &mdash; Management Dashboard &mdash; Prototype v0.1
+    </div>
+
+<script src="mii-db.js"></script>
+<script>
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // ─── Auth gate ──────────────────────────────────────────────
+
+    var _useLocalDemo = false;
+    (function checkAccess() {
+        const userJson = localStorage.getItem('mii_user');
+        const token = localStorage.getItem('mii_token');
+        if (!token || !userJson) {
+            // No login — allow local demo mode
+            _useLocalDemo = true;
+            return;
+        }
+        const user = JSON.parse(userJson);
+        if (user.role !== 'ADMIN' && user.role !== 'SUPERVISOR') {
+            location.href = 'hub.html';
+            return;
+        }
+    })();
+
+    // ─── Date helpers ───────────────────────────────────────────
+
+    function toIso(d) { return d.toISOString().split('T')[0]; }
+
+    function setRange(days) {
+        const to = new Date();
+        const from = new Date();
+        if (days === 'today') {
+            // same day
+        } else {
+            from.setDate(from.getDate() - (parseInt(days) - 1));
+        }
+        document.getElementById('date-from').value = toIso(from);
+        document.getElementById('date-to').value = toIso(to);
+    }
+
+    // Default: Last 7 Days
+    setRange('7');
+
+    // Pill click handlers
+    document.querySelectorAll('.pill').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.pill').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            setRange(btn.dataset.range);
+            loadDashboard();
+        });
+    });
+
+    document.getElementById('btn-refresh').addEventListener('click', function() {
+        document.querySelectorAll('.pill').forEach(function(b) { b.classList.remove('active'); });
+        loadDashboard();
+    });
+
+    // ─── Card builder ───────────────────────────────────────────
+
+    function statCard(value, label, colorClass, subtitle) {
+        var sub = subtitle ? '<div class="stat-sub">' + subtitle + '</div>' : '';
+        return '<div class="stat-card">' +
+            '<div class="stat-value ' + (colorClass || '') + '">' + value + '</div>' +
+            '<div class="stat-label">' + label + '</div>' +
+            sub +
+            '</div>';
+    }
+
+    function colorForPct(pct, goodAbove) {
+        if (goodAbove) {
+            if (pct >= 90) return 'green';
+            if (pct >= 70) return 'amber';
+            return 'red';
+        } else {
+            if (pct <= 5) return 'green';
+            if (pct <= 15) return 'amber';
+            return 'red';
+        }
+    }
+
+    function severityBreakdown(obj) {
+        if (!obj || Object.keys(obj).length === 0) return '';
+        return Object.entries(obj).map(function(e) { return e[1] + ' ' + e[0]; }).join(', ');
+    }
+
+    // ─── Render functions ───────────────────────────────────────
+
+    function renderSafety(s) {
+        var el = document.getElementById('safety-stats');
+        var havColor = s.havs_workers_above_elv > 0 ? 'red' : (s.havs_workers_above_eav > 0 ? 'amber' : 'green');
+        el.innerHTML =
+            statCard(s.havs_workers_above_eav, 'HAVs > EAV', havColor, s.havs_total_entries + ' entries logged') +
+            statCard(s.havs_workers_above_elv, 'HAVs > ELV', s.havs_workers_above_elv > 0 ? 'red' : 'green', 'Exposure Limit') +
+            statCard(s.near_misses_reported, 'Near Misses', s.near_misses_reported > 0 ? 'amber' : 'green',
+                severityBreakdown(s.near_misses_by_severity) || 'None reported') +
+            statCard(s.defects_open, 'Open Defects', s.defects_open > 5 ? 'red' : (s.defects_open > 0 ? 'amber' : 'green'),
+                severityBreakdown(s.defects_open_by_severity) || 'All clear');
+    }
+
+    function renderCompliance(c) {
+        var el = document.getElementById('compliance-stats');
+        el.innerHTML =
+            statCard(c.submission_rate_pct + '%', 'DR Submission', colorForPct(c.submission_rate_pct, true),
+                c.daily_reports_submitted + ' of ' + c.daily_reports_expected + ' expected') +
+            statCard(c.checklist_avg_completion_pct + '%', 'Checklist Avg', colorForPct(c.checklist_avg_completion_pct, true), 'R&R compliance') +
+            statCard(c.inspection_pass_rate_pct + '%', 'Inspection Pass', colorForPct(c.inspection_pass_rate_pct, true),
+                c.inspections_pass + ' of ' + c.inspections_total + ' passed') +
+            statCard(c.workplace_inspection_pass_pct + '%', 'WPI Pass Rate', colorForPct(c.workplace_inspection_pass_pct, true),
+                c.workplace_inspections_total + ' inspection(s)');
+    }
+
+    function renderOperations(o) {
+        var el = document.getElementById('operations-stats');
+        var varColor = Math.abs(o.manning_variance_pct) <= 5 ? 'green' : (Math.abs(o.manning_variance_pct) <= 15 ? 'amber' : 'red');
+        var varSign = o.manning_variance_pct >= 0 ? '+' : '';
+        var reqSummary = Object.entries(o.requisitions_by_status || {}).map(function(e) { return e[1] + ' ' + e[0]; }).join(', ') || 'None';
+        el.innerHTML =
+            statCard(varSign + o.manning_variance_pct + '%', 'Manning Variance', varColor,
+                o.manning_actual + ' of ' + o.manning_planned + ' planned') +
+            statCard(o.hot_work_active, 'Hot Work Active', o.hot_work_active > 0 ? 'amber' : 'green',
+                o.hot_work_issued + ' issued in period') +
+            statCard(Object.values(o.requisitions_by_status || {}).reduce(function(a, b) { return a + b; }, 0),
+                'Requisitions', '', reqSummary) +
+            statCard(o.goods_inward_received, 'Goods Received', '', 'In period');
+    }
+
+    function renderPowraCompliance(powra) {
+        if (!powra) return;
+        var el = document.getElementById('powra-compliance-stats');
+        var passColor = colorForPct(powra.pass_rate_pct, true);
+        var failColor = powra.failed > 0 ? 'red' : 'green';
+        el.innerHTML =
+            statCard(powra.this_period, 'POWRAs This Period', '', powra.total + ' total') +
+            statCard(powra.pass_rate_pct + '%', 'POWRA Pass Rate', passColor, powra.passed + ' of ' + powra.total + ' passed') +
+            statCard(powra.failed, 'Failed POWRAs', failColor, 'Requires review') +
+            statCard(powra.by_assessor.length, 'Active Assessors', '', 'In period');
+    }
+
+    function renderPowraAssessorSummary(powra) {
+        if (!powra || !powra.by_assessor || powra.by_assessor.length === 0) return;
+        var el = document.getElementById('powra-assessor-summary');
+        var thStyle = 'text-align:center;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-light);padding:10px 14px;border-bottom:2px solid var(--border);background:#fafbfc;';
+        var rows = powra.by_assessor.map(function(a) {
+            var passRate = a.count > 0 ? Math.round((a.passed / a.count) * 100) : 0;
+            var failCell = a.failed > 0 ? '<span style="color:var(--danger);font-weight:700;">' + a.failed + '</span>' : '0';
+            return '<tr>' +
+                '<td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:0.85rem;">' + a.assessor + '</td>' +
+                '<td style="text-align:center;padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:0.85rem;">' + a.count + '</td>' +
+                '<td style="text-align:center;padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:0.85rem;">' + a.passed + '</td>' +
+                '<td style="text-align:center;padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:0.85rem;">' + failCell + '</td>' +
+                '<td style="text-align:center;padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:0.85rem;">' + passRate + '%</td>' +
+            '</tr>';
+        }).join('');
+        el.innerHTML =
+            '<div style="background:var(--white);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;">' +
+                '<div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:0.82rem;font-weight:700;color:var(--text);">POWRA by Assessor</div>' +
+                '<table style="width:100%;border-collapse:collapse;">' +
+                    '<thead><tr>' +
+                        '<th style="text-align:left;' + thStyle + '">Assessor</th>' +
+                        '<th style="' + thStyle + '">Total</th>' +
+                        '<th style="' + thStyle + '">Passed</th>' +
+                        '<th style="' + thStyle + '">Failed</th>' +
+                        '<th style="' + thStyle + '">Pass Rate</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+            '</div>';
+    }
+
+    async function loadPowraMetrics(dateFrom, dateTo) {
+        try {
+            if (typeof MiiDB !== 'undefined') {
+                await MiiDB.ready();
+                var all = await MiiDB.getAll('powra');
+                var filtered = all.filter(function(p) {
+                    return p.date >= dateFrom && p.date <= dateTo;
+                });
+                var passed = filtered.filter(function(p) { return p.status === 'Passed'; }).length;
+                var failed = filtered.filter(function(p) { return p.status === 'Failed'; }).length;
+                var total = filtered.length;
+
+                var assessorMap = {};
+                filtered.forEach(function(p) {
+                    var name = p.assessorName || p.assessor_name || 'Unknown';
+                    if (!assessorMap[name]) assessorMap[name] = { count: 0, passed: 0, failed: 0 };
+                    assessorMap[name].count++;
+                    if (p.status === 'Passed') assessorMap[name].passed++;
+                    if (p.status === 'Failed') assessorMap[name].failed++;
+                });
+                var byAssessor = Object.keys(assessorMap).map(function(name) {
+                    return { assessor: name, count: assessorMap[name].count, passed: assessorMap[name].passed, failed: assessorMap[name].failed };
+                }).sort(function(a, b) { return b.count - a.count; });
+
+                return {
+                    total: total, passed: passed, failed: failed,
+                    pass_rate_pct: total > 0 ? Math.round((passed / total) * 1000) / 10 : 0,
+                    this_period: total,
+                    by_assessor: byAssessor
+                };
+            }
+        } catch (e) {
+            console.warn('Failed to load POWRA metrics from IndexedDB:', e);
+        }
+        return null;
+    }
+
+    function renderTrends(t) {
+        renderBarChart('chart-manning', t.dates, [
+            { data: t.manning_planned, cls: 'blue' },
+            { data: t.manning_actual, cls: 'green' },
+        ]);
+        renderBarChart('chart-safety', t.dates, [
+            { data: t.near_misses, cls: 'red' },
+            { data: t.defects_raised, cls: 'amber' },
+        ]);
+    }
+
+    function renderBarChart(containerId, dates, series) {
+        var el = document.getElementById(containerId);
+        // Find global max across all series
+        var maxVal = 1;
+        series.forEach(function(s) {
+            s.data.forEach(function(v) { if (v > maxVal) maxVal = v; });
+        });
+
+        var html = '';
+        for (var i = 0; i < dates.length; i++) {
+            var d = new Date(dates[i] + 'T00:00:00');
+            var dayLabel = DAY_NAMES[d.getDay()];
+            var bars = '';
+            series.forEach(function(s) {
+                var val = s.data[i] || 0;
+                var pct = Math.round(val / maxVal * 100);
+                bars += '<div class="chart-bar ' + s.cls + '" style="height:' + Math.max(pct, 2) + '%" title="' + val + '"></div>';
+            });
+            html += '<div class="chart-day">' +
+                '<div class="chart-bars">' + bars + '</div>' +
+                '<div class="chart-day-label">' + dayLabel + '</div>' +
+                '</div>';
+        }
+        el.innerHTML = html;
+    }
+
+    // ─── Mock data (used when API is unavailable / local dev) ──
+
+    function buildMockData(dateFrom, dateTo) {
+        var d = new Date(dateFrom + 'T00:00:00');
+        var dEnd = new Date(dateTo + 'T00:00:00');
+        var dates = [];
+        while (d <= dEnd) {
+            dates.push(d.toISOString().split('T')[0]);
+            d.setDate(d.getDate() + 1);
+        }
+        return {
+            date_from: dateFrom,
+            date_to: dateTo,
+            generated_at: new Date().toISOString(),
+            safety: {
+                havs_workers_above_eav: 3,
+                havs_workers_above_elv: 0,
+                havs_total_entries: 42,
+                near_misses_reported: 5,
+                near_misses_open: 2,
+                near_misses_by_severity: { High: 1, Medium: 2, Low: 2 },
+                defects_open: 7,
+                defects_open_by_severity: { Critical: 2, Moderate: 3, Minor: 2 },
+                defects_closed_in_range: 4
+            },
+            compliance: {
+                daily_reports_submitted: 6,
+                daily_reports_expected: 7,
+                submission_rate_pct: 85.7,
+                checklist_avg_completion_pct: 92.5,
+                inspections_total: 18,
+                inspections_pass: 15,
+                inspection_pass_rate_pct: 83.3,
+                workplace_inspections_total: 2,
+                workplace_inspection_pass_pct: 88.0
+            },
+            operations: {
+                manning_planned: 224,
+                manning_actual: 210,
+                manning_variance_pct: -6.3,
+                hot_work_active: 3,
+                hot_work_issued: 5,
+                requisitions_by_status: { Pending: 4, Issued: 6, Rejected: 2 },
+                goods_inward_received: 3
+            },
+            powra: {
+                total: 24,
+                passed: 21,
+                failed: 3,
+                pass_rate_pct: 87.5,
+                this_period: 24,
+                by_assessor: [
+                    { assessor: 'Andrew Drew', count: 8, passed: 7, failed: 1 },
+                    { assessor: 'John Smith', count: 7, passed: 7, failed: 0 },
+                    { assessor: 'Mike Jones', count: 5, passed: 4, failed: 1 },
+                    { assessor: 'Sarah Williams', count: 4, passed: 3, failed: 1 },
+                ]
+            },
+            trends: {
+                dates: dates,
+                manning_planned: dates.map(function(_, i) {
+                    var day = new Date(dates[i] + 'T00:00:00').getDay();
+                    return day === 0 || day === 6 ? 0 : 30 + Math.floor(Math.random() * 6);
+                }),
+                manning_actual: dates.map(function(_, i) {
+                    var day = new Date(dates[i] + 'T00:00:00').getDay();
+                    return day === 0 || day === 6 ? 0 : 26 + Math.floor(Math.random() * 8);
+                }),
+                near_misses: dates.map(function() { return Math.floor(Math.random() * 3); }),
+                defects_raised: dates.map(function() { return Math.floor(Math.random() * 3); }),
+                havs_max_a8: dates.map(function() { return +(Math.random() * 4).toFixed(1); })
+            }
+        };
+    }
+
+    // ─── API fetch (with mock fallback) ─────────────────────────
+
+    function renderData(data) {
+        renderSafety(data.safety);
+        renderCompliance(data.compliance);
+        renderOperations(data.operations);
+        renderTrends(data.trends);
+        if (data.powra) {
+            renderPowraCompliance(data.powra);
+            renderPowraAssessorSummary(data.powra);
+        }
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboard-content').style.display = 'block';
+    }
+
+    async function loadDashboard() {
+        var dateFrom = document.getElementById('date-from').value;
+        var dateTo = document.getElementById('date-to').value;
+        if (!dateFrom || !dateTo) return;
+
+        document.getElementById('offline-banner').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('dashboard-content').style.display = 'none';
+
+        // If no token / local demo mode — use mock data directly
+        var token = localStorage.getItem('mii_token');
+        if (_useLocalDemo || !token) {
+            renderData(buildMockData(dateFrom, dateTo));
+            return;
+        }
+
+        // Try live API
+        if (!navigator.onLine) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('offline-banner').style.display = 'block';
+            return;
+        }
+
+        try {
+            var res = await fetch(MII_API + '/dashboard/summary?date_from=' + dateFrom + '&date_to=' + dateTo, {
+                headers: { 'Authorization': 'Bearer ' + token },
+            });
+
+            if (res.status === 403) {
+                alert('Access denied — requires ADMIN or SUPERVISOR role.');
+                location.href = 'hub.html';
+                return;
+            }
+            if (res.status === 401) {
+                localStorage.removeItem('mii_token');
+                localStorage.removeItem('mii_user');
+                location.href = 'hub.html';
+                return;
+            }
+            if (!res.ok) {
+                var err = await res.json();
+                alert('Error: ' + (err.error || 'Unknown error'));
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
+
+            renderData(await res.json());
+
+        } catch (e) {
+            // API unreachable — fall back to mock data
+            console.warn('API unreachable, using demo data:', e.message);
+            renderData(buildMockData(dateFrom, dateTo));
+        }
+
+        // Overlay live IndexedDB POWRA data (enriches mock or API data)
+        loadPowraMetrics(dateFrom, dateTo).then(function(powraLocal) {
+            if (powraLocal && powraLocal.total > 0) {
+                renderPowraCompliance(powraLocal);
+                renderPowraAssessorSummary(powraLocal);
+            }
+        });
+    }
+
+    // ─── Offline detection ──────────────────────────────────────
+
+    window.addEventListener('online', function() {
+        document.getElementById('offline-banner').style.display = 'none';
+        loadDashboard();
+    });
+    window.addEventListener('offline', function() {
+        if (!_useLocalDemo) {
+            document.getElementById('offline-banner').style.display = 'block';
+        }
+    });
+
+    // ─── Initial load ───────────────────────────────────────────
+
+    loadDashboard();
+</script>
+
+</body>
+</html>

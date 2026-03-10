@@ -1243,17 +1243,17 @@
 <script>
 (function() {
     var token = localStorage.getItem('mii_token');
-    if (!token) { window.location.href = 'index.html'; return; }
+    if (!token) { window.location.href = 'hub.html'; return; }
     try {
         var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
         if (!payload.exp || payload.exp * 1000 < Date.now()) {
             localStorage.removeItem('mii_token');
             localStorage.removeItem('mii_user');
-            window.location.href = 'index.html';
+            window.location.href = 'hub.html';
         }
     } catch(e) {
         localStorage.removeItem('mii_token');
-        window.location.href = 'index.html';
+        window.location.href = 'hub.html';
     }
 })();
 </script>

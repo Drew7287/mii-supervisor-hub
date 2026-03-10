@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SHEQ Observation — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; padding-bottom: 90px; }
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+        .form-header { max-width: 700px; margin: 0 auto; padding: 20px 20px 0; }
+        .form-ref { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--success); }
+        .form-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin: 2px 0 6px; }
+        .form-desc { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; margin-bottom: 8px; }
+        .form-body { max-width: 700px; margin: 0 auto; padding: 12px 20px; }
+        .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); padding: 14px 0 8px; border-bottom: 2px solid var(--primary); margin-bottom: 12px; }
+        .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .field label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 3px; }
+        .field input, .field select, .field textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
+        .field textarea { min-height: 100px; resize: vertical; }
+        .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+        .field.full { grid-column: 1 / -1; }
+
+        .type-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .type-btn { flex: 1 1 calc(33% - 6px); min-width: 120px; padding: 12px 8px; border: 2px solid var(--border); border-radius: 8px; background: var(--white); cursor: pointer; text-align: center; font-family: inherit; transition: all 0.15s; }
+        .type-btn:hover { border-color: #999; }
+        .type-btn .type-icon { font-size: 1.4rem; margin-bottom: 4px; }
+        .type-btn .type-label { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+        .type-btn.selected.delay { border-color: var(--accent); background: #e8f2fc; }
+        .type-btn.selected.environmental { border-color: var(--success); background: #e6f7ec; }
+        .type-btn.selected.hazard { border-color: var(--danger); background: #fde8ea; }
+        .type-btn.selected.near-miss { border-color: var(--warning); background: #fff6e0; }
+        .type-btn.selected.plant { border-color: #6f42c1; background: #f3eeff; }
+
+        .toggle-group { display: flex; gap: 0; margin-bottom: 16px; }
+        .toggle-btn { flex: 1; padding: 10px 8px; border: 1.5px solid var(--border); background: var(--white); font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; text-align: center; transition: all 0.15s; }
+        .toggle-btn:first-child { border-radius: 6px 0 0 6px; }
+        .toggle-btn:last-child { border-radius: 0 6px 6px 0; }
+        .toggle-btn.selected.yes { border-color: var(--success); background: #e6f7ec; color: var(--success); }
+        .toggle-btn.selected.no { border-color: var(--danger); background: #fde8ea; color: var(--danger); }
+
+        .conditional { display: none; }
+        .conditional.show { display: block; }
+
+        .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
+        .submit-status { font-size: 0.82rem; color: var(--text-light); }
+        .btn-submit { padding: 10px 24px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; color: var(--white); background: var(--success); transition: opacity 0.15s; }
+        .btn-submit:hover { opacity: 0.9; }
+
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
+        .overlay.show { display: flex; }
+        .overlay-card { background: var(--white); border-radius: 12px; padding: 32px 28px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .overlay-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 14px; background: #e6f7ec; color: var(--success); }
+        .overlay-card h3 { font-size: 1.15rem; color: var(--primary); margin-bottom: 6px; }
+        .overlay-card .report-id { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+        .overlay-card p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+        .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+        .overlay-actions button { padding: 9px 20px; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+
+        @media (max-width: 600px) { .fields { grid-template-columns: 1fr; } .type-selector { flex-direction: column; } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>SHEQ Observation</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<div class="form-header">
+    <div class="form-ref">SF 042B &mdash; Observation Report</div>
+    <h2>SHEQ Observation</h2>
+    <div class="form-desc">Log safety, health, environment &amp; quality observations on site. All observations are reviewed by SHEQ and management.</div>
+</div>
+
+<div class="form-body">
+    <div class="section-title">Observation Type</div>
+    <div class="type-selector">
+        <button class="type-btn delay" onclick="selectType('Delay', this)">
+            <div class="type-icon">&#9203;</div>
+            <div class="type-label">Delay</div>
+        </button>
+        <button class="type-btn environmental" onclick="selectType('Environmental', this)">
+            <div class="type-icon">&#127793;</div>
+            <div class="type-label">Environmental</div>
+        </button>
+        <button class="type-btn hazard" onclick="selectType('Hazard / Unsafe Condition', this)">
+            <div class="type-icon">&#9889;</div>
+            <div class="type-label">Hazard / Unsafe Condition</div>
+        </button>
+        <button class="type-btn near-miss" onclick="selectType('Near Miss', this)">
+            <div class="type-icon">&#9888;</div>
+            <div class="type-label">Near Miss</div>
+        </button>
+        <button class="type-btn plant" onclick="selectType('Plant Improvement', this)">
+            <div class="type-icon">&#128295;</div>
+            <div class="type-label">Plant Improvement</div>
+        </button>
+    </div>
+
+    <div class="section-title">Details</div>
+    <div class="fields">
+        <div class="field">
+            <label>Observer Name</label>
+            <input type="text" id="f-name" placeholder="Your name">
+        </div>
+        <div class="field">
+            <label>Date</label>
+            <input type="date" id="f-date">
+        </div>
+        <div class="field">
+            <label>Time</label>
+            <input type="time" id="f-time">
+        </div>
+        <div class="field">
+            <label>Location</label>
+            <input type="text" id="f-location" placeholder="e.g. Bay 4, ground floor">
+        </div>
+        <div class="field full">
+            <label>Details of Observation</label>
+            <textarea id="f-details" placeholder="Describe what you observed..."></textarea>
+        </div>
+    </div>
+
+    <div class="section-title">Action</div>
+    <div class="fields">
+        <div class="field full">
+            <label>Immediate Action Taken</label>
+            <textarea id="f-immediate-action" placeholder="Describe any immediate corrective action..." style="min-height:70px"></textarea>
+        </div>
+    </div>
+
+    <label style="display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-light); margin-bottom:6px;">Further Action Required?</label>
+    <div class="toggle-group" id="further-action-toggle">
+        <button class="toggle-btn yes" onclick="setFurtherAction('Yes', this)">Yes</button>
+        <button class="toggle-btn no selected" onclick="setFurtherAction('No', this)">No</button>
+    </div>
+
+    <div class="conditional" id="further-action-section">
+        <div class="fields">
+            <div class="field full">
+                <label>Further Action Details</label>
+                <textarea id="f-further-action" placeholder="Describe the further action required..." style="min-height:70px"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <label style="display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-light); margin-bottom:6px;">Uploaded to Salus?</label>
+    <div class="toggle-group" id="salus-toggle">
+        <button class="toggle-btn yes" onclick="setSalus('Yes', this)">Yes</button>
+        <button class="toggle-btn no selected" onclick="setSalus('No', this)">No</button>
+    </div>
+</div>
+
+<div class="submit-bar">
+    <div class="submit-status">SF 042B &mdash; SHEQ Observation</div>
+    <button class="btn-submit" onclick="submitObservation()">Submit Observation</button>
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-icon">&#10003;</div>
+        <h3>Observation Submitted</h3>
+        <div class="report-id" id="overlay-id"></div>
+        <p>Your observation has been logged and will be reviewed by SHEQ and management. Thank you for reporting.</p>
+        <div class="overlay-actions">
+            <button class="btn-outline" onclick="window.location.href='hub.html'">Back to Hub</button>
+            <button class="btn-primary" onclick="location.reload()">Submit Another</button>
+        </div>
+    </div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('SW registration failed:', err);
+    });
+}
+
+let observationType = '';
+let furtherActionRequired = 'No';
+let uploadedToSalus = 'No';
+
+// Pre-fill defaults
+document.getElementById('f-date').valueAsDate = new Date();
+(function() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('f-time').value = hh + ':' + mm;
+})();
+
+// Pre-fill name from user
+try {
+    const user = JSON.parse(localStorage.getItem('mii_user') || '{}');
+    if (user.username) document.getElementById('f-name').value = user.username;
+} catch(_) {}
+
+function selectType(type, btn) {
+    observationType = type;
+    document.querySelectorAll('.type-btn').forEach(function(b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+}
+
+function setFurtherAction(val, btn) {
+    furtherActionRequired = val;
+    btn.parentElement.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    document.getElementById('further-action-section').classList.toggle('show', val === 'Yes');
+}
+
+function setSalus(val, btn) {
+    uploadedToSalus = val;
+    btn.parentElement.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+}
+
+function submitObservation() {
+    if (!observationType) { alert('Please select an observation type.'); return; }
+    var name = document.getElementById('f-name').value.trim();
+    if (!name) { alert('Please enter your name.'); return; }
+    var details = document.getElementById('f-details').value.trim();
+    if (!details) { alert('Please enter the details of your observation.'); return; }
+
+    var id = 'SHQ-' + String(Date.now()).slice(-6);
+    var now = new Date();
+    var record = {
+        id: id,
+        observationType: observationType,
+        observerName: name,
+        date: document.getElementById('f-date').value,
+        time: document.getElementById('f-time').value,
+        location: document.getElementById('f-location').value.trim(),
+        details: details,
+        immediateAction: document.getElementById('f-immediate-action').value.trim(),
+        furtherActionRequired: furtherActionRequired,
+        furtherActionDetails: furtherActionRequired === 'Yes' ? document.getElementById('f-further-action').value.trim() : '',
+        uploadedToSalus: uploadedToSalus,
+        status: 'Open',
+        submittedAt: now.toISOString().split('T')[0] + ' ' + now.toTimeString().slice(0, 5)
+    };
+
+    var records = JSON.parse(localStorage.getItem('mii_sheq_observations') || '[]');
+    records.push(record);
+    localStorage.setItem('mii_sheq_observations', JSON.stringify(records));
+    MiiDB.save('sheq_observations', record);
+
+    document.getElementById('overlay-id').textContent = id;
+    document.getElementById('overlay').classList.add('show');
+}
+
+// ── Seed mock data ──
+(function seedSheqObservations() {
+    if (localStorage.getItem('mii_sheq_observations_seeded')) return;
+    var seed = [
+        { id: 'SHQ-100001', observationType: 'Hazard / Unsafe Condition', observerName: 'Andrew Drew', date: '2026-03-07', time: '08:30', location: 'Bay 3, ground floor', details: 'Trailing cable across walkway creating trip hazard near scaffold access point.', immediateAction: 'Cable re-routed and secured with cable covers.', furtherActionRequired: 'Yes', furtherActionDetails: 'Permanent cable management solution needed for this area.', uploadedToSalus: 'No', status: 'Open', submittedAt: '2026-03-07 08:35' },
+        { id: 'SHQ-100002', observationType: 'Near Miss', observerName: 'John Smith', date: '2026-03-07', time: '10:15', location: 'Steel erection area', details: 'Unsecured bolt dropped from height during steel erection. Landed in exclusion zone, no personnel present.', immediateAction: 'Area re-checked, tool tethering reinforced with crew.', furtherActionRequired: 'No', furtherActionDetails: '', uploadedToSalus: 'Yes', status: 'Open', submittedAt: '2026-03-07 10:20' },
+        { id: 'SHQ-100003', observationType: 'Environmental', observerName: 'Mike Jones', date: '2026-03-08', time: '14:00', location: 'Laydown area east', details: 'Diesel spill from plant refuelling. Approximately 2 litres on hardstanding.', immediateAction: 'Spill kit deployed, area cleaned and absorbent applied.', furtherActionRequired: 'Yes', furtherActionDetails: 'Review refuelling procedure and bund placement.', uploadedToSalus: 'Yes', status: 'Open', submittedAt: '2026-03-08 14:10' },
+        { id: 'SHQ-100004', observationType: 'Delay', observerName: 'Andrew Drew', date: '2026-03-09', time: '07:45', location: 'Gate 2 access', details: 'Material delivery delayed by 2 hours due to incorrect permit documentation.', immediateAction: 'Contacted logistics to arrange correct paperwork.', furtherActionRequired: 'No', furtherActionDetails: '', uploadedToSalus: 'No', status: 'Open', submittedAt: '2026-03-09 07:50' },
+        { id: 'SHQ-100005', observationType: 'Plant Improvement', observerName: 'Sarah Williams', date: '2026-03-10', time: '11:30', location: 'Workshop', details: 'Suggested adding mirror at blind corner of internal roadway to improve visibility for FLT movements.', immediateAction: 'Raised with site management for review.', furtherActionRequired: 'Yes', furtherActionDetails: 'Procurement and installation of convex safety mirror.', uploadedToSalus: 'No', status: 'Open', submittedAt: '2026-03-10 11:35' }
+    ];
+    localStorage.setItem('mii_sheq_observations', JSON.stringify(seed));
+    seed.forEach(function(r) { MiiDB.save('sheq_observations', r); });
+    localStorage.setItem('mii_sheq_observations_seeded', 'true');
+})();
+</script>
+</body>
+</html>
