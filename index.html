@@ -406,6 +406,23 @@
     <!-- CARD GRID -->
     <div class="card-grid">
 
+        <!-- MANAGEMENT DASHBOARD (role-gated) -->
+        <a class="card" href="dashboard.html" id="card-dashboard" style="display:none">
+            <div class="card-accent blue"></div>
+            <div class="card-body">
+                <div class="card-icon blue">&#128202;</div>
+                <div class="card-title">Management Dashboard</div>
+                <div class="card-desc">
+                    Live KPIs across safety, compliance &amp; operations.
+                    Defects, HAVs, manning, inspections and trend charts.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Live</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
         <!-- DAILY REPORT -->
         <a class="card" href="daily_report_template.html">
             <div class="card-accent blue"></div>
@@ -424,17 +441,51 @@
         </a>
 
         <!-- SHEQ OBSERVATIONS -->
-        <a class="card" href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&route=shorturl" target="_blank">
+        <a class="card" href="sheq_observations.html">
             <div class="card-accent green"></div>
             <div class="card-body">
                 <div class="card-icon green">&#128065;</div>
                 <div class="card-title">SHEQ Observations</div>
                 <div class="card-desc">
                     Log safety, health, environment &amp; quality observations on site.
-                    Positive and negative. Opens MS Forms.
+                    Positive and negative. SF 042B observation report.
                 </div>
                 <div class="card-footer">
                     <span class="card-tag event">Per Event</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- POWRA -->
+        <a class="card" href="powra.html">
+            <div class="card-accent green"></div>
+            <div class="card-body">
+                <div class="card-icon green">&#9888;</div>
+                <div class="card-title">Point of Work Risk Assessment</div>
+                <div class="card-desc">
+                    Complete a POWRA before starting any task. 17-point hazard checklist
+                    with portable lockout box section.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag weekly">Per Task</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- POWRA REGISTER -->
+        <a class="card" href="powra_register.html">
+            <div class="card-accent green"></div>
+            <div class="card-body">
+                <div class="card-icon green">&#128203;</div>
+                <div class="card-title">POWRA Register</div>
+                <div class="card-desc">
+                    Search and review completed Point of Work Risk Assessments.
+                    View pass/fail status, checklist answers and assessor details.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Live</span>
                     <span class="card-arrow">&#8594;</span>
                 </div>
             </div>
@@ -500,6 +551,23 @@
                 <div class="card-desc">
                     Register of open defects from pre-use inspections. Assign, track
                     and resolve. Inspection log for KPI compliance.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag event">Live</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- ACTION TRACKER -->
+        <a class="card" href="action_tracker.html">
+            <div class="card-accent red"></div>
+            <div class="card-body">
+                <div class="card-icon red">&#128203;</div>
+                <div class="card-title">Action Tracker</div>
+                <div class="card-desc">
+                    External audit actions from Excel imports. View, filter and close
+                    actions. Shared live with desktop app.
                 </div>
                 <div class="card-footer">
                     <span class="card-tag event">Live</span>
@@ -673,6 +741,12 @@
                 : user.username.substring(0, 2).toUpperCase();
             avatarEl.textContent = initials;
             logoutBtn.style.display = '';
+
+            // Show dashboard card for ADMIN/SUPERVISOR
+            const dashCard = document.getElementById('card-dashboard');
+            if (dashCard) {
+                dashCard.style.display = (user.role === 'ADMIN' || user.role === 'SUPERVISOR') ? '' : 'none';
+            }
 
             // Update greeting with name
             const firstName = parts[0];

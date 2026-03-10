@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Action Tracker — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .stat-value.red { color: var(--danger); }
+        .stat-value.amber { color: var(--warning); }
+        .stat-value.green { color: var(--success); }
+        .stat-value.blue { color: var(--accent); }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-bar input,
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-bar input { flex: 1; min-width: 180px; }
+        .filter-bar select { min-width: 140px; }
+        .filter-bar input:focus,
+        .filter-bar select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* ===== ACTION CARDS ===== */
+        .action-list {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+        }
+        .action-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            transition: box-shadow 0.15s;
+        }
+        .action-card:hover { box-shadow: var(--shadow-hover); }
+        .action-accent {
+            width: 5px;
+            flex-shrink: 0;
+        }
+        .action-accent.overdue { background: var(--danger); }
+        .action-accent.open { background: var(--warning); }
+        .action-accent.closed, .action-accent.not_applicable { background: var(--success); }
+
+        .action-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .action-header {
+            padding: 14px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .action-header:hover { background: #fafbfc; }
+
+        .status-pill {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .status-pill.open { background: #fff6e0; color: #b07d00; }
+        .status-pill.overdue { background: #fde8ea; color: var(--danger); }
+        .status-pill.closed { background: #e6f7ec; color: var(--success); }
+        .status-pill.not_applicable { background: #e6f7ec; color: var(--success); }
+
+        .action-area {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+        .action-text-preview {
+            font-size: 0.88rem;
+            color: var(--text);
+            flex: 1;
+            min-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .action-meta {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .source-badge {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: #eef2f7;
+            color: var(--text-light);
+            flex-shrink: 0;
+        }
+
+        .expand-arrow {
+            font-size: 0.8rem;
+            color: var(--border);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .action-card.expanded .expand-arrow { transform: rotate(180deg); }
+
+        /* EXPANDED DETAIL */
+        .action-detail {
+            display: none;
+            border-top: 1px solid #f0f0f0;
+            padding: 16px;
+        }
+        .action-card.expanded .action-detail { display: block; }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .detail-item label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 2px;
+        }
+        .detail-item span {
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+
+        .full-text-section {
+            margin-bottom: 14px;
+        }
+        .full-text-section h4 {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .full-text-section p {
+            font-size: 0.85rem;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        /* ACTIVITY TIMELINE */
+        .activity-section h4 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .audit-entry {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .audit-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+        .audit-dot.imported { background: var(--accent); }
+        .audit-dot.closed { background: var(--success); }
+        .audit-dot.reopened { background: var(--warning); }
+        .audit-dot.written_back { background: var(--primary); }
+        .audit-content {
+            font-size: 0.82rem;
+            color: var(--text);
+            line-height: 1.45;
+        }
+        .audit-content .audit-time {
+            font-size: 0.72rem;
+            color: var(--text-light);
+        }
+
+        /* ACTION PANELS */
+        .close-panel {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .close-panel label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .close-panel select,
+        .close-panel textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+            margin-bottom: 8px;
+        }
+        .close-panel textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .close-panel select:focus,
+        .close-panel textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        .btn-close-action {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            background: var(--success);
+            transition: opacity 0.15s;
+        }
+        .btn-close-action:hover { opacity: 0.9; }
+        .btn-close-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .closed-banner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #e6f7ec;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .closed-banner .check { font-size: 1.1rem; color: var(--success); }
+        .closed-banner span { font-size: 0.82rem; color: var(--success); font-weight: 600; }
+
+        /* ===== LOADING / EMPTY ===== */
+        .loading-spinner {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-light);
+        }
+        .loading-spinner::after {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-light);
+        }
+        .empty-state h3 { font-size: 1rem; margin-bottom: 4px; color: var(--text); }
+        .empty-state p { font-size: 0.85rem; }
+
+        .error-banner {
+            max-width: 960px;
+            margin: 16px auto;
+            padding: 12px 24px;
+            background: #fde8ea;
+            color: var(--danger);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; }
+            .filter-bar select { min-width: 100%; }
+            .action-header { flex-wrap: wrap; gap: 6px; }
+            .action-meta { width: 100%; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Action Tracker</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<div class="stats-bar" id="stats-bar">
+    <div class="stat-card"><div class="stat-value red">—</div><div class="stat-label">Open</div></div>
+    <div class="stat-card"><div class="stat-value amber">—</div><div class="stat-label">Overdue</div></div>
+    <div class="stat-card"><div class="stat-value green">—</div><div class="stat-label">Closed Today</div></div>
+    <div class="stat-card"><div class="stat-value blue">—</div><div class="stat-label">Total</div></div>
+</div>
+
+<div class="filter-bar">
+    <input type="text" id="filter-search" placeholder="Search actions, questions, assigned to...">
+    <select id="filter-status" onchange="loadActions()">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="overdue">Overdue</option>
+        <option value="closed">Closed</option>
+        <option value="not_applicable">N/A</option>
+    </select>
+    <select id="filter-area" onchange="loadActions()">
+        <option value="">All Areas</option>
+    </select>
+    <select id="filter-source" onchange="loadActions()">
+        <option value="">All Sources</option>
+    </select>
+</div>
+
+<div class="action-list" id="action-list">
+    <div class="loading-spinner">Loading actions...</div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+
+function authHeaders() {
+    const token = localStorage.getItem('mii_auth_token');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (token || ''),
+    };
+}
+
+function checkAuth() {
+    const token = localStorage.getItem('mii_auth_token');
+    if (!token) {
+        window.location.href = 'hub.html';
+        return false;
+    }
+    return true;
+}
+
+// ===== DEBOUNCE =====
+let searchTimer = null;
+document.getElementById('filter-search').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadActions, 300);
+});
+
+// ===== LOAD STATS =====
+async function loadStats() {
+    try {
+        const sheet = document.getElementById('filter-source').value;
+        const params = sheet ? '?sheet_name=' + encodeURIComponent(sheet) : '';
+        const res = await fetch(MII_API + '/actions/stats' + params, { headers: authHeaders() });
+        if (res.status === 401) { window.location.href = 'hub.html'; return; }
+        const data = await res.json();
+        document.getElementById('stats-bar').innerHTML = `
+            <div class="stat-card"><div class="stat-value red">${data.open}</div><div class="stat-label">Open</div></div>
+            <div class="stat-card"><div class="stat-value amber">${data.overdue}</div><div class="stat-label">Overdue</div></div>
+            <div class="stat-card"><div class="stat-value green">${data.closed_today}</div><div class="stat-label">Closed Today</div></div>
+            <div class="stat-card"><div class="stat-value blue">${data.total}</div><div class="stat-label">Total</div></div>
+        `;
+    } catch (e) {
+        console.error('Stats error:', e);
+    }
+}
+
+// ===== LOAD AREAS =====
+async function loadAreas() {
+    try {
+        const res = await fetch(MII_API + '/actions/areas', { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const sel = document.getElementById('filter-area');
+        const current = sel.value;
+        sel.innerHTML = '<option value="">All Areas</option>';
+        data.areas.forEach(a => {
+            sel.innerHTML += `<option value="${esc(a)}">${esc(a)}</option>`;
+        });
+        sel.value = current;
+    } catch (e) {
+        console.error('Areas error:', e);
+    }
+}
+
+// ===== LOAD SOURCES (distinct sheet names) =====
+async function loadSources() {
+    try {
+        const res = await fetch(MII_API + '/actions?limit=1000&offset=0', { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const sheets = [...new Set(data.actions.map(a => a.source_sheet_name).filter(Boolean))].sort();
+        const sel = document.getElementById('filter-source');
+        const current = sel.value;
+        sel.innerHTML = '<option value="">All Sources</option>';
+        sheets.forEach(s => {
+            sel.innerHTML += `<option value="${esc(s)}">${esc(s)}</option>`;
+        });
+        sel.value = current;
+    } catch (e) {
+        console.error('Sources error:', e);
+    }
+}
+
+// ===== LOAD ACTIONS =====
+async function loadActions() {
+    const list = document.getElementById('action-list');
+    list.innerHTML = '<div class="loading-spinner">Loading actions...</div>';
+
+    try {
+        const params = new URLSearchParams();
+        const search = document.getElementById('filter-search').value.trim();
+        const status = document.getElementById('filter-status').value;
+        const area = document.getElementById('filter-area').value;
+        const source = document.getElementById('filter-source').value;
+
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
+        if (area) params.set('area', area);
+        if (source) params.set('sheet_name', source);
+        params.set('limit', '200');
+        params.set('offset', '0');
+
+        const res = await fetch(MII_API + '/actions?' + params.toString(), { headers: authHeaders() });
+        if (res.status === 401) { window.location.href = 'hub.html'; return; }
+        if (!res.ok) throw new Error('API error ' + res.status);
+        const data = await res.json();
+
+        renderActions(data.actions, data.total);
+        loadStats();
+    } catch (e) {
+        console.error('Load actions error:', e);
+        list.innerHTML = '<div class="error-banner">Failed to load actions. Check your connection and try again.</div>';
+    }
+}
+
+// ===== RENDER =====
+function renderActions(actions, total) {
+    const list = document.getElementById('action-list');
+
+    if (!actions || actions.length === 0) {
+        list.innerHTML = '<div class="empty-state"><h3>No actions found</h3><p>Try adjusting your filters</p></div>';
+        return;
+    }
+
+    list.innerHTML = actions.map(a => {
+        const accentClass = a.is_overdue ? 'overdue' : a.status;
+        const pillClass = a.is_overdue ? 'overdue' : a.status;
+        const pillText = a.is_overdue ? 'Overdue' : statusLabel(a.status);
+        const preview = truncate(a.action_text, 80);
+        const targetStr = a.target_date || '—';
+        const assignedStr = a.assigned_to || '—';
+
+        return `
+        <div class="action-card" id="card-${a.id}">
+            <div class="action-accent ${accentClass}"></div>
+            <div class="action-body">
+                <div class="action-header" onclick="toggleCard('${a.id}')">
+                    <span class="status-pill ${pillClass}">${pillText}</span>
+                    <span class="action-area">${esc(a.area || '—')}</span>
+                    <span class="action-text-preview">${esc(preview)}</span>
+                    <span class="action-meta">
+                        <span>${esc(assignedStr)}</span>
+                        <span>${targetStr}</span>
+                    </span>
+                    ${a.source_sheet_name ? `<span class="source-badge">${esc(a.source_sheet_name)}</span>` : ''}
+                    <span class="expand-arrow">&#9660;</span>
+                </div>
+                <div class="action-detail">
+                    <div class="detail-grid">
+                        <div class="detail-item"><label>Source</label><span>${esc(a.source_sheet_name || '—')}</span></div>
+                        <div class="detail-item"><label>Area</label><span>${esc(a.area || '—')}</span></div>
+                        <div class="detail-item"><label>Auditor</label><span>${esc(a.auditor || '—')}</span></div>
+                        <div class="detail-item"><label>Audit Date</label><span>${a.audit_date || '—'}</span></div>
+                        <div class="detail-item"><label>Assigned To</label><span>${esc(a.assigned_to || '— Unassigned —')}</span></div>
+                        <div class="detail-item"><label>Target Date</label><span>${a.target_date || '—'}</span></div>
+                    </div>
+
+                    <div class="full-text-section">
+                        <h4>Action</h4>
+                        <p>${esc(a.action_text)}</p>
+                    </div>
+
+                    ${a.question ? `
+                    <div class="full-text-section">
+                        <h4>Question</h4>
+                        <p>${esc(a.question)}</p>
+                    </div>` : ''}
+
+                    ${renderTimeline(a.audit_logs)}
+                    ${renderClosePanel(a)}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderTimeline(logs) {
+    if (!logs || logs.length === 0) return '';
+    return `
+    <div class="activity-section">
+        <h4>Activity</h4>
+        ${logs.map(l => `
+            <div class="audit-entry">
+                <div class="audit-dot ${l.change_type}"></div>
+                <div class="audit-content">
+                    <strong>${esc(l.user_name || 'System')}</strong> — ${esc(changeLabel(l.change_type))}${l.details ? ': ' + esc(l.details) : ''}<br>
+                    <span class="audit-time">${formatTimestamp(l.timestamp)}</span>
+                </div>
+            </div>
+        `).join('')}
+    </div>`;
+}
+
+function renderClosePanel(a) {
+    if (a.status === 'open') {
+        return `
+        <div class="close-panel">
+            <label>Status</label>
+            <select id="close-status-${a.id}">
+                <option value="closed">Closed</option>
+                <option value="not_applicable">Not Applicable</option>
+            </select>
+            <label>Closure Notes</label>
+            <textarea id="close-notes-${a.id}" placeholder="Describe the resolution or reason for closing..."></textarea>
+            <button class="btn-close-action" id="close-btn-${a.id}" onclick="closeAction('${a.id}')">Close Action</button>
+        </div>`;
+    }
+    if (a.status === 'closed' || a.status === 'not_applicable') {
+        return `
+        <div class="closed-banner">
+            <span class="check">&#10003;</span>
+            <span>${statusLabel(a.status)} ${a.closed_at ? formatTimestamp(a.closed_at) : ''}</span>
+        </div>
+        ${a.closure_notes ? '<p style="font-size:0.82rem;color:var(--text-light);margin-top:8px;line-height:1.45">' + esc(a.closure_notes) + '</p>' : ''}`;
+    }
+    return '';
+}
+
+// ===== CLOSE ACTION =====
+async function closeAction(id) {
+    const notes = document.getElementById('close-notes-' + id).value.trim();
+    const status = document.getElementById('close-status-' + id).value;
+    const btn = document.getElementById('close-btn-' + id);
+
+    if (!notes) { alert('Please enter closure notes.'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Closing...';
+
+    try {
+        const res = await fetch(MII_API + '/actions/close', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ action_id: id, status: status, closure_notes: notes }),
+        });
+        if (res.status === 401) { window.location.href = 'hub.html'; return; }
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.error || 'Failed to close action');
+            btn.disabled = false;
+            btn.textContent = 'Close Action';
+            return;
+        }
+        loadActions();
+    } catch (e) {
+        console.error('Close action error:', e);
+        alert('Network error. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Close Action';
+    }
+}
+
+// ===== TOGGLE CARD =====
+function toggleCard(id) {
+    document.getElementById('card-' + id).classList.toggle('expanded');
+}
+
+// ===== HELPERS =====
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function truncate(s, len) {
+    if (!s) return '';
+    return s.length > len ? s.substring(0, len) + '...' : s;
+}
+
+function statusLabel(s) {
+    const map = { open: 'Open', closed: 'Closed', not_applicable: 'N/A', overdue: 'Overdue' };
+    return map[s] || s;
+}
+
+function changeLabel(t) {
+    const map = { imported: 'Imported', closed: 'Closed', reopened: 'Reopened', written_back: 'Written back to source' };
+    return map[t] || t;
+}
+
+function formatTimestamp(ts) {
+    if (!ts) return '';
+    try {
+        const d = new Date(ts);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
+            ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+        return ts;
+    }
+}
+
+// ===== INIT =====
+if (checkAuth()) {
+    loadStats();
+    loadAreas();
+    loadSources();
+    loadActions();
+}
+</script>
+</body>
+</html>
