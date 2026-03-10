@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Admin — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== TABS ===== */
+        .tabs {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px 0;
+            display: flex;
+            gap: 4px;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .stat-value.red { color: var(--danger); }
+        .stat-value.amber { color: var(--warning); }
+        .stat-value.green { color: var(--success); }
+        .stat-value.blue { color: var(--accent); }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar input,
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-bar input { flex: 1; min-width: 180px; }
+        .filter-bar select { min-width: 140px; }
+        .filter-bar input:focus,
+        .filter-bar select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* ===== CONTENT AREA ===== */
+        .content {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+        }
+
+        /* ===== ALERT CARDS (dashboard) ===== */
+        .alert-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 8px;
+            overflow: hidden;
+            display: flex;
+        }
+        .alert-accent {
+            width: 5px;
+            flex-shrink: 0;
+        }
+        .alert-accent.expired { background: var(--danger); }
+        .alert-accent.expiring_soon { background: var(--warning); }
+        .alert-body {
+            flex: 1;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .alert-info { flex: 1; min-width: 200px; }
+        .alert-name { font-weight: 600; font-size: 0.9rem; }
+        .alert-detail { font-size: 0.8rem; color: var(--text-light); margin-top: 2px; }
+        .alert-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .alert-badge.expired { background: #fde8e8; color: var(--danger); }
+        .alert-badge.expiring_soon { background: #fff3cd; color: #856404; }
+
+        /* ===== EMPLOYEE CARDS (records tab) ===== */
+        .emp-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .emp-header {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .emp-header:hover { background: #fafbfc; }
+        .emp-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .emp-info { flex: 1; min-width: 0; }
+        .emp-name { font-weight: 600; font-size: 0.95rem; }
+        .emp-number { font-size: 0.8rem; color: var(--text-light); }
+        .emp-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+        .badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .badge.current { background: #d4edda; color: #155724; }
+        .badge.expiring_soon { background: #fff3cd; color: #856404; }
+        .badge.expired { background: #fde8e8; color: #721c24; }
+        .emp-actions { display: flex; gap: 8px; align-items: center; }
+        .btn-add {
+            padding: 5px 12px;
+            background: var(--accent);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-add:hover { background: var(--primary-light); }
+        .expand-arrow {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            transition: transform 0.2s;
+        }
+        .emp-card.expanded .expand-arrow { transform: rotate(180deg); }
+        .emp-detail {
+            display: none;
+            padding: 0 16px 14px;
+        }
+        .emp-card.expanded .emp-detail { display: block; }
+
+        /* ===== TRAINING TABLE ===== */
+        .training-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .training-table th {
+            text-align: left;
+            padding: 8px 10px;
+            background: var(--bg);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            border-bottom: 1px solid var(--border);
+        }
+        .training-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-dot.current { background: var(--success); }
+        .status-dot.expiring_soon { background: var(--warning); }
+        .status-dot.expired { background: var(--danger); }
+        .btn-edit {
+            padding: 3px 10px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-delete {
+            padding: 3px 10px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--danger);
+        }
+        .btn-delete:hover { border-color: var(--danger); background: #fde8e8; }
+
+        /* ===== TYPE CARDS ===== */
+        .type-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .type-code {
+            font-weight: 700;
+            font-size: 0.95rem;
+            min-width: 80px;
+        }
+        .type-name { flex: 1; min-width: 150px; }
+        .cat-pill {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: #e8f0fe;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .type-meta {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        /* ===== PAGINATION ===== */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 0;
+        }
+        .pagination button {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            background: var(--white);
+            font-size: 0.82rem;
+            cursor: pointer;
+        }
+        .pagination button:hover { border-color: var(--accent); color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination .page-info {
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            color: var(--text-light);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 100;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 60px 16px;
+            overflow-y: auto;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--white);
+            border-radius: 10px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 4px;
+        }
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 3px;
+        }
+        .modal-footer {
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn-primary {
+            padding: 8px 20px;
+            background: var(--accent);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-secondary {
+            padding: 8px 20px;
+            background: var(--white);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .btn-secondary:hover { background: var(--bg); }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-light);
+        }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* ===== LOADING ===== */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: var(--primary);
+            color: var(--white);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 200;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { background: var(--danger); }
+        .toast.success { background: var(--success); }
+
+        @media (max-width: 600px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; }
+            .filter-bar input, .filter-bar select { min-width: 100%; }
+            .training-table { font-size: 0.75rem; }
+            .training-table th, .training-table td { padding: 6px 6px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+    <h1>Training Admin</h1>
+    <a href="index.html">&larr; Supervisor Hub</a>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="records">Records</button>
+    <button class="tab-btn" data-tab="types">Types</button>
+</div>
+
+<!-- ===================== DASHBOARD TAB ===================== -->
+<div class="tab-panel active" id="tab-dashboard">
+    <div class="stats-bar">
+        <div class="stat-card"><div class="stat-value green" id="stat-current">-</div><div class="stat-label">Current</div></div>
+        <div class="stat-card"><div class="stat-value amber" id="stat-expiring">-</div><div class="stat-label">Expiring Soon</div></div>
+        <div class="stat-card"><div class="stat-value red" id="stat-expired">-</div><div class="stat-label">Expired</div></div>
+        <div class="stat-card"><div class="stat-value blue" id="stat-total">-</div><div class="stat-label">Total Records</div></div>
+    </div>
+    <div class="content" id="alerts-list">
+        <div class="loading">Loading alerts...</div>
+    </div>
+</div>
+
+<!-- ===================== RECORDS TAB ===================== -->
+<div class="tab-panel" id="tab-records">
+    <div class="filter-bar" style="padding-top: 16px;">
+        <input type="text" id="rec-search" placeholder="Search employee or training...">
+        <select id="rec-status">
+            <option value="">All Statuses</option>
+            <option value="current">Current</option>
+            <option value="expiring_soon">Expiring Soon</option>
+            <option value="expired">Expired</option>
+        </select>
+        <select id="rec-category">
+            <option value="">All Categories</option>
+            <option value="safety_card">Safety Card</option>
+            <option value="customer_specific">Customer Specific</option>
+            <option value="management">Management</option>
+            <option value="equipment">Equipment</option>
+            <option value="technical">Technical</option>
+            <option value="trade_cert">Trade Cert</option>
+            <option value="company_induction">Company Induction</option>
+            <option value="other">Other</option>
+        </select>
+        <select id="rec-type">
+            <option value="">All Types</option>
+        </select>
+    </div>
+    <div class="content" id="records-list">
+        <div class="loading">Loading records...</div>
+    </div>
+    <div class="pagination" id="rec-pagination"></div>
+</div>
+
+<!-- ===================== TYPES TAB ===================== -->
+<div class="tab-panel" id="tab-types">
+    <div class="filter-bar" style="padding-top: 16px;">
+        <input type="text" id="type-search" placeholder="Search types...">
+        <select id="type-category">
+            <option value="">All Categories</option>
+            <option value="safety_card">Safety Card</option>
+            <option value="customer_specific">Customer Specific</option>
+            <option value="management">Management</option>
+            <option value="equipment">Equipment</option>
+            <option value="technical">Technical</option>
+            <option value="trade_cert">Trade Cert</option>
+            <option value="company_induction">Company Induction</option>
+            <option value="other">Other</option>
+        </select>
+        <button class="btn-add" onclick="openTypeModal()">+ Add Type</button>
+    </div>
+    <div class="content" id="types-list">
+        <div class="loading">Loading types...</div>
+    </div>
+</div>
+
+<!-- ===================== RECORD MODAL ===================== -->
+<div class="modal-overlay" id="record-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <span id="record-modal-title">Add Training Record</span>
+            <button class="modal-close" onclick="closeRecordModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="rm-id">
+            <input type="hidden" id="rm-employee-id">
+            <div class="form-group">
+                <label>Employee</label>
+                <input type="text" id="rm-employee-name" readonly style="background:#f5f5f5;">
+            </div>
+            <div class="form-group">
+                <label>Training Type</label>
+                <select id="rm-type"></select>
+            </div>
+            <div class="form-group">
+                <label>Certificate #</label>
+                <input type="text" id="rm-cert" placeholder="Optional">
+            </div>
+            <div class="form-group">
+                <label>Achieved Date</label>
+                <input type="date" id="rm-achieved">
+            </div>
+            <div class="form-group" id="rm-expiry-group">
+                <label>Expiry Date</label>
+                <input type="date" id="rm-expiry">
+                <div class="form-hint" id="rm-expiry-hint"></div>
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea id="rm-notes" placeholder="Optional"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeRecordModal()">Cancel</button>
+            <button class="btn-primary" onclick="saveRecord()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== TYPE MODAL ===================== -->
+<div class="modal-overlay" id="type-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <span id="type-modal-title">Add Training Type</span>
+            <button class="modal-close" onclick="closeTypeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="tm-id">
+            <div class="form-group">
+                <label>Code</label>
+                <input type="text" id="tm-code" placeholder="e.g. CSCS" style="text-transform:uppercase;">
+            </div>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="tm-name" placeholder="e.g. CSCS Card">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="tm-category">
+                    <option value="">Select...</option>
+                    <option value="safety_card">Safety Card</option>
+                    <option value="customer_specific">Customer Specific</option>
+                    <option value="management">Management</option>
+                    <option value="equipment">Equipment</option>
+                    <option value="technical">Technical</option>
+                    <option value="trade_cert">Trade Cert</option>
+                    <option value="company_induction">Company Induction</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="tm-has-expiry" checked> Has Expiry</label>
+            </div>
+            <div class="form-group" id="tm-validity-group">
+                <label>Validity (months)</label>
+                <input type="number" id="tm-validity" min="1" placeholder="e.g. 36">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="tm-description" placeholder="Optional"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeTypeModal()">Cancel</button>
+            <button class="btn-primary" onclick="saveType()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   Training Admin — MII Supervisor Hub
+   API-driven admin page for training records + types
+   ================================================================ */
+
+const MII_API = (localStorage.getItem('mii_api_base') || '').replace(/\/+$/, '');
+
+function authHeaders() {
+    const t = localStorage.getItem('mii_jwt');
+    return { 'Content-Type': 'application/json', 'Authorization': t ? 'Bearer ' + t : '' };
+}
+
+function checkAuth() {
+    if (!localStorage.getItem('mii_jwt')) {
+        location.href = 'hub.html';
+        return false;
+    }
+    return true;
+}
+
+// ─── State ─────────────────────────────────────────────────────
+
+let _typesCache = null;
+let _recOffset = 0;
+let _recTotal = 0;
+const REC_LIMIT = 50;
+let _debounceTimer = null;
+let _typeDebounceTimer = null;
+
+// ─── Init ──────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!checkAuth()) return;
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // Filter listeners — records
+    document.getElementById('rec-search').addEventListener('input', () => {
+        clearTimeout(_debounceTimer);
+        _debounceTimer = setTimeout(() => { _recOffset = 0; loadRecords(); }, 300);
+    });
+    document.getElementById('rec-status').addEventListener('change', () => { _recOffset = 0; loadRecords(); });
+    document.getElementById('rec-category').addEventListener('change', () => { _recOffset = 0; loadRecords(); });
+    document.getElementById('rec-type').addEventListener('change', () => { _recOffset = 0; loadRecords(); });
+
+    // Filter listeners — types
+    document.getElementById('type-search').addEventListener('input', () => {
+        clearTimeout(_typeDebounceTimer);
+        _typeDebounceTimer = setTimeout(renderFilteredTypes, 300);
+    });
+    document.getElementById('type-category').addEventListener('change', renderFilteredTypes);
+
+    // Has-expiry toggle in type modal
+    document.getElementById('tm-has-expiry').addEventListener('change', function() {
+        document.getElementById('tm-validity-group').style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Auto-expiry calc in record modal
+    document.getElementById('rm-type').addEventListener('change', autoCalcExpiry);
+    document.getElementById('rm-achieved').addEventListener('change', autoCalcExpiry);
+
+    // Modal overlay click-to-close
+    document.getElementById('record-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeRecordModal();
+    });
+    document.getElementById('type-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeTypeModal();
+    });
+
+    // Load dashboard
+    loadDashboard();
+    loadTypesCache();
+});
+
+// ─── Tabs ──────────────────────────────────────────────────────
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+
+    if (tab === 'dashboard') loadDashboard();
+    else if (tab === 'records') loadRecords();
+    else if (tab === 'types') loadTypes();
+}
+
+// ─── Dashboard ─────────────────────────────────────────────────
+
+async function loadDashboard() {
+    try {
+        const [statsRes, alertsRes] = await Promise.all([
+            fetch(MII_API + '/api/training/stats', { headers: authHeaders() }),
+            fetch(MII_API + '/api/training/expiring?days=30&include_expired=true&limit=50', { headers: authHeaders() }),
+        ]);
+        const stats = await statsRes.json();
+        const alerts = await alertsRes.json();
+
+        document.getElementById('stat-current').textContent = (stats.current || 0).toLocaleString();
+        document.getElementById('stat-expiring').textContent = stats.expiring_soon || 0;
+        document.getElementById('stat-expired').textContent = stats.expired || 0;
+        document.getElementById('stat-total').textContent = (stats.total_records || 0).toLocaleString();
+
+        renderAlerts(alerts.alerts || []);
+    } catch (e) {
+        document.getElementById('alerts-list').innerHTML = '<div class="empty-state"><p>Failed to load dashboard</p></div>';
+    }
+}
+
+function renderAlerts(alerts) {
+    const el = document.getElementById('alerts-list');
+    if (!alerts.length) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">&#9989;</div><p>No expiring or expired training records</p></div>';
+        return;
+    }
+    el.innerHTML = alerts.map(a => `
+        <div class="alert-card">
+            <div class="alert-accent ${a.status}"></div>
+            <div class="alert-body">
+                <div class="alert-info">
+                    <div class="alert-name">${esc(a.employee_name)}</div>
+                    <div class="alert-detail">${esc(a.training_type_code)} — ${esc(a.training_type_name)} &middot; ${esc(formatCat(a.category))}</div>
+                </div>
+                <div>
+                    <span class="alert-badge ${a.status}">
+                        ${a.status === 'expired'
+                            ? Math.abs(a.days_until_expiry) + 'd overdue'
+                            : a.days_until_expiry + 'd left'}
+                    </span>
+                </div>
+                <div class="alert-detail">${a.expiry_date || ''}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ─── Records ───────────────────────────────────────────────────
+
+async function loadRecords() {
+    const el = document.getElementById('records-list');
+    el.innerHTML = '<div class="loading">Loading records...</div>';
+
+    const params = new URLSearchParams({
+        limit: REC_LIMIT,
+        offset: _recOffset,
+    });
+    const search = document.getElementById('rec-search').value.trim();
+    const status = document.getElementById('rec-status').value;
+    const category = document.getElementById('rec-category').value;
+    const typeId = document.getElementById('rec-type').value;
+
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+    if (category) params.set('category', category);
+    if (typeId) params.set('type_id', typeId);
+
+    try {
+        const res = await fetch(MII_API + '/api/training/records?' + params, { headers: authHeaders() });
+        const data = await res.json();
+        _recTotal = data.total || 0;
+        renderRecords(data.records || []);
+        renderRecPagination();
+    } catch (e) {
+        el.innerHTML = '<div class="empty-state"><p>Failed to load records</p></div>';
+    }
+}
+
+function renderRecords(records) {
+    const el = document.getElementById('records-list');
+    if (!records.length) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">&#128269;</div><p>No records found</p></div>';
+        return;
+    }
+
+    // Group by employee
+    const grouped = {};
+    records.forEach(r => {
+        const key = r.employee_id;
+        if (!grouped[key]) {
+            grouped[key] = {
+                employee_id: r.employee_id,
+                employee_name: r.employee_name,
+                employee_number: r.employee_number,
+                records: [],
+                statuses: { current: 0, expiring_soon: 0, expired: 0 },
+            };
+        }
+        grouped[key].records.push(r);
+        grouped[key].statuses[r.status] = (grouped[key].statuses[r.status] || 0) + 1;
+    });
+
+    el.innerHTML = Object.values(grouped).map(emp => {
+        const initials = emp.employee_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        const badges = [];
+        if (emp.statuses.expired) badges.push(`<span class="badge expired">${emp.statuses.expired} expired</span>`);
+        if (emp.statuses.expiring_soon) badges.push(`<span class="badge expiring_soon">${emp.statuses.expiring_soon} expiring</span>`);
+        if (emp.statuses.current) badges.push(`<span class="badge current">${emp.statuses.current} current</span>`);
+
+        const rows = emp.records.map(r => `
+            <tr>
+                <td><span class="status-dot ${r.status}"></span>${formatStatus(r.status)}</td>
+                <td>${esc(r.training_type_code)}</td>
+                <td>${esc(r.training_type_name)}</td>
+                <td>${esc(formatCat(r.category))}</td>
+                <td>${r.achieved_date || '—'}</td>
+                <td>${r.expiry_date || 'N/A'}</td>
+                <td>${esc(r.certificate_number || '—')}</td>
+                <td>
+                    <button class="btn-edit" onclick="openEditRecord('${r.id}', '${esc(emp.employee_name)}', '${emp.employee_id}', ${JSON.stringify(r).replace(/'/g, '&#39;').replace(/"/g, '&quot;')})">Edit</button>
+                    <button class="btn-delete" onclick="deleteRecord('${r.id}')">Del</button>
+                </td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="emp-card" id="emp-${emp.employee_id}">
+                <div class="emp-header" onclick="toggleEmp('${emp.employee_id}')">
+                    <div class="emp-avatar">${initials}</div>
+                    <div class="emp-info">
+                        <div class="emp-name">${esc(emp.employee_name)}</div>
+                        <div class="emp-number">${esc(emp.employee_number || '')}</div>
+                    </div>
+                    <div class="emp-badges">${badges.join('')}</div>
+                    <div class="emp-actions">
+                        <button class="btn-add" onclick="event.stopPropagation(); openAddRecord('${emp.employee_id}', '${esc(emp.employee_name)}')">+ Add</button>
+                        <span class="expand-arrow">&#9660;</span>
+                    </div>
+                </div>
+                <div class="emp-detail">
+                    <table class="training-table">
+                        <thead><tr>
+                            <th>Status</th><th>Code</th><th>Training</th><th>Category</th>
+                            <th>Achieved</th><th>Expiry</th><th>Cert #</th><th></th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleEmp(empId) {
+    document.getElementById('emp-' + empId).classList.toggle('expanded');
+}
+
+function renderRecPagination() {
+    const el = document.getElementById('rec-pagination');
+    const totalPages = Math.ceil(_recTotal / REC_LIMIT);
+    const currentPage = Math.floor(_recOffset / REC_LIMIT) + 1;
+
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+    el.innerHTML = `
+        <button ${currentPage <= 1 ? 'disabled' : ''} onclick="recPage(${_recOffset - REC_LIMIT})">&larr; Prev</button>
+        <span class="page-info">Page ${currentPage} of ${totalPages} (${_recTotal} records)</span>
+        <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="recPage(${_recOffset + REC_LIMIT})">Next &rarr;</button>
+    `;
+}
+
+function recPage(offset) {
+    _recOffset = Math.max(0, offset);
+    loadRecords();
+}
+
+// ─── Types ─────────────────────────────────────────────────────
+
+async function loadTypes() {
+    await loadTypesCache(true);
+    renderFilteredTypes();
+}
+
+async function loadTypesCache(force) {
+    if (_typesCache && !force) return;
+    try {
+        const res = await fetch(MII_API + '/api/training/types', { headers: authHeaders() });
+        const data = await res.json();
+        _typesCache = data.types || [];
+        populateTypeDropdowns();
+    } catch (e) {
+        _typesCache = [];
+    }
+}
+
+function populateTypeDropdowns() {
+    // Record filter dropdown
+    const sel = document.getElementById('rec-type');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All Types</option>';
+    (_typesCache || []).forEach(t => {
+        sel.innerHTML += `<option value="${t.id}">${esc(t.code)} — ${esc(t.name)}</option>`;
+    });
+    sel.value = current;
+
+    // Record modal dropdown
+    const rmSel = document.getElementById('rm-type');
+    rmSel.innerHTML = '<option value="">Select type...</option>';
+    (_typesCache || []).forEach(t => {
+        rmSel.innerHTML += `<option value="${t.id}" data-has-expiry="${t.has_expiry}" data-validity="${t.validity_months || ''}">${esc(t.code)} — ${esc(t.name)}</option>`;
+    });
+}
+
+function renderFilteredTypes() {
+    const el = document.getElementById('types-list');
+    if (!_typesCache) { el.innerHTML = '<div class="loading">Loading...</div>'; return; }
+
+    const search = document.getElementById('type-search').value.trim().toLowerCase();
+    const cat = document.getElementById('type-category').value;
+
+    let filtered = _typesCache;
+    if (search) {
+        filtered = filtered.filter(t =>
+            t.code.toLowerCase().includes(search) ||
+            t.name.toLowerCase().includes(search)
+        );
+    }
+    if (cat) {
+        filtered = filtered.filter(t => t.category === cat);
+    }
+
+    if (!filtered.length) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>No types found</p></div>';
+        return;
+    }
+
+    el.innerHTML = filtered.map(t => `
+        <div class="type-card">
+            <div class="type-code">${esc(t.code)}</div>
+            <div class="type-name">${esc(t.name)}</div>
+            <span class="cat-pill">${esc(formatCat(t.category))}</span>
+            <div class="type-meta">
+                ${t.has_expiry ? (t.validity_months ? t.validity_months + ' mo' : 'Has expiry') : 'No expiry'}
+                &middot; ${t.record_count} records
+            </div>
+            <button class="btn-edit" onclick='openEditType(${JSON.stringify(t)})'>Edit</button>
+        </div>
+    `).join('');
+}
+
+// ─── Record Modal ──────────────────────────────────────────────
+
+function openAddRecord(empId, empName) {
+    document.getElementById('record-modal-title').textContent = 'Add Training Record';
+    document.getElementById('rm-id').value = '';
+    document.getElementById('rm-employee-id').value = empId;
+    document.getElementById('rm-employee-name').value = empName;
+    document.getElementById('rm-type').value = '';
+    document.getElementById('rm-cert').value = '';
+    document.getElementById('rm-achieved').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('rm-expiry').value = '';
+    document.getElementById('rm-expiry-hint').textContent = '';
+    document.getElementById('rm-expiry-group').style.display = 'block';
+    document.getElementById('rm-notes').value = '';
+    document.getElementById('record-modal').classList.add('open');
+}
+
+function openEditRecord(id, empName, empId, rec) {
+    document.getElementById('record-modal-title').textContent = 'Edit Training Record';
+    document.getElementById('rm-id').value = id;
+    document.getElementById('rm-employee-id').value = empId;
+    document.getElementById('rm-employee-name').value = empName;
+    document.getElementById('rm-type').value = rec.training_type_id || '';
+    document.getElementById('rm-cert').value = rec.certificate_number || '';
+    document.getElementById('rm-achieved').value = rec.achieved_date || '';
+    document.getElementById('rm-expiry').value = rec.expiry_date || '';
+    document.getElementById('rm-expiry-hint').textContent = '';
+    document.getElementById('rm-notes').value = rec.notes || '';
+
+    // Check if type has expiry
+    const opt = document.querySelector(`#rm-type option[value="${rec.training_type_id}"]`);
+    if (opt && opt.dataset.hasExpiry === 'false') {
+        document.getElementById('rm-expiry-group').style.display = 'none';
+    } else {
+        document.getElementById('rm-expiry-group').style.display = 'block';
+    }
+
+    document.getElementById('record-modal').classList.add('open');
+}
+
+function closeRecordModal() {
+    document.getElementById('record-modal').classList.remove('open');
+}
+
+function autoCalcExpiry() {
+    const typeSelect = document.getElementById('rm-type');
+    const opt = typeSelect.options[typeSelect.selectedIndex];
+    if (!opt || !opt.value) return;
+
+    const hasExpiry = opt.dataset.hasExpiry !== 'false';
+    const validity = parseInt(opt.dataset.validity) || 0;
+    const achieved = document.getElementById('rm-achieved').value;
+
+    if (!hasExpiry) {
+        document.getElementById('rm-expiry-group').style.display = 'none';
+        document.getElementById('rm-expiry').value = '';
+        document.getElementById('rm-expiry-hint').textContent = '';
+        return;
+    }
+
+    document.getElementById('rm-expiry-group').style.display = 'block';
+
+    if (validity && achieved) {
+        const d = new Date(achieved);
+        d.setMonth(d.getMonth() + validity);
+        document.getElementById('rm-expiry').value = d.toISOString().slice(0, 10);
+        document.getElementById('rm-expiry-hint').textContent = `Auto-calculated: ${validity} months from achieved date`;
+    } else {
+        document.getElementById('rm-expiry-hint').textContent = '';
+    }
+}
+
+async function saveRecord() {
+    const body = {
+        employee_id: document.getElementById('rm-employee-id').value,
+        training_type_id: document.getElementById('rm-type').value,
+        achieved_date: document.getElementById('rm-achieved').value || null,
+        expiry_date: document.getElementById('rm-expiry').value || null,
+        certificate_number: document.getElementById('rm-cert').value || null,
+        notes: document.getElementById('rm-notes').value || null,
+    };
+
+    const id = document.getElementById('rm-id').value;
+    if (id) body.id = id;
+
+    if (!body.training_type_id) {
+        toast('Please select a training type', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch(MII_API + '/api/training/records', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            toast(data.error || 'Save failed', 'error');
+            return;
+        }
+        closeRecordModal();
+        toast(id ? 'Record updated' : 'Record added', 'success');
+        loadRecords();
+    } catch (e) {
+        toast('Network error', 'error');
+    }
+}
+
+async function deleteRecord(id) {
+    if (!confirm('Delete this training record?')) return;
+    try {
+        const res = await fetch(MII_API + '/api/training/records/' + id, {
+            method: 'DELETE',
+            headers: authHeaders(),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            toast(data.error || 'Delete failed', 'error');
+            return;
+        }
+        toast('Record deleted', 'success');
+        loadRecords();
+    } catch (e) {
+        toast('Network error', 'error');
+    }
+}
+
+// ─── Type Modal ────────────────────────────────────────────────
+
+function openTypeModal() {
+    document.getElementById('type-modal-title').textContent = 'Add Training Type';
+    document.getElementById('tm-id').value = '';
+    document.getElementById('tm-code').value = '';
+    document.getElementById('tm-name').value = '';
+    document.getElementById('tm-category').value = '';
+    document.getElementById('tm-has-expiry').checked = true;
+    document.getElementById('tm-validity-group').style.display = 'block';
+    document.getElementById('tm-validity').value = '';
+    document.getElementById('tm-description').value = '';
+    document.getElementById('type-modal').classList.add('open');
+}
+
+function openEditType(t) {
+    document.getElementById('type-modal-title').textContent = 'Edit Training Type';
+    document.getElementById('tm-id').value = t.id;
+    document.getElementById('tm-code').value = t.code;
+    document.getElementById('tm-name').value = t.name;
+    document.getElementById('tm-category').value = t.category;
+    document.getElementById('tm-has-expiry').checked = t.has_expiry;
+    document.getElementById('tm-validity-group').style.display = t.has_expiry ? 'block' : 'none';
+    document.getElementById('tm-validity').value = t.validity_months || '';
+    document.getElementById('tm-description').value = t.description || '';
+    document.getElementById('type-modal').classList.add('open');
+}
+
+function closeTypeModal() {
+    document.getElementById('type-modal').classList.remove('open');
+}
+
+async function saveType() {
+    const id = document.getElementById('tm-id').value;
+    const body = {
+        code: document.getElementById('tm-code').value.trim().toUpperCase(),
+        name: document.getElementById('tm-name').value.trim(),
+        category: document.getElementById('tm-category').value,
+        has_expiry: document.getElementById('tm-has-expiry').checked,
+        validity_months: parseInt(document.getElementById('tm-validity').value) || null,
+        description: document.getElementById('tm-description').value.trim() || null,
+    };
+
+    if (!body.code || !body.name || !body.category) {
+        toast('Code, name, and category are required', 'error');
+        return;
+    }
+
+    const method = id ? 'PATCH' : 'POST';
+    if (id) body.id = id;
+
+    try {
+        const res = await fetch(MII_API + '/api/training/types', {
+            method,
+            headers: authHeaders(),
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            toast(data.error || 'Save failed', 'error');
+            return;
+        }
+        closeTypeModal();
+        toast(id ? 'Type updated' : 'Type created', 'success');
+        _typesCache = null;
+        loadTypes();
+    } catch (e) {
+        toast('Network error', 'error');
+    }
+}
+
+// ─── Helpers ───────────────────────────────────────────────────
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function formatStatus(s) {
+    return { current: 'Current', expiring_soon: 'Expiring', expired: 'Expired' }[s] || s;
+}
+
+function formatCat(c) {
+    return (c || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function toast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + (type || '');
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
