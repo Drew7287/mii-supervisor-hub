@@ -280,13 +280,78 @@
             color: var(--text-light);
         }
 
-        /* ACTION PANELS */
-        .close-panel {
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 1px solid #f0f0f0;
+        /* HEADER CLOSE BUTTON */
+        .btn-header-close {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            background: var(--danger);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+            transition: background 0.15s;
         }
-        .close-panel label {
+        .btn-header-close:hover { background: #a00d24; }
+
+        /* CLOSE MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--white);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .modal-close-x {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 4px 8px;
+        }
+        .modal-close-x:hover { color: var(--text); }
+        .modal-body { padding: 16px 20px; }
+        .modal-detail {
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .modal-detail strong { color: var(--text); }
+        .modal-detail p { margin-top: 6px; }
+        .modal-body label {
             display: block;
             font-size: 0.7rem;
             font-weight: 600;
@@ -295,8 +360,8 @@
             color: var(--text-light);
             margin-bottom: 4px;
         }
-        .close-panel select,
-        .close-panel textarea {
+        .modal-body select,
+        .modal-body textarea {
             width: 100%;
             padding: 8px 10px;
             border: 1px solid var(--border);
@@ -304,20 +369,37 @@
             font-size: 0.85rem;
             font-family: inherit;
             background: var(--white);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
-        .close-panel textarea {
-            min-height: 60px;
+        .modal-body textarea {
+            min-height: 80px;
             resize: vertical;
         }
-        .close-panel select:focus,
-        .close-panel textarea:focus {
+        .modal-body select:focus,
+        .modal-body textarea:focus {
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
         }
-
-        .btn-close-action {
+        .modal-footer {
+            padding: 12px 20px 18px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn-modal-cancel {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--white);
+            color: var(--text);
+        }
+        .btn-modal-cancel:hover { background: #f8f9fa; }
+        .btn-modal-save {
             padding: 8px 18px;
             border: none;
             border-radius: 6px;
@@ -329,8 +411,8 @@
             background: var(--success);
             transition: opacity 0.15s;
         }
-        .btn-close-action:hover { opacity: 0.9; }
-        .btn-close-action:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-modal-save:hover { opacity: 0.9; }
+        .btn-modal-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .closed-banner {
             display: flex;
@@ -426,6 +508,30 @@
 
 <div class="action-list" id="action-list">
     <div class="loading-spinner">Loading actions...</div>
+</div>
+
+<!-- CLOSE ACTION MODAL -->
+<div class="modal-overlay" id="close-modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2>Close Action</h2>
+            <button class="modal-close-x" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-detail" id="modal-action-detail"></div>
+            <label>Close as</label>
+            <select id="modal-status">
+                <option value="closed">Closed</option>
+                <option value="not_applicable">Not Applicable</option>
+            </select>
+            <label>Closure Notes (required)</label>
+            <textarea id="modal-notes" placeholder="Describe how the action was resolved, or why it's not applicable..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-modal-save" id="modal-save-btn" onclick="submitClose()">Close Action</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -553,6 +659,10 @@ function renderActions(actions, total) {
         return;
     }
 
+    // Store actions data for modal access
+    window._actionsData = {};
+    actions.forEach(a => { window._actionsData[a.id] = a; });
+
     list.innerHTML = actions.map(a => {
         const accentClass = a.is_overdue ? 'overdue' : a.status;
         const pillClass = a.is_overdue ? 'overdue' : a.status;
@@ -560,6 +670,9 @@ function renderActions(actions, total) {
         const preview = truncate(a.action_text, 80);
         const targetStr = a.target_date || '—';
         const assignedStr = a.assigned_to || '—';
+        const closeBtn = a.status === 'open'
+            ? `<button class="btn-header-close" onclick="event.stopPropagation(); openCloseModal('${a.id}')">Close</button>`
+            : '';
 
         return `
         <div class="action-card" id="card-${a.id}">
@@ -574,6 +687,7 @@ function renderActions(actions, total) {
                         <span>${targetStr}</span>
                     </span>
                     ${a.source_sheet_name ? `<span class="source-badge">${esc(a.source_sheet_name)}</span>` : ''}
+                    ${closeBtn}
                     <span class="expand-arrow">&#9660;</span>
                 </div>
                 <div class="action-detail">
@@ -598,7 +712,7 @@ function renderActions(actions, total) {
                     </div>` : ''}
 
                     ${renderTimeline(a.audit_logs)}
-                    ${renderClosePanel(a)}
+                    ${renderClosedBanner(a)}
                 </div>
             </div>
         </div>`;
@@ -622,20 +736,7 @@ function renderTimeline(logs) {
     </div>`;
 }
 
-function renderClosePanel(a) {
-    if (a.status === 'open') {
-        return `
-        <div class="close-panel">
-            <label>Status</label>
-            <select id="close-status-${a.id}">
-                <option value="closed">Closed</option>
-                <option value="not_applicable">Not Applicable</option>
-            </select>
-            <label>Closure Notes</label>
-            <textarea id="close-notes-${a.id}" placeholder="Describe the resolution or reason for closing..."></textarea>
-            <button class="btn-close-action" id="close-btn-${a.id}" onclick="closeAction('${a.id}')">Close Action</button>
-        </div>`;
-    }
+function renderClosedBanner(a) {
     if (a.status === 'closed' || a.status === 'not_applicable') {
         return `
         <div class="closed-banner">
@@ -647,11 +748,42 @@ function renderClosePanel(a) {
     return '';
 }
 
-// ===== CLOSE ACTION =====
-async function closeAction(id) {
-    const notes = document.getElementById('close-notes-' + id).value.trim();
-    const status = document.getElementById('close-status-' + id).value;
-    const btn = document.getElementById('close-btn-' + id);
+// ===== CLOSE MODAL =====
+let _closeActionId = null;
+
+function openCloseModal(id) {
+    _closeActionId = id;
+    const a = window._actionsData[id];
+    if (!a) return;
+
+    // Populate modal detail
+    let detail = '';
+    if (a.question) detail += '<p><strong>Question:</strong> ' + esc(a.question) + '</p>';
+    detail += '<p><strong>Action:</strong> ' + esc(a.action_text) + '</p>';
+    if (a.assigned_to) detail += '<p><strong>Assigned To:</strong> ' + esc(a.assigned_to) + '</p>';
+    if (a.target_date) detail += '<p><strong>Target Date:</strong> ' + a.target_date + '</p>';
+
+    document.getElementById('modal-action-detail').innerHTML = detail;
+    document.getElementById('modal-status').value = 'closed';
+    document.getElementById('modal-notes').value = '';
+    document.getElementById('modal-save-btn').disabled = false;
+    document.getElementById('modal-save-btn').textContent = 'Close Action';
+    document.getElementById('close-modal').classList.add('active');
+    document.getElementById('modal-notes').focus();
+}
+
+function closeModal() {
+    _closeActionId = null;
+    document.getElementById('close-modal').classList.remove('active');
+}
+
+async function submitClose() {
+    const id = _closeActionId;
+    if (!id) return;
+
+    const notes = document.getElementById('modal-notes').value.trim();
+    const status = document.getElementById('modal-status').value;
+    const btn = document.getElementById('modal-save-btn');
 
     if (!notes) { alert('Please enter closure notes.'); return; }
 
@@ -672,6 +804,7 @@ async function closeAction(id) {
             btn.textContent = 'Close Action';
             return;
         }
+        closeModal();
         loadActions();
     } catch (e) {
         console.error('Close action error:', e);
@@ -680,6 +813,11 @@ async function closeAction(id) {
         btn.textContent = 'Close Action';
     }
 }
+
+// Close modal on overlay click
+document.getElementById('close-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
 
 // ===== TOGGLE CARD =====
 function toggleCard(id) {
