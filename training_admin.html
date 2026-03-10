@@ -681,15 +681,15 @@
    API-driven admin page for training records + types
    ================================================================ */
 
-const MII_API = (localStorage.getItem('mii_api_base') || '').replace(/\/+$/, '');
+const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
 
 function authHeaders() {
-    const t = localStorage.getItem('mii_jwt');
+    const t = localStorage.getItem('mii_token');
     return { 'Content-Type': 'application/json', 'Authorization': t ? 'Bearer ' + t : '' };
 }
 
 function checkAuth() {
-    if (!localStorage.getItem('mii_jwt')) {
+    if (!localStorage.getItem('mii_token')) {
         location.href = 'hub.html';
         return false;
     }
@@ -769,8 +769,8 @@ function switchTab(tab) {
 async function loadDashboard() {
     try {
         const [statsRes, alertsRes] = await Promise.all([
-            fetch(MII_API + '/api/training/stats', { headers: authHeaders() }),
-            fetch(MII_API + '/api/training/expiring?days=30&include_expired=true&limit=50', { headers: authHeaders() }),
+            fetch(MII_API + '/training/stats', { headers: authHeaders() }),
+            fetch(MII_API + '/training/expiring?days=30&include_expired=true&limit=50', { headers: authHeaders() }),
         ]);
         const stats = await statsRes.json();
         const alerts = await alertsRes.json();
@@ -834,7 +834,7 @@ async function loadRecords() {
     if (typeId) params.set('type_id', typeId);
 
     try {
-        const res = await fetch(MII_API + '/api/training/records?' + params, { headers: authHeaders() });
+        const res = await fetch(MII_API + '/training/records?' + params, { headers: authHeaders() });
         const data = await res.json();
         _recTotal = data.total || 0;
         renderRecords(data.records || []);
@@ -952,7 +952,7 @@ async function loadTypes() {
 async function loadTypesCache(force) {
     if (_typesCache && !force) return;
     try {
-        const res = await fetch(MII_API + '/api/training/types', { headers: authHeaders() });
+        const res = await fetch(MII_API + '/training/types', { headers: authHeaders() });
         const data = await res.json();
         _typesCache = data.types || [];
         populateTypeDropdowns();
@@ -1107,7 +1107,7 @@ async function saveRecord() {
     }
 
     try {
-        const res = await fetch(MII_API + '/api/training/records', {
+        const res = await fetch(MII_API + '/training/records', {
             method: 'POST',
             headers: authHeaders(),
             body: JSON.stringify(body),
@@ -1128,7 +1128,7 @@ async function saveRecord() {
 async function deleteRecord(id) {
     if (!confirm('Delete this training record?')) return;
     try {
-        const res = await fetch(MII_API + '/api/training/records/' + id, {
+        const res = await fetch(MII_API + '/training/records/' + id, {
             method: 'DELETE',
             headers: authHeaders(),
         });
@@ -1196,7 +1196,7 @@ async function saveType() {
     if (id) body.id = id;
 
     try {
-        const res = await fetch(MII_API + '/api/training/types', {
+        const res = await fetch(MII_API + '/training/types', {
             method,
             headers: authHeaders(),
             body: JSON.stringify(body),
