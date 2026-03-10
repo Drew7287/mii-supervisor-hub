@@ -76,8 +76,10 @@
         const db = e.target.result;
 
         // Create array-based stores with keyPath=id
+        // Stores with custom indexes are handled individually below
+        const INDEXED_STORES = ['daily_reports', 'havs_entries', 'certificates'];
         ARRAY_STORES.forEach((name) => {
-          if (!db.objectStoreNames.contains(name)) {
+          if (!INDEXED_STORES.includes(name) && !db.objectStoreNames.contains(name)) {
             db.createObjectStore(name, { keyPath: 'id' });
           }
         });

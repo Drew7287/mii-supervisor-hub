@@ -1495,7 +1495,7 @@ async function loadCertificates() {
 async function viewCertificate(id) {
     try {
         var cert = await MiiDB.get("certificates", id);
-        if (\!cert) { toast("Certificate not found", "error"); return; }
+        if (!cert) { toast("Certificate not found", "error"); return; }
         document.getElementById("cert-viewer-title").textContent = (cert.employee_name || cert.employee_number) + " - " + cert.training_type;
         var contentEl = document.getElementById("cert-viewer-content");
         if (cert.file_type === "application/pdf") {
@@ -1513,7 +1513,7 @@ function closeCertViewer() {
 }
 
 async function deleteCertificate(id) {
-    if (\!confirm("Delete this certificate?")) return;
+    if (!confirm("Delete this certificate?")) return;
     try {
         await MiiDB.remove("certificates", id);
         toast("Certificate deleted", "success"); loadCertificates();
