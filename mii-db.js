@@ -17,7 +17,7 @@
   'use strict';
 
   const DB_NAME = 'mii-hub';
-  const DB_VERSION = 5;
+  const DB_VERSION = 6;
 
   // IndexedDB store name → localStorage key mapping
   const STORE_LS_MAP = {
@@ -52,6 +52,7 @@
     'havs_entries',
     'sheq_observations',
     'powra',
+    'certificates',
   ];
 
   // Reference data stores (pulled from server, not pushed via sync_queue)
@@ -94,6 +95,13 @@
           const havsStore = db.createObjectStore('havs_entries', { keyPath: 'id' });
           havsStore.createIndex('date', 'date', { unique: false });
           havsStore.createIndex('workerId', 'workerId', { unique: false });
+        }
+
+        // certificates store with indexes for employee and training type lookups
+        if (!db.objectStoreNames.contains('certificates')) {
+          const certStore = db.createObjectStore('certificates', { keyPath: 'id' });
+          certStore.createIndex('employee_number', 'employee_number', { unique: false });
+          certStore.createIndex('training_type', 'training_type', { unique: false });
         }
 
         // Reference data stores (keyed by employee_number)

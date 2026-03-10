@@ -489,6 +489,34 @@
         .toast.error { background: var(--danger); }
         .toast.success { background: var(--success); }
 
+
+        /* ===== CERTIFICATES TAB ===== */
+        .cert-upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 32px 24px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--white); margin-bottom: 16px; }
+        .cert-upload-zone:hover, .cert-upload-zone.dragover { border-color: var(--accent); background: rgba(0,120,212,0.04); }
+        .cert-upload-zone .upload-icon { font-size: 2.2rem; margin-bottom: 8px; color: var(--text-light); }
+        .cert-upload-zone .upload-text { font-size: 0.9rem; color: var(--text-light); margin-bottom: 4px; }
+        .cert-upload-zone .upload-hint { font-size: 0.75rem; color: var(--text-light); }
+        .cert-preview { display: none; background: var(--white); border-radius: 8px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+        .cert-preview.visible { display: block; }
+        .cert-preview-img { max-width: 100%; max-height: 300px; border-radius: 6px; border: 1px solid var(--border); display: block; margin: 0 auto 12px; }
+        .cert-preview-pdf { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg); border-radius: 6px; margin-bottom: 12px; }
+        .cert-preview-pdf .pdf-icon { font-size: 2rem; color: var(--danger); }
+        .cert-preview-pdf .pdf-name { font-size: 0.85rem; font-weight: 600; word-break: break-all; }
+        .cert-preview-pdf .pdf-size { font-size: 0.75rem; color: var(--text-light); }
+        .cert-preview-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .cert-card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .cert-thumb { width: 56px; height: 56px; border-radius: 6px; border: 1px solid var(--border); object-fit: cover; flex-shrink: 0; cursor: pointer; }
+        .cert-thumb-pdf { width: 56px; height: 56px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--danger); flex-shrink: 0; cursor: pointer; }
+        .cert-info { flex: 1; min-width: 150px; }
+        .cert-emp { font-weight: 600; font-size: 0.9rem; }
+        .cert-type { font-size: 0.8rem; color: var(--text-light); }
+        .cert-date { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+        .cert-actions { display: flex; gap: 8px; }
+        .btn-view { padding: 5px 12px; background: var(--accent); color: var(--white); border: none; border-radius: 5px; font-size: 0.78rem; font-weight: 600; cursor: pointer; min-height: 36px; }
+        .btn-view:hover { background: var(--primary-light); }
+        .cert-viewer-content img { max-width: 100%; max-height: 75vh; display: block; margin: 0 auto; border-radius: 6px; }
+        .cert-viewer-content iframe { width: 100%; height: 75vh; border: none; border-radius: 6px; }
+
         @media (max-width: 600px) {
             .stats-bar { grid-template-columns: repeat(2, 1fr); }
             .filter-bar { flex-direction: column; }
@@ -503,7 +531,7 @@
 <!-- TOP BAR -->
 <div class="topbar">
     <h1>Training Admin</h1>
-    <a href="index.html">&larr; Supervisor Hub</a>
+    <a href="hub.html">&larr; Supervisor Hub</a>
 </div>
 
 <!-- TABS -->
@@ -511,6 +539,7 @@
     <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
     <button class="tab-btn" data-tab="records">Records</button>
     <button class="tab-btn" data-tab="types">Types</button>
+    <button class="tab-btn" data-tab="certificates">Certificates</button>
 </div>
 
 <!-- ===================== DASHBOARD TAB ===================== -->
@@ -576,6 +605,44 @@
     </div>
     <div class="content" id="types-list">
         <div class="loading">Loading types...</div>
+    </div>
+</div>
+
+<!-- ===================== CERTIFICATES TAB ===================== -->
+<div class="tab-panel" id="tab-certificates">
+    <div class="filter-bar" style="padding-top: 16px;">
+        <input type="text" id="cert-search" placeholder="Search by employee or training type...">
+        <select id="cert-filter-type">
+            <option value="">All Types</option>
+        </select>
+    </div>
+    <div class="content">
+        <div class="cert-upload-zone" id="cert-upload-zone">
+            <div class="upload-icon">&#128247;</div>
+            <div class="upload-text">Tap to take photo or choose file</div>
+            <div class="upload-hint">JPG, PNG or PDF (max 10MB)</div>
+            <input type="file" id="cert-file-input" accept="image/*,application/pdf" capture="environment" style="display:none;">
+        </div>
+        <div class="cert-preview" id="cert-preview">
+            <div id="cert-preview-content"></div>
+            <div class="form-group" style="margin-top:12px;">
+                <label>Employee</label>
+                <select id="cert-employee" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;min-height:44px;"></select>
+            </div>
+            <div class="form-group">
+                <label>Training Type</label>
+                <select id="cert-training-type" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;min-height:44px;"></select>
+            </div>
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <textarea id="cert-notes" placeholder="e.g. Card number, provider..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;min-height:60px;resize:vertical;"></textarea>
+            </div>
+            <div class="cert-preview-actions">
+                <button class="btn-secondary" onclick="cancelCertUpload()" style="min-height:44px;padding:10px 20px;">Cancel</button>
+                <button class="btn-primary" onclick="saveCertificate()" style="min-height:44px;padding:10px 20px;">Save Certificate</button>
+            </div>
+        </div>
+        <div id="cert-list"></div>
     </div>
 </div>
 
@@ -672,9 +739,24 @@
     </div>
 </div>
 
+<!-- ===================== CERT VIEWER MODAL ===================== -->
+<div class="modal-overlay" id="cert-viewer-modal">
+    <div class="modal" style="max-width:700px;">
+        <div class="modal-header">
+            <span id="cert-viewer-title">Certificate</span>
+            <button class="modal-close" onclick="closeCertViewer()">&times;</button>
+        </div>
+        <div class="modal-body cert-viewer-content" id="cert-viewer-content"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeCertViewer()">Close</button>
+        </div>
+    </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="mii-db.js"></script>
 <script>
 /* ================================================================
    Training Admin — MII Supervisor Hub
@@ -762,6 +844,7 @@ function switchTab(tab) {
     if (tab === 'dashboard') loadDashboard();
     else if (tab === 'records') loadRecords();
     else if (tab === 'types') loadTypes();
+    else if (tab === 'certificates') loadCertificatesTab();
 }
 
 // ─── Dashboard ─────────────────────────────────────────────────
@@ -1234,6 +1317,209 @@ function toast(msg, type) {
     requestAnimationFrame(() => el.classList.add('show'));
     setTimeout(() => el.classList.remove('show'), 3000);
 }
+
+// Certificates
+let _certFileData = null;
+let _certFileName = null;
+let _certFileType = null;
+let _certDebounce = null;
+let _certSetup = false;
+
+function loadCertificatesTab() {
+    if (!_certSetup) {
+        setupCertUploadZone();
+        populateCertDropdowns();
+        _certSetup = true;
+    }
+    loadCertificates();
+}
+
+function setupCertUploadZone() {
+    const zone = document.getElementById("cert-upload-zone");
+    const input = document.getElementById("cert-file-input");
+    zone.addEventListener("click", function(e) { if (e.target !== input) input.click(); });
+    zone.addEventListener("dragover", function(e) { e.preventDefault(); zone.classList.add("dragover"); });
+    zone.addEventListener("dragleave", function() { zone.classList.remove("dragover"); });
+    zone.addEventListener("drop", function(e) {
+        e.preventDefault(); zone.classList.remove("dragover");
+        if (e.dataTransfer.files.length) handleCertFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener("change", function() { if (input.files.length) handleCertFile(input.files[0]); });
+    document.getElementById("cert-search").addEventListener("input", function() {
+        clearTimeout(_certDebounce); _certDebounce = setTimeout(loadCertificates, 300);
+    });
+    document.getElementById("cert-filter-type").addEventListener("change", loadCertificates);
+    document.getElementById("cert-viewer-modal").addEventListener("click", function(e) {
+        if (e.target === this) closeCertViewer();
+    });
+}
+
+function handleCertFile(file) {
+    var validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+    if (validTypes.indexOf(file.type) === -1) { toast("Please select a JPG, PNG or PDF file", "error"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast("File too large. Maximum 10MB.", "error"); return; }
+    _certFileName = file.name;
+    _certFileType = file.type;
+    var reader = new FileReader();
+    reader.onload = function(e) { _certFileData = e.target.result; showCertPreview(); };
+    reader.readAsDataURL(file);
+}
+function showCertPreview() {
+    var previewEl = document.getElementById("cert-preview");
+    var contentEl = document.getElementById("cert-preview-content");
+    if (_certFileType === "application/pdf") {
+        contentEl.innerHTML = '<div class="cert-preview-pdf"><span class="pdf-icon">&#128196;</span><div><div class="pdf-name">' + esc(_certFileName) + '</div><div class="pdf-size">PDF Document</div></div></div>';
+    } else {
+        contentEl.innerHTML = '<img class="cert-preview-img" src="' + _certFileData + '" alt="Certificate preview">';
+    }
+    previewEl.classList.add("visible");
+    document.getElementById("cert-upload-zone").style.display = "none";
+}
+
+function cancelCertUpload() {
+    _certFileData = null; _certFileName = null; _certFileType = null;
+    document.getElementById("cert-preview").classList.remove("visible");
+    document.getElementById("cert-preview-content").innerHTML = "";
+    document.getElementById("cert-upload-zone").style.display = "";
+    document.getElementById("cert-file-input").value = "";
+    document.getElementById("cert-employee").value = "";
+    document.getElementById("cert-training-type").value = "";
+    document.getElementById("cert-notes").value = "";
+}
+
+async function populateCertDropdowns() {
+    var empSel = document.getElementById("cert-employee");
+    empSel.innerHTML = '<option value="">Select employee...</option>';
+    try {
+        var pairs = await MiiDB.getEmployeePairs();
+        pairs.forEach(function(p) {
+            var opt = document.createElement("option");
+            opt.value = p[0]; opt.textContent = p[1] + " (" + p[0] + ")";
+            empSel.appendChild(opt);
+        });
+    } catch(e) {
+        try {
+            var res = await fetch(MII_API + "/employees", { headers: authHeaders() });
+            var data = await res.json();
+            var emps = data.employees || data;
+            emps.sort(function(a, b) { return a.name.localeCompare(b.name); });
+            emps.forEach(function(emp) {
+                var opt = document.createElement("option");
+                opt.value = emp.employee_number; opt.textContent = emp.name + " (" + emp.employee_number + ")";
+                empSel.appendChild(opt);
+            });
+        } catch(e2) { console.warn("Could not load employees for cert dropdown"); }
+    }
+    await loadTypesCache();
+    var typeSel = document.getElementById("cert-training-type");
+    typeSel.innerHTML = '<option value="">Select training type...</option>';
+    (_typesCache || []).forEach(function(t) {
+        var opt = document.createElement("option");
+        opt.value = t.code; opt.textContent = t.code + " - " + t.name;
+        typeSel.appendChild(opt);
+    });
+    var filterSel = document.getElementById("cert-filter-type");
+    filterSel.innerHTML = '<option value="">All Types</option>';
+    (_typesCache || []).forEach(function(t) {
+        var opt = document.createElement("option");
+        opt.value = t.code; opt.textContent = t.code + " - " + t.name;
+        filterSel.appendChild(opt);
+    });
+}
+async function saveCertificate() {
+    var empNum = document.getElementById("cert-employee").value;
+    var trainingType = document.getElementById("cert-training-type").value;
+    var notes = document.getElementById("cert-notes").value.trim();
+    if (!empNum) { toast("Please select an employee", "error"); return; }
+    if (!trainingType) { toast("Please select a training type", "error"); return; }
+    if (!_certFileData) { toast("No file selected", "error"); return; }
+    var empName = empNum;
+    var empOpt = document.querySelector("#cert-employee option:checked");
+    if (empOpt && empOpt.value) empName = empOpt.textContent;
+    var cert = {
+        id: "CERT-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7),
+        employee_number: empNum, employee_name: empName,
+        training_type: trainingType, file_data: _certFileData,
+        file_name: _certFileName, file_type: _certFileType,
+        notes: notes, uploaded_at: new Date().toISOString()
+    };
+    try {
+        await MiiDB.save("certificates", cert);
+        toast("Certificate saved", "success");
+        cancelCertUpload(); loadCertificates();
+    } catch(e) { console.error("Failed to save certificate:", e); toast("Failed to save certificate", "error"); }
+}
+
+async function loadCertificates() {
+    var listEl = document.getElementById("cert-list");
+    try {
+        var certs = await MiiDB.getAll("certificates");
+        var search = (document.getElementById("cert-search").value || "").trim().toLowerCase();
+        if (search) {
+            certs = certs.filter(function(c) {
+                return (c.employee_name || "").toLowerCase().indexOf(search) !== -1 ||
+                       (c.employee_number || "").toLowerCase().indexOf(search) !== -1 ||
+                       (c.training_type || "").toLowerCase().indexOf(search) !== -1 ||
+                       (c.file_name || "").toLowerCase().indexOf(search) !== -1;
+            });
+        }
+        var typeFilter = document.getElementById("cert-filter-type").value;
+        if (typeFilter) certs = certs.filter(function(c) { return c.training_type === typeFilter; });
+        certs.sort(function(a, b) { return new Date(b.uploaded_at) - new Date(a.uploaded_at); });
+        if (!certs.length) {
+            listEl.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>' +
+                (search || typeFilter ? "No certificates match your search" : "No certificates uploaded yet") + '</p></div>';
+            return;
+        }
+        listEl.innerHTML = certs.map(function(c) {
+            var thumb;
+            if (c.file_type === "application/pdf") {
+                thumb = '<div class="cert-thumb-pdf" onclick="viewCertificate(' + String.fromCharCode(39) + c.id + String.fromCharCode(39) + ')">&#128196;</div>';
+            } else {
+                thumb = '<img class="cert-thumb" src="' + c.file_data + '" alt="Cert" onclick="viewCertificate(' + String.fromCharCode(39) + c.id + String.fromCharCode(39) + ')">';
+            }
+            var uploadDate = "";
+            try { var d = new Date(c.uploaded_at); uploadDate = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); } catch(err) {}
+            return '<div class="cert-card">' + thumb +
+                '<div class="cert-info"><div class="cert-emp">' + esc(c.employee_name || c.employee_number) + '</div>' +
+                '<div class="cert-type">' + esc(c.training_type) + ' &middot; ' + esc(c.file_name) + '</div>' +
+                (c.notes ? '<div class="cert-date">' + esc(c.notes) + '</div>' : "") +
+                '<div class="cert-date">Uploaded ' + uploadDate + '</div></div>' +
+                '<div class="cert-actions">' +
+                '<button class="btn-view" onclick="viewCertificate(' + String.fromCharCode(39) + c.id + String.fromCharCode(39) + ')">View</button>' +
+                '<button class="btn-delete" onclick="deleteCertificate(' + String.fromCharCode(39) + c.id + String.fromCharCode(39) + ')">Del</button>' +
+                '</div></div>';
+        }).join("");
+    } catch(e) { console.error("Failed to load certificates:", e); listEl.innerHTML = '<div class="empty-state"><p>Failed to load certificates</p></div>'; }
+}
+async function viewCertificate(id) {
+    try {
+        var cert = await MiiDB.get("certificates", id);
+        if (\!cert) { toast("Certificate not found", "error"); return; }
+        document.getElementById("cert-viewer-title").textContent = (cert.employee_name || cert.employee_number) + " - " + cert.training_type;
+        var contentEl = document.getElementById("cert-viewer-content");
+        if (cert.file_type === "application/pdf") {
+            contentEl.innerHTML = '<iframe src="' + cert.file_data + '"></iframe>';
+        } else {
+            contentEl.innerHTML = '<img src="' + cert.file_data + '" alt="Certificate">';
+        }
+        document.getElementById("cert-viewer-modal").classList.add("open");
+    } catch(e) { toast("Failed to load certificate", "error"); }
+}
+
+function closeCertViewer() {
+    document.getElementById("cert-viewer-modal").classList.remove("open");
+    document.getElementById("cert-viewer-content").innerHTML = "";
+}
+
+async function deleteCertificate(id) {
+    if (\!confirm("Delete this certificate?")) return;
+    try {
+        await MiiDB.remove("certificates", id);
+        toast("Certificate deleted", "success"); loadCertificates();
+    } catch(e) { toast("Failed to delete", "error"); }
+}
+
 </script>
 </body>
 </html>
