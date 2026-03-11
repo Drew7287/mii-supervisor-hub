@@ -272,6 +272,13 @@ textarea { resize: vertical; min-height: 80px; }
         </div>
         <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h4>COSHH Substances</h4>
+                <button class="btn btn-outline btn-sm" onclick="addCoshhItem()">+ Add</button>
+            </div>
+            <div id="coshh-list"></div>
+        </div>
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                 <h4>Training Requirements</h4>
                 <button class="btn btn-outline btn-sm" onclick="addTrainingItem()">+ Add</button>
             </div>
@@ -414,7 +421,7 @@ async function newDocument() {
             return h ? h.id : null;
         }).filter(Boolean),
         risk_assessments: [],
-        requirements: { ppe: [], equipment: [], permits: [], training: [] },
+        requirements: { ppe: [], equipment: [], permits: [], training: [], coshh: [] },
         environment: { waste_generated: 'no', waste_details: '', noise_level: 'low', noise_controls: '', weather: '', factors: [] },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -670,7 +677,7 @@ function renderRiskAssessment() {
     currentDoc.risk_assessments = selected.map(hid => {
         if (existing[hid]) return existing[hid];
         const h = MII_HAZARDS.find(hz => hz.id === hid);
-        return { hazard_id: hid, initial_l: 3, initial_s: 3, controls: h ? h.default_controls : '', final_l: 2, final_s: 2 };
+        return { hazard_id: hid, initial_l: 3, initial_s: 3, controls: h ? h.default_controls : '', final_l: 2, final_s: 2, who_harmed: 'Workers and others in the area', risk_description: '' };
     });
 
     el.innerHTML = currentDoc.risk_assessments.map((ra, i) => {
@@ -679,17 +686,21 @@ function renderRiskAssessment() {
         const fScore = (ra.final_l||1) * (ra.final_s||1);
         return `<div class="ra-card">
             <h4>${escHtml(h ? h.name : 'Unknown Hazard')}</h4>
+            <div class="form-row" style="margin-bottom:12px;">
+                <div><label>Risk to Individual</label><input type="text" id="ra-risk-${i}" value="${escHtml(ra.risk_description||'')}" placeholder="Describe the risk..." style="margin-bottom:0;"></div>
+                <div><label>Who Might Be Harmed?</label><input type="text" id="ra-who-${i}" value="${escHtml(ra.who_harmed||'Workers and others in the area')}" placeholder="e.g. Workers, Public" style="margin-bottom:0;"></div>
+            </div>
             <div class="ra-grid">
                 <div>
                     <label>Initial Likelihood</label>
                     <select id="ra-il-${i}" onchange="updateRiskScore(${i})">
-                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.initial_l==v?'selected':''}>${v} - ${['Very Low','Low','Medium','High','Very High'][v-1]}</option>`).join('')}
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.initial_l==v?'selected':''}>${v} - ${['Rare','Unlikely','Possible','Likely','Almost Certain'][v-1]}</option>`).join('')}
                     </select>
                 </div>
                 <div>
                     <label>Initial Severity</label>
                     <select id="ra-is-${i}" onchange="updateRiskScore(${i})">
-                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.initial_s==v?'selected':''}>${v} - ${['Insignificant','Minor','Moderate','Major','Catastrophic'][v-1]}</option>`).join('')}
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.initial_s==v?'selected':''}>${v} - ${['Minor','Moderate','Significant','Major','Catastrophic'][v-1]}</option>`).join('')}
                     </select>
                 </div>
                 <div style="text-align:center;">
@@ -703,13 +714,13 @@ function renderRiskAssessment() {
                 <div>
                     <label>Residual Likelihood</label>
                     <select id="ra-fl-${i}" onchange="updateRiskScore(${i})">
-                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.final_l==v?'selected':''}>${v} - ${['Very Low','Low','Medium','High','Very High'][v-1]}</option>`).join('')}
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.final_l==v?'selected':''}>${v} - ${['Rare','Unlikely','Possible','Likely','Almost Certain'][v-1]}</option>`).join('')}
                     </select>
                 </div>
                 <div>
                     <label>Residual Severity</label>
                     <select id="ra-fs-${i}" onchange="updateRiskScore(${i})">
-                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.final_s==v?'selected':''}>${v} - ${['Insignificant','Minor','Moderate','Major','Catastrophic'][v-1]}</option>`).join('')}
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.final_s==v?'selected':''}>${v} - ${['Minor','Moderate','Significant','Major','Catastrophic'][v-1]}</option>`).join('')}
                     </select>
                 </div>
                 <div style="text-align:center;">
@@ -740,12 +751,16 @@ function updateRiskScore(idx) {
     currentDoc.risk_assessments[idx].final_l = fl;
     currentDoc.risk_assessments[idx].final_s = fs;
     currentDoc.risk_assessments[idx].controls = document.getElementById('ra-ctrl-'+idx).value;
+    const riskEl = document.getElementById('ra-risk-'+idx);
+    const whoEl = document.getElementById('ra-who-'+idx);
+    if (riskEl) currentDoc.risk_assessments[idx].risk_description = riskEl.value;
+    if (whoEl) currentDoc.risk_assessments[idx].who_harmed = whoEl.value;
 }
 
 function riskClass(score) {
     if (score <= 4) return 'risk-low';
     if (score <= 9) return 'risk-med';
-    if (score <= 15) return 'risk-high';
+    if (score <= 16) return 'risk-high';
     return 'risk-crit';
 }
 
@@ -773,6 +788,8 @@ function renderRequirements() {
     }).join('');
     // Equipment
     renderListItems('equip-list', req.equipment || []);
+    // COSHH
+    renderListItems('coshh-list', req.coshh || []);
     // Training
     renderListItems('training-list', req.training || []);
 }
@@ -788,10 +805,12 @@ function renderListItems(containerId, items) {
 }
 
 function addEquipItem() { collectRequirements(); currentDoc.requirements.equipment.push(''); renderRequirements(); }
+function addCoshhItem() { collectRequirements(); currentDoc.requirements.coshh.push(''); renderRequirements(); }
 function addTrainingItem() { collectRequirements(); currentDoc.requirements.training.push(''); renderRequirements(); }
 function removeListItem(containerId, idx) {
     collectRequirements();
     if (containerId === 'equip-list') currentDoc.requirements.equipment.splice(idx, 1);
+    else if (containerId === 'coshh-list') currentDoc.requirements.coshh.splice(idx, 1);
     else currentDoc.requirements.training.splice(idx, 1);
     renderRequirements();
 }
@@ -800,8 +819,9 @@ function collectRequirements() {
     const ppeChecked = [...document.querySelectorAll('#ppe-grid input:checked')].map(el => el.value);
     const permChecked = [...document.querySelectorAll('#permits-grid input:checked')].map(el => el.value);
     const equip = [...document.querySelectorAll('#equip-list .list-item')].map(el => el.value).filter(Boolean);
+    const coshh = [...document.querySelectorAll('#coshh-list .list-item')].map(el => el.value).filter(Boolean);
     const training = [...document.querySelectorAll('#training-list .list-item')].map(el => el.value).filter(Boolean);
-    currentDoc.requirements = { ppe: ppeChecked, permits: permChecked, equipment: equip, training: training };
+    currentDoc.requirements = { ppe: ppeChecked, permits: permChecked, equipment: equip, coshh: coshh, training: training };
 }
 
 // ─── Environment ──────────────────────────────────────────
@@ -924,6 +944,7 @@ function renderReview() {
         <p style="margin-bottom:8px;"><strong>PPE:</strong> ${(req.ppe||[]).join(', ') || 'None selected'}</p>
         <p style="margin-bottom:8px;"><strong>Permits:</strong> ${(req.permits||[]).join(', ') || 'None required'}</p>
         <p style="margin-bottom:8px;"><strong>Equipment:</strong> ${(req.equipment||[]).filter(Boolean).join(', ') || 'None specified'}</p>
+        <p style="margin-bottom:8px;"><strong>COSHH:</strong> ${(req.coshh||[]).filter(Boolean).join(', ') || 'None specified'}</p>
         <p><strong>Training:</strong> ${(req.training||[]).filter(Boolean).join(', ') || 'None specified'}</p>
     `);
 
@@ -974,12 +995,24 @@ function runAIReview() {
     checks.push({ name: 'All hazards have control measures', pass: allControls });
 
     // Critical risks
-    const hasCritical = ras.some(ra => (ra.initial_l||1)*(ra.initial_s||1) > 15);
-    checks.push({ name: 'No critical initial risk scores (>15)', pass: !hasCritical });
+    const hasCritical = ras.some(ra => (ra.initial_l||1)*(ra.initial_s||1) > 16);
+    checks.push({ name: 'No critical initial risk scores (>16)', pass: !hasCritical });
 
     // Residual lower than initial
     const allReduced = ras.every(ra => (ra.final_l||1)*(ra.final_s||1) <= (ra.initial_l||1)*(ra.initial_s||1));
     checks.push({ name: 'All residual scores equal or lower than initial', pass: allReduced });
+
+    // High residual risk warning
+    const hasHighResidual = ras.some(ra => (ra.final_l||1)*(ra.final_s||1) > 9);
+    checks.push({ name: 'No high residual risk scores (>9)', pass: !hasHighResidual });
+
+    // PPE selected
+    const req = d.requirements || {};
+    const hasPPE = (req.ppe || []).length > 0;
+    checks.push({ name: 'PPE items selected', pass: hasPPE });
+
+    // Minimum hazard count
+    checks.push({ name: 'At least 2 hazards selected', pass: sel.length >= 2 });
 
     // Job details filled
     const jd = d.job_details || {};
@@ -1001,10 +1034,14 @@ function runAIReview() {
 
 async function saveDraft() {
     collectStepData(currentStep);
-    // Also collect risk assessment controls
+    // Also collect risk assessment controls and extra fields
     (currentDoc.risk_assessments || []).forEach((ra, i) => {
         const ctrl = document.getElementById('ra-ctrl-'+i);
         if (ctrl) ra.controls = ctrl.value;
+        const riskEl = document.getElementById('ra-risk-'+i);
+        const whoEl = document.getElementById('ra-who-'+i);
+        if (riskEl) ra.risk_description = riskEl.value;
+        if (whoEl) ra.who_harmed = whoEl.value;
     });
     currentDoc.updated_at = new Date().toISOString();
     await MiiDB.save('rams_documents', currentDoc);
