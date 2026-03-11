@@ -17,7 +17,7 @@
   'use strict';
 
   const DB_NAME = 'mii-hub';
-  const DB_VERSION = 8;
+  const DB_VERSION = 7;
 
   // IndexedDB store name → localStorage key mapping
   const STORE_LS_MAP = {
@@ -105,9 +105,6 @@
           const certStore = db.createObjectStore('certificates', { keyPath: 'id' });
           certStore.createIndex('employee_number', 'employee_number', { unique: false });
           certStore.createIndex('training_type', 'training_type', { unique: false });
-          certStore.createIndex('filing_status', 'filing_status', { unique: false });
-          certStore.createIndex('achieved_date', 'achieved_date', { unique: false });
-          certStore.createIndex('training_type_code', 'training_type_code', { unique: false });
         }
 
         // rams_documents store with indexes for status and RAMS number lookups
@@ -137,19 +134,6 @@
           });
           sq.createIndex('entity', 'entity', { unique: false });
           sq.createIndex('status', 'status', { unique: false });
-        }
-        // v8 migration: add new indexes to existing certificates store
-        if (e.oldVersion >= 1 && e.oldVersion < 8 && db.objectStoreNames.contains('certificates')) {
-          const certStore = e.target.transaction.objectStore('certificates');
-          if (!certStore.indexNames.contains('filing_status')) {
-            certStore.createIndex('filing_status', 'filing_status', { unique: false });
-          }
-          if (!certStore.indexNames.contains('achieved_date')) {
-            certStore.createIndex('achieved_date', 'achieved_date', { unique: false });
-          }
-          if (!certStore.indexNames.contains('training_type_code')) {
-            certStore.createIndex('training_type_code', 'training_type_code', { unique: false });
-          }
         }
       };
 
