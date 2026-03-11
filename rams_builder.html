@@ -3387,7 +3387,10 @@ function renderAISuggestions(summary) {
     panel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
             <h4 style="color:var(--primary);">AI Suggestions (${aiSuggestions.length})</h4>
-            <div style="font-size:0.8rem;color:var(--text-light);">${accepted} accepted, ${pending} pending</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <div style="font-size:0.8rem;color:var(--text-light);">${accepted} accepted, ${pending} pending</div>
+                ${aiSuggestions.length > 0 ? '<button class="btn btn-outline btn-sm" onclick="downloadAISuggestionsJSON()" style="padding:2px 8px;font-size:0.75rem;">Save JSON</button>' : ''}
+            </div>
         </div>
         ${summary ? `<p style="font-size:0.85rem;color:var(--text-light);margin-bottom:14px;padding:10px;background:#f8f9fa;border-radius:6px;">${escHtml(summary)}</p>` : ''}
         ${aiSuggestions.length === 0 ? '<p style="color:var(--success);">No issues found - document looks good!</p>' :
@@ -3428,6 +3431,32 @@ function ignoreAISuggestion(idx) {
     if (!s || s._status !== 'pending') return;
     s._status = 'ignored';
     renderAISuggestions('');
+}
+
+function downloadAISuggestionsJSON() {
+    if (!aiSuggestions || aiSuggestions.length === 0) return;
+    const payload = {
+        document_id: currentDoc ? (currentDoc.id || null) : null,
+        rams_number: currentDoc ? (currentDoc.rams_number || null) : null,
+        suggestion_count: aiSuggestions.length,
+        suggestions: aiSuggestions.map(s => ({
+            type: s.type || '',
+            section: s.section || '',
+            target: s.target || '',
+            title: s.title || '',
+            description: s.description || '',
+            suggested_text: s.suggested_text || '',
+            confidence: s.confidence || 0,
+            justification: s.justification || ''
+        }))
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rams_ai_suggestions.json';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 function applyAISuggestion(s) {
