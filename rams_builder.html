@@ -302,6 +302,7 @@ textarea { resize: vertical; min-height: 80px; }
     <!-- Review Queue Tabs -->
     <div class="review-tabs">
         <button class="review-tab active" data-tab="my-docs" onclick="switchListTab('my-docs')">My Documents</button>
+        <button class="review-tab" data-tab="rams-library" onclick="switchListTab('rams-library')">RAMS Library</button>
         <button class="review-tab" data-tab="pending-reviews" onclick="switchListTab('pending-reviews')">Pending Reviews <span class="tab-badge" id="pending-review-count" style="display:none;">0</span></button>
         <button class="review-tab" data-tab="review-history" onclick="switchListTab('review-history')">Review History</button>
     </div>
@@ -311,6 +312,13 @@ textarea { resize: vertical; min-height: 80px; }
             <input type="text" id="doc-search" placeholder="Search by name, number or works area..." oninput="renderDocList()">
         </div>
         <div id="doc-list"></div>
+    </div>
+
+    <div id="tab-rams-library" style="display:none;">
+        <div class="search-bar">
+            <input type="text" id="library-search" placeholder="Search all RAMS by number, name, area..." oninput="renderRamsLibrary()">
+        </div>
+        <div id="rams-library-list"></div>
     </div>
 
     <div id="tab-pending-reviews" style="display:none;">
@@ -819,6 +827,7 @@ async function submitForReview() {
 
     currentDoc.updated_at = new Date().toISOString();
     await MiiDB.save('rams_documents', currentDoc);
+    syncRamsToServer(currentDoc);
 
     closeSubmitReviewModal();
     updateReviewBanner();
@@ -902,6 +911,7 @@ async function executeReviewDecision(decision) {
 
     currentDoc.updated_at = new Date().toISOString();
     await MiiDB.save('rams_documents', currentDoc);
+    syncRamsToServer(currentDoc);
 
     closeReviewDecisionModal();
     updateReviewBanner();
@@ -922,10 +932,12 @@ async function executeReviewDecision(decision) {
 
 function switchListTab(tabName) {
     document.querySelectorAll('.review-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
-    document.getElementById('tab-my-docs').style.display = tabName === 'my-docs' ? '' : 'none';
-    document.getElementById('tab-pending-reviews').style.display = tabName === 'pending-reviews' ? '' : 'none';
-    document.getElementById('tab-review-history').style.display = tabName === 'review-history' ? '' : 'none';
+    ['my-docs', 'rams-library', 'pending-reviews', 'review-history'].forEach(id => {
+        const el = document.getElementById('tab-' + id);
+        if (el) el.style.display = id === tabName ? '' : 'none';
+    });
 
+    if (tabName === 'rams-library') renderRamsLibrary();
     if (tabName === 'pending-reviews') renderPendingReviews();
     if (tabName === 'review-history') renderReviewHistory();
 }
@@ -1140,6 +1152,157 @@ async function updatePendingReviewCount() {
         badge.style.display = count > 0 ? '' : 'none';
     }
     return count;
+}
+
+// ─── RAMS Server Sync ─────────────────────────────────────
+
+async function syncRamsToServer(doc) {
+    const token = localStorage.getItem('mii_token');
+    if (!token) return; // Not logged in, skip server sync
+
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    try {
+        const resp = await fetch(MII_API + '/rams/documents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(doc)
+        });
+        if (resp.ok) {
+            console.log('[RAMS Sync] Synced', doc.rams_number, 'to server');
+        } else {
+            const err = await resp.json().catch(() => ({}));
+            console.warn('[RAMS Sync] Server error:', err.error || resp.status);
+        }
+    } catch (e) {
+        console.log('[RAMS Sync] Offline or error:', e.message);
+    }
+}
+
+let _libraryCache = null;
+let _libraryCacheTime = 0;
+
+async function renderRamsLibrary() {
+    const el = document.getElementById('rams-library-list');
+    const search = (document.getElementById('library-search').value || '').toLowerCase();
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    const token = localStorage.getItem('mii_token');
+
+    if (!token) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">&#128274;</div><p>Log in to browse the RAMS Library.<br>All approved RAMS across the organisation will appear here.</p></div>';
+        return;
+    }
+
+    // Cache for 30 seconds to avoid hammering
+    const now = Date.now();
+    if (!_libraryCache || now - _libraryCacheTime > 30000 || search) {
+        el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-light);">Loading RAMS Library...</div>';
+        try {
+            const params = new URLSearchParams();
+            if (search) params.set('search', search);
+            params.set('limit', '200');
+            const res = await fetch(MII_API + '/rams/documents?' + params.toString(), {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error('Server error');
+            const data = await res.json();
+            _libraryCache = data.documents || [];
+            _libraryCacheTime = now;
+        } catch (e) {
+            el.innerHTML = '<div class="empty-state"><div class="icon">&#9888;</div><p>Could not load RAMS Library.<br>' + e.message + '</p></div>';
+            return;
+        }
+    }
+
+    const docs = _libraryCache;
+    if (docs.length === 0) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">&#128218;</div><p>No RAMS documents in the library yet.<br>Documents are added when saved by any user.</p></div>';
+        return;
+    }
+
+    const user = getCurrentUser();
+    el.innerHTML = docs.map(d => {
+        const sc = d.status === 'approved' ? 'status-approved' : d.status === 'rejected' ? 'status-rejected' : (d.status === 'pending_review' || d.status === 'review') ? 'status-review' : 'status-draft';
+        const statusLabel = d.status === 'pending_review' ? 'Pending Review' : (d.status || 'draft');
+        const date = d.updated_at ? new Date(d.updated_at).toLocaleDateString('en-GB') : '';
+        const isOwn = d.author_id === user.user_id;
+        return `<div class="doc-row" onclick="openLibraryDoc('${d.id}', ${isOwn})" style="cursor:pointer;">
+            <div class="doc-info">
+                <div class="doc-title">${escHtml(d.rams_number || '')} - ${escHtml(d.job_name || 'Untitled')}</div>
+                <div class="doc-meta">${escHtml(d.works_area || '')} &middot; ${escHtml(d.author_name || 'Unknown')} &middot; Rev ${d.revision || 0} &middot; ${date}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span class="status-badge ${sc}">${statusLabel}</span>
+                ${!isOwn ? '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();cloneFromLibrary(\'' + d.id + '\')" title="Clone to my documents">&#128203; Clone</button>' : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function openLibraryDoc(id, isOwn) {
+    if (isOwn) {
+        // Own doc — check if it exists locally and open it
+        const localDoc = await MiiDB.get('rams_documents', id);
+        if (localDoc) {
+            editDocument(id);
+            return;
+        }
+    }
+
+    // Fetch full doc from server and open read-only or import
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    const token = localStorage.getItem('mii_token');
+    try {
+        const res = await fetch(MII_API + '/rams/documents/' + id, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to fetch document');
+        const doc = await res.json();
+
+        if (isOwn) {
+            // Save locally and open
+            await MiiDB.save('rams_documents', doc);
+            editDocument(doc.id);
+        } else {
+            // Save locally as read-only view
+            await MiiDB.save('rams_documents', doc);
+            editDocument(doc.id);
+        }
+    } catch (e) {
+        alert('Could not load document: ' + e.message);
+    }
+}
+
+async function cloneFromLibrary(id) {
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    const token = localStorage.getItem('mii_token');
+    try {
+        const res = await fetch(MII_API + '/rams/documents/' + id, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to fetch document');
+        const source = await res.json();
+
+        const docs = await MiiDB.getAll('rams_documents');
+        const nextNum = (docs.length + 1).toString().padStart(4, '0');
+        const clone = JSON.parse(JSON.stringify(source));
+        clone.id = 'RAMS-' + crypto.randomUUID();
+        clone.rams_number = 'MII-2026-' + nextNum;
+        clone.status = 'draft';
+        clone.revision = 0;
+        clone.revision_history = [];
+        clone.renewed_from_id = source.id;
+        clone.renewed_from_number = source.rams_number;
+        delete clone.review;
+        clone.created_at = new Date().toISOString();
+        clone.updated_at = new Date().toISOString();
+        await MiiDB.save('rams_documents', clone);
+        syncRamsToServer(clone);
+        renderDocList();
+        switchListTab('my-docs');
+        alert('Cloned as ' + clone.rams_number);
+    } catch (e) {
+        alert('Could not clone document: ' + e.message);
+    }
 }
 
 // ─── Standard Controls Lookup ─────────────────────────────
@@ -3320,6 +3483,7 @@ function applyAISuggestion(s) {
 async function saveDraftSilent() {
     currentDoc.updated_at = new Date().toISOString();
     await MiiDB.save('rams_documents', currentDoc);
+    syncRamsToServer(currentDoc); // fire-and-forget
 }
 
 // ─── Save / Export ────────────────────────────────────────
@@ -3337,6 +3501,7 @@ async function saveDraft() {
     });
     currentDoc.updated_at = new Date().toISOString();
     await MiiDB.save('rams_documents', currentDoc);
+    syncRamsToServer(currentDoc); // fire-and-forget
     alert('Draft saved successfully.');
 }
 
@@ -3551,6 +3716,7 @@ async function exportExcel() {
     });
     currentDoc.updated_at = new Date().toISOString();
     MiiDB.save('rams_documents', currentDoc);
+    syncRamsToServer(currentDoc);
 
     // ── Write file ──
     const filename = (currentDoc.rams_number || 'RAMS-Document') + `_Rev${String(revision).padStart(3,'0')}.xlsx`;
