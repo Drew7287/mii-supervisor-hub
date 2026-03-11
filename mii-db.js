@@ -17,7 +17,7 @@
   'use strict';
 
   const DB_NAME = 'mii-hub';
-  const DB_VERSION = 7;
+  const DB_VERSION = 8;
 
   // IndexedDB store name → localStorage key mapping
   const STORE_LS_MAP = {
@@ -54,6 +54,12 @@
     'powra',
     'certificates',
     'rams_documents',
+    'cost_jobs',
+    'cost_categories',
+    'cost_transactions',
+    'cost_supplier_mappings',
+    'cost_labour_mappings',
+    'cost_imports',
   ];
 
   // Reference data stores (pulled from server, not pushed via sync_queue)
@@ -78,7 +84,11 @@
 
         // Create array-based stores with keyPath=id
         // Stores with custom indexes are handled individually below
-        const INDEXED_STORES = ['daily_reports', 'havs_entries', 'certificates', 'rams_documents'];
+        const INDEXED_STORES = [
+          'daily_reports', 'havs_entries', 'certificates', 'rams_documents',
+          'cost_jobs', 'cost_categories', 'cost_transactions',
+          'cost_supplier_mappings', 'cost_labour_mappings', 'cost_imports',
+        ];
         ARRAY_STORES.forEach((name) => {
           if (!INDEXED_STORES.includes(name) && !db.objectStoreNames.contains(name)) {
             db.createObjectStore(name, { keyPath: 'id' });
@@ -112,6 +122,47 @@
           const ramsStore = db.createObjectStore('rams_documents', { keyPath: 'id' });
           ramsStore.createIndex('status', 'status', { unique: false });
           ramsStore.createIndex('rams_number', 'rams_number', { unique: false });
+        }
+
+        // cost_jobs store with status and job_number indexes
+        if (!db.objectStoreNames.contains('cost_jobs')) {
+          const cjStore = db.createObjectStore('cost_jobs', { keyPath: 'id' });
+          cjStore.createIndex('status', 'status', { unique: false });
+          cjStore.createIndex('job_number', 'job_number', { unique: true });
+        }
+
+        // cost_categories store with job_id index
+        if (!db.objectStoreNames.contains('cost_categories')) {
+          const ccStore = db.createObjectStore('cost_categories', { keyPath: 'id' });
+          ccStore.createIndex('job_id', 'job_id', { unique: false });
+        }
+
+        // cost_transactions store with compound indexes for filtering
+        if (!db.objectStoreNames.contains('cost_transactions')) {
+          const ctStore = db.createObjectStore('cost_transactions', { keyPath: 'id' });
+          ctStore.createIndex('job_id', 'job_id', { unique: false });
+          ctStore.createIndex('job_date', ['job_id', 'trans_date'], { unique: false });
+          ctStore.createIndex('job_category', ['job_id', 'mapped_category'], { unique: false });
+          ctStore.createIndex('supplier_name', 'supplier_name', { unique: false });
+          ctStore.createIndex('import_batch_id', 'import_batch_id', { unique: false });
+        }
+
+        // cost_supplier_mappings store
+        if (!db.objectStoreNames.contains('cost_supplier_mappings')) {
+          const smStore = db.createObjectStore('cost_supplier_mappings', { keyPath: 'id' });
+          smStore.createIndex('job_id', 'job_id', { unique: false });
+        }
+
+        // cost_labour_mappings store
+        if (!db.objectStoreNames.contains('cost_labour_mappings')) {
+          const lmStore = db.createObjectStore('cost_labour_mappings', { keyPath: 'id' });
+          lmStore.createIndex('job_id', 'job_id', { unique: false });
+          lmStore.createIndex('cost_code', 'cost_code', { unique: false });
+        }
+
+        // cost_imports store (import batch records)
+        if (!db.objectStoreNames.contains('cost_imports')) {
+          db.createObjectStore('cost_imports', { keyPath: 'id' });
         }
 
         // Reference data stores (keyed by employee_number)

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost Tracking — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+
+            /* Cost-specific */
+            --cost-positive: #006600;
+            --cost-negative: #CC0000;
+            --cost-caution: #E68A00;
+            --cost-purple: #8e44ad;
+            --cost-neutral: #666666;
+            --bg-green: #C6EFCE;
+            --bg-red: #FFC7CE;
+            --bg-amber: #FFEB9C;
+            --bg-purple: #E2D0F0;
+
+            --mii-blue: #003087;
+            --mii-red: #C8102E;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-bar {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary {
+            background: var(--mii-blue);
+            color: var(--white);
+        }
+        .btn-secondary {
+            background: var(--white);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: #f8f9fa; }
+
+        /* ===== TABLE ===== */
+        .table-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+        }
+        .table-scroll {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+        }
+        thead th {
+            background: #f8f9fb;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+        thead th.right { text-align: right; }
+        thead th.center { text-align: center; }
+        tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        tbody tr:hover { background: #f8f9fb; }
+        tbody td {
+            padding: 10px 12px;
+            vertical-align: middle;
+        }
+        td.right { text-align: right; font-variant-numeric: tabular-nums; }
+        td.center { text-align: center; }
+        td.bold { font-weight: 700; }
+
+        .job-no { font-weight: 700; white-space: nowrap; }
+        .job-no.group { color: var(--mii-blue); }
+        .project-name { min-width: 200px; }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .status-badge.active { background: var(--bg-green); color: var(--cost-positive); }
+        .status-badge.complete { background: #dce5f0; color: #2F5496; }
+        .status-badge.on_hold { background: var(--bg-amber); color: var(--cost-caution); }
+        .status-badge.dormant { background: #fce4d6; color: #D35400; }
+        .status-badge.archived { background: #e8e8e8; color: #9E9E9E; }
+
+        /* Markup input */
+        .markup-input {
+            width: 60px;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .markup-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.15);
+        }
+
+        /* ===== CONTEXT MENU ===== */
+        .context-menu {
+            display: none;
+            position: fixed;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+            z-index: 200;
+            min-width: 180px;
+            padding: 4px 0;
+        }
+        .context-menu.active { display: block; }
+        .context-menu-item {
+            display: block;
+            width: 100%;
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            font-size: 0.82rem;
+            font-family: inherit;
+            text-align: left;
+            cursor: pointer;
+            color: var(--text);
+        }
+        .context-menu-item:hover { background: #f0f2f5; }
+        .context-menu-item.danger { color: var(--danger); }
+        .context-menu-item.danger:hover { background: #fde8ea; }
+        .context-menu-sep {
+            height: 1px;
+            background: #f0f0f0;
+            margin: 4px 0;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 40px;
+            overflow-y: auto;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--white);
+            border-radius: 10px;
+            width: 94%;
+            max-width: 720px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+            margin-bottom: 40px;
+        }
+        .modal-header {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .modal-close-x {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 4px 8px;
+        }
+        .modal-close-x:hover { color: var(--text); }
+        .modal-body { padding: 16px 20px; }
+        .modal-footer {
+            padding: 12px 20px 18px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .form-group { margin-bottom: 12px; }
+        .form-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+
+        /* Category table in modal */
+        .cat-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 0.82rem;
+        }
+        .cat-table th {
+            background: #f8f9fb;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            border-bottom: 1px solid var(--border);
+        }
+        .cat-table th.right { text-align: right; }
+        .cat-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; }
+        .cat-table td.right { text-align: right; }
+        .cat-table .cat-num { color: var(--text-light); width: 30px; }
+        .cat-table input[type="number"] {
+            width: 110px;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .cat-table input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.15);
+        }
+        .cat-table .at-cost { color: var(--cost-neutral); font-variant-numeric: tabular-nums; }
+        .cat-table tfoot td {
+            font-weight: 700;
+            border-top: 2px solid var(--border);
+            padding-top: 8px;
+        }
+
+        .btn-modal-cancel {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--white);
+            color: var(--text);
+        }
+        .btn-modal-cancel:hover { background: #f8f9fa; }
+        .btn-modal-save {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--white);
+            background: var(--success);
+            transition: opacity 0.15s;
+        }
+        .btn-modal-save:hover { opacity: 0.9; }
+        .btn-modal-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            padding: 12px 20px;
+            font-size: 0.85rem;
+            max-width: 380px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.25s ease-out;
+        }
+        .toast.success { border-left: 4px solid var(--cost-positive); }
+        .toast.error { border-left: 4px solid var(--cost-negative); }
+        .toast.info { border-left: 4px solid var(--accent); }
+        .toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-light);
+        }
+        .empty-state .info-box {
+            display: inline-block;
+            background: #e8f0fe;
+            border: 1px solid #c4d8f0;
+            border-radius: 8px;
+            padding: 20px 32px;
+            font-size: 0.9rem;
+            color: var(--text);
+            max-width: 480px;
+        }
+
+        /* ===== LOADING ===== */
+        .loading-spinner {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-light);
+        }
+        .loading-spinner::after {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Hidden file input */
+        .hidden { display: none; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .form-row { grid-template-columns: 1fr; }
+            .table-scroll { font-size: 0.78rem; }
+        }
+        @media (max-width: 480px) {
+            .stats-bar { grid-template-columns: 1fr; }
+            .action-bar { flex-direction: column; }
+            .action-bar .btn { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Cost Tracking</h1>
+    <a href="index.html">&larr; Hub</a>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar" id="stats-bar">
+    <div class="stat-card"><div class="stat-value" style="color:var(--mii-blue)">—</div><div class="stat-label">Active Jobs</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--cost-positive)">—</div><div class="stat-label">Total Budget</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--cost-caution)">—</div><div class="stat-label">Total Transactions</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--mii-red)">—</div><div class="stat-label">Last Import</div></div>
+</div>
+
+<!-- Action Buttons -->
+<div class="action-bar">
+    <button class="btn btn-primary" onclick="triggerImport()">Import Opera 3</button>
+    <button class="btn btn-secondary" onclick="openAddJobModal()">Add Job</button>
+    <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
+    <input type="file" id="file-input" class="hidden" accept=".xlsx,.csv" onchange="handleFileSelect(event)">
+</div>
+
+<!-- Jobs Table -->
+<div class="table-wrap">
+    <div class="table-scroll" id="table-container">
+        <div class="loading-spinner">Loading jobs...</div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="context-menu">
+    <button class="context-menu-item" id="ctx-open" onclick="ctxOpen()">Open</button>
+    <div class="context-menu-sep"></div>
+    <button class="context-menu-item" id="ctx-toggle-status" onclick="ctxToggleStatus()">Mark Complete</button>
+    <div class="context-menu-sep"></div>
+    <button class="context-menu-item danger" id="ctx-delete" onclick="ctxDelete()">Delete</button>
+</div>
+
+<!-- Add Job Modal -->
+<div class="modal-overlay" id="add-job-modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2>Add New Job</h2>
+            <button class="modal-close-x" onclick="closeAddJobModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Job Number *</label>
+                    <input type="text" id="modal-job-number" placeholder="e.g. SW4455" required>
+                </div>
+                <div class="form-group">
+                    <label>Project Name *</label>
+                    <input type="text" id="modal-project-name" placeholder="e.g. Hirwaun Power Plant" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Client</label>
+                    <input type="text" id="modal-client" value="Tata Steel">
+                </div>
+                <div class="form-group">
+                    <label>Markup %</label>
+                    <input type="number" id="modal-markup" value="14" min="1" max="50">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Budget Categories</label>
+                <table class="cat-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Category Name</th>
+                            <th class="right">Contract Value &pound;</th>
+                            <th class="right">At Cost &pound;</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cat-table-body"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td></td>
+                            <td>Total</td>
+                            <td class="right" id="cat-total-contract">&pound;0.00</td>
+                            <td class="right" id="cat-total-cost">&pound;0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-cancel" onclick="closeAddJobModal()">Cancel</button>
+            <button class="btn-modal-save" id="btn-create-job" onclick="createJob()">Create Job</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="mii-db.js"></script>
+<script src="cost_db.js"></script>
+<script>
+// ===== CONSTANTS =====
+const CATEGORY_NAMES = [
+    'Design',
+    'Labour',
+    'Plant & Equipment',
+    'Equipment Hired',
+    'Materials',
+    'Off Site',
+    'Consumables',
+    'Travel & Accommodation',
+];
+
+const STATUS_COLORS = {
+    active: '#006600',
+    complete: '#2F5496',
+    on_hold: '#E68A00',
+    dormant: '#D35400',
+    archived: '#9E9E9E',
+};
+
+// ===== HELPERS =====
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function formatGBP(val) {
+    if (typeof CostDB !== 'undefined' && CostDB.formatGBP) return CostDB.formatGBP(val);
+    const n = parseFloat(val) || 0;
+    return '\u00A3' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatGBPShort(val) {
+    const n = parseFloat(val) || 0;
+    if (n >= 1000000) return '\u00A3' + (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return '\u00A3' + (n / 1000).toFixed(0) + 'K';
+    return '\u00A3' + n.toFixed(0);
+}
+
+function formatDate(d) {
+    if (!d) return '\u2014';
+    try {
+        const dt = new Date(d);
+        if (isNaN(dt.getTime())) return '\u2014';
+        return dt.toISOString().split('T')[0];
+    } catch (_) {
+        return '\u2014';
+    }
+}
+
+function generateId() {
+    return 'cj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+}
+
+// ===== TOAST =====
+function showToast(message, type) {
+    type = type || 'info';
+    const container = document.getElementById('toast-container');
+    const icons = { success: '\u2713', error: '\u2717', info: '\u2139' };
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.innerHTML = '<span class="toast-icon">' + (icons[type] || '') + '</span><span>' + esc(message) + '</span>';
+    container.appendChild(toast);
+    setTimeout(function() {
+        toast.style.animation = 'slideOut 0.25s ease-in forwards';
+        setTimeout(function() { toast.remove(); }, 250);
+    }, 4000);
+}
+
+// ===== DATA LOADING =====
+let _jobs = [];
+let _categories = {};  // jobId -> [categories]
+let _txnCounts = {};    // jobId -> count
+let _imports = [];
+
+async function loadAllData() {
+    try {
+        await MiiDB.ready();
+
+        _jobs = await MiiDB.getAll('cost_jobs');
+        const allCats = await MiiDB.getAll('cost_categories');
+        const allTxns = await MiiDB.getAll('cost_transactions');
+        _imports = await MiiDB.getAll('cost_imports');
+
+        // Group categories by job
+        _categories = {};
+        allCats.forEach(function(c) {
+            if (!_categories[c.job_id]) _categories[c.job_id] = [];
+            _categories[c.job_id].push(c);
+        });
+
+        // Count transactions per job
+        _txnCounts = {};
+        allTxns.forEach(function(t) {
+            _txnCounts[t.job_id] = (_txnCounts[t.job_id] || 0) + 1;
+        });
+
+        // Sort jobs by job_number
+        _jobs.sort(function(a, b) {
+            return (a.job_number || '').localeCompare(b.job_number || '');
+        });
+
+        renderStats();
+        renderTable();
+    } catch (err) {
+        console.error('Failed to load data:', err);
+        document.getElementById('table-container').innerHTML =
+            '<div class="empty-state"><div class="info-box">Failed to load data. Check console for details.</div></div>';
+    }
+}
+
+function getJobBudget(job) {
+    const cats = _categories[job.id] || [];
+    let total = 0;
+    cats.forEach(function(c) { total += parseFloat(c.budget_at_cost) || 0; });
+    return total;
+}
+
+function getJobContractValue(job) {
+    const cats = _categories[job.id] || [];
+    let total = 0;
+    cats.forEach(function(c) { total += parseFloat(c.contract_value) || 0; });
+    return total;
+}
+
+function getJobTxnCount(job) {
+    return _txnCounts[job.id] || 0;
+}
+
+function getJobLastImport(job) {
+    return job.last_import_at || null;
+}
+
+// ===== RENDER STATS =====
+function renderStats() {
+    const activeCount = _jobs.filter(function(j) { return j.status === 'active'; }).length;
+    let totalBudget = 0;
+    let totalTxns = 0;
+    let latestImport = null;
+
+    _jobs.forEach(function(j) {
+        totalBudget += getJobBudget(j);
+        totalTxns += getJobTxnCount(j);
+        const imp = getJobLastImport(j);
+        if (imp && (!latestImport || imp > latestImport)) latestImport = imp;
+    });
+
+    document.getElementById('stats-bar').innerHTML =
+        '<div class="stat-card"><div class="stat-value" style="color:var(--mii-blue)">' + activeCount + '</div><div class="stat-label">Active Jobs</div></div>' +
+        '<div class="stat-card"><div class="stat-value" style="color:var(--cost-positive)">' + formatGBPShort(totalBudget) + '</div><div class="stat-label">Total Budget</div></div>' +
+        '<div class="stat-card"><div class="stat-value" style="color:var(--cost-caution)">' + totalTxns.toLocaleString() + '</div><div class="stat-label">Total Transactions</div></div>' +
+        '<div class="stat-card"><div class="stat-value" style="color:var(--mii-red)">' + (latestImport ? formatDate(latestImport) : 'Never') + '</div><div class="stat-label">Last Import</div></div>';
+}
+
+// ===== RENDER TABLE =====
+function renderTable() {
+    const container = document.getElementById('table-container');
+
+    if (_jobs.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="info-box">No jobs configured yet. Click \'Add Job\' to set up a new cost tracking job.</div></div>';
+        return;
+    }
+
+    let html = '<table><thead><tr>' +
+        '<th>Job No</th>' +
+        '<th>Project Name</th>' +
+        '<th>Client</th>' +
+        '<th>Status</th>' +
+        '<th class="center">Markup %</th>' +
+        '<th class="right">Contract Value</th>' +
+        '<th class="right">Budget (At Cost)</th>' +
+        '<th class="right">Transactions</th>' +
+        '<th class="center">Last Import</th>' +
+        '</tr></thead><tbody>';
+
+    _jobs.forEach(function(job) {
+        const isGroup = job.is_group;
+        const statusClass = (job.status || 'active').replace(/\s+/g, '_').toLowerCase();
+        const statusLabel = (job.status || 'active').replace(/_/g, ' ');
+        const contractVal = getJobContractValue(job);
+        const budgetVal = getJobBudget(job);
+        const txnCount = getJobTxnCount(job);
+        const lastImport = getJobLastImport(job);
+        const markup = job.markup_pct != null ? job.markup_pct : 14;
+
+        html += '<tr data-job-id="' + esc(job.id) + '" ondblclick="openJobDetail(\'' + esc(job.id) + '\')" oncontextmenu="showContextMenu(event, \'' + esc(job.id) + '\')">' +
+            '<td class="job-no' + (isGroup ? ' group' : '') + '">' + esc(job.job_number) + '</td>' +
+            '<td class="project-name">' + esc(job.project_name) + '</td>' +
+            '<td>' + esc(job.client || '') + '</td>' +
+            '<td><span class="status-badge ' + statusClass + '">' + esc(statusLabel) + '</span></td>' +
+            '<td class="center"><input type="number" class="markup-input" value="' + markup + '" min="0" max="50" data-job-id="' + esc(job.id) + '" onchange="handleMarkupChange(this)" onclick="event.stopPropagation()"></td>' +
+            '<td class="right">' + formatGBP(contractVal) + '</td>' +
+            '<td class="right">' + formatGBP(budgetVal) + '</td>' +
+            '<td class="right">' + txnCount.toLocaleString() + '</td>' +
+            '<td class="center">' + formatDate(lastImport) + '</td>' +
+            '</tr>';
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+// ===== MARKUP CHANGE =====
+async function handleMarkupChange(input) {
+    const jobId = input.getAttribute('data-job-id');
+    const newMarkup = parseFloat(input.value) || 14;
+
+    // Clamp
+    if (newMarkup < 0) input.value = 0;
+    if (newMarkup > 50) input.value = 50;
+
+    const job = _jobs.find(function(j) { return j.id === jobId; });
+    if (!job) return;
+
+    job.markup_pct = parseFloat(input.value);
+
+    // Recalculate budget_at_cost for each category
+    const cats = _categories[jobId] || [];
+    for (let i = 0; i < cats.length; i++) {
+        const c = cats[i];
+        c.budget_at_cost = parseFloat(c.contract_value || 0) / (1 + job.markup_pct / 100);
+        await MiiDB.save('cost_categories', c);
+    }
+
+    // Update via CostDB if available, otherwise direct MiiDB
+    if (typeof CostDB !== 'undefined' && CostDB.updateMarkup) {
+        await CostDB.updateMarkup(jobId, job.markup_pct);
+    } else {
+        await MiiDB.save('cost_jobs', job);
+    }
+
+    // Refresh display
+    renderStats();
+    renderTable();
+}
+
+// ===== NAVIGATION =====
+function openJobDetail(jobId) {
+    window.location.href = 'cost_job_detail.html?id=' + encodeURIComponent(jobId);
+}
+
+// ===== CONTEXT MENU =====
+let _ctxJobId = null;
+
+function showContextMenu(e, jobId) {
+    e.preventDefault();
+    _ctxJobId = jobId;
+
+    const job = _jobs.find(function(j) { return j.id === jobId; });
+    if (!job) return;
+
+    // Update toggle status label
+    const toggleBtn = document.getElementById('ctx-toggle-status');
+    if (job.status === 'complete') {
+        toggleBtn.textContent = 'Reactivate';
+    } else {
+        toggleBtn.textContent = 'Mark Complete';
+    }
+
+    const menu = document.getElementById('context-menu');
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+    menu.classList.add('active');
+}
+
+function hideContextMenu() {
+    document.getElementById('context-menu').classList.remove('active');
+    _ctxJobId = null;
+}
+
+document.addEventListener('click', hideContextMenu);
+document.addEventListener('contextmenu', function(e) {
+    if (!e.target.closest('tr[data-job-id]')) hideContextMenu();
+});
+
+function ctxOpen() {
+    if (_ctxJobId) openJobDetail(_ctxJobId);
+    hideContextMenu();
+}
+
+async function ctxToggleStatus() {
+    if (!_ctxJobId) return;
+    const job = _jobs.find(function(j) { return j.id === _ctxJobId; });
+    if (!job) return;
+
+    job.status = job.status === 'complete' ? 'active' : 'complete';
+    await MiiDB.save('cost_jobs', job);
+    showToast('Job ' + job.job_number + ' marked as ' + job.status, 'success');
+    hideContextMenu();
+    renderStats();
+    renderTable();
+}
+
+async function ctxDelete() {
+    if (!_ctxJobId) return;
+    const job = _jobs.find(function(j) { return j.id === _ctxJobId; });
+    if (!job) return;
+
+    hideContextMenu();
+
+    if (!confirm('Delete job ' + job.job_number + ' (' + job.project_name + ')?\n\nThis will remove the job and all its categories. Transaction data will be kept.')) {
+        return;
+    }
+
+    // Remove categories
+    const cats = _categories[job.id] || [];
+    for (let i = 0; i < cats.length; i++) {
+        await MiiDB.remove('cost_categories', cats[i].id);
+    }
+    delete _categories[job.id];
+
+    // Remove job
+    await MiiDB.remove('cost_jobs', job.id);
+    _jobs = _jobs.filter(function(j) { return j.id !== job.id; });
+
+    showToast('Job ' + job.job_number + ' deleted', 'success');
+    renderStats();
+    renderTable();
+}
+
+// ===== IMPORT =====
+function triggerImport() {
+    document.getElementById('file-input').value = '';
+    document.getElementById('file-input').click();
+}
+
+async function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    showToast('Processing ' + file.name + '...', 'info');
+
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+        if (typeof CostDB !== 'undefined' && CostDB.processImport) {
+            const result = await CostDB.processImport(workbook, file.name);
+            showToast(result.message || ('Imported ' + (result.count || 0) + ' transactions'), 'success');
+        } else {
+            // Basic fallback: just show what was parsed
+            const firstSheet = workbook.SheetNames[0];
+            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+            showToast('Parsed ' + rows.length + ' rows from ' + firstSheet + '. CostDB not loaded for full processing.', 'info');
+        }
+
+        await loadAllData();
+    } catch (err) {
+        console.error('Import error:', err);
+        showToast('Import failed: ' + err.message, 'error');
+    }
+}
+
+// ===== ADD JOB MODAL =====
+function openAddJobModal() {
+    document.getElementById('modal-job-number').value = '';
+    document.getElementById('modal-project-name').value = '';
+    document.getElementById('modal-client').value = 'Tata Steel';
+    document.getElementById('modal-markup').value = '14';
+    document.getElementById('btn-create-job').disabled = false;
+
+    // Build category rows
+    const tbody = document.getElementById('cat-table-body');
+    tbody.innerHTML = '';
+    CATEGORY_NAMES.forEach(function(name, i) {
+        const row = document.createElement('tr');
+        row.innerHTML = '<td class="cat-num">' + (i + 1) + '</td>' +
+            '<td>' + esc(name) + '</td>' +
+            '<td class="right"><input type="number" class="cat-contract" data-idx="' + i + '" value="0" min="0" step="0.01" oninput="updateCatTotals()"></td>' +
+            '<td class="right at-cost" id="cat-cost-' + i + '">&pound;0.00</td>';
+        tbody.appendChild(row);
+    });
+
+    updateCatTotals();
+    document.getElementById('add-job-modal').classList.add('active');
+    document.getElementById('modal-job-number').focus();
+}
+
+function closeAddJobModal() {
+    document.getElementById('add-job-modal').classList.remove('active');
+}
+
+// Close modal on overlay click
+document.getElementById('add-job-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddJobModal();
+});
+
+function updateCatTotals() {
+    const markup = parseFloat(document.getElementById('modal-markup').value) || 14;
+    const inputs = document.querySelectorAll('.cat-contract');
+    let totalContract = 0;
+    let totalCost = 0;
+
+    inputs.forEach(function(input) {
+        const idx = input.getAttribute('data-idx');
+        const cv = parseFloat(input.value) || 0;
+        const ac = cv / (1 + markup / 100);
+        totalContract += cv;
+        totalCost += ac;
+        document.getElementById('cat-cost-' + idx).textContent = formatGBP(ac);
+    });
+
+    document.getElementById('cat-total-contract').textContent = formatGBP(totalContract);
+    document.getElementById('cat-total-cost').textContent = formatGBP(totalCost);
+}
+
+// Re-calc when markup changes in modal
+document.getElementById('modal-markup').addEventListener('input', updateCatTotals);
+
+async function createJob() {
+    const jobNumber = document.getElementById('modal-job-number').value.trim();
+    const projectName = document.getElementById('modal-project-name').value.trim();
+    const client = document.getElementById('modal-client').value.trim();
+    const markup = parseFloat(document.getElementById('modal-markup').value) || 14;
+
+    if (!jobNumber) { alert('Job number is required.'); return; }
+    if (!projectName) { alert('Project name is required.'); return; }
+
+    // Check for duplicate job number
+    const existing = _jobs.find(function(j) { return j.job_number === jobNumber; });
+    if (existing) {
+        alert('Job number ' + jobNumber + ' already exists.');
+        return;
+    }
+
+    const btn = document.getElementById('btn-create-job');
+    btn.disabled = true;
+
+    try {
+        const jobId = generateId();
+        const now = new Date().toISOString();
+
+        // Calculate totals
+        const inputs = document.querySelectorAll('.cat-contract');
+        let totalContract = 0;
+        let totalBudget = 0;
+
+        // Save categories
+        const catRecords = [];
+        inputs.forEach(function(input, i) {
+            const cv = parseFloat(input.value) || 0;
+            const ac = cv / (1 + markup / 100);
+            totalContract += cv;
+            totalBudget += ac;
+
+            catRecords.push({
+                id: jobId + '_cat_' + i,
+                job_id: jobId,
+                category_index: i,
+                category_name: CATEGORY_NAMES[i],
+                contract_value: cv,
+                budget_at_cost: ac,
+                created_at: now,
+            });
+        });
+
+        // Save job
+        const job = {
+            id: jobId,
+            job_number: jobNumber,
+            project_name: projectName,
+            client: client,
+            status: 'active',
+            markup_pct: markup,
+            contract_value_total: totalContract,
+            budget_at_cost: totalBudget,
+            is_group: false,
+            last_import_at: null,
+            created_at: now,
+            updated_at: now,
+        };
+
+        await MiiDB.save('cost_jobs', job);
+
+        for (let i = 0; i < catRecords.length; i++) {
+            await MiiDB.save('cost_categories', catRecords[i]);
+        }
+
+        closeAddJobModal();
+        showToast('Job ' + jobNumber + ' created', 'success');
+        await loadAllData();
+    } catch (err) {
+        console.error('Create job error:', err);
+        showToast('Failed to create job: ' + err.message, 'error');
+        btn.disabled = false;
+    }
+}
+
+// ===== REFRESH =====
+async function refreshAll() {
+    showToast('Refreshing...', 'info');
+    await loadAllData();
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllData();
+});
+</script>
+</body>
+</html>

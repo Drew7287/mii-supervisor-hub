@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost Tracker — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #003087;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+
+            --cost-positive: #006600;
+            --cost-negative: #CC0000;
+            --cost-caution: #E68A00;
+            --cost-purple: #8e44ad;
+            --bg-green: #C6EFCE;
+            --bg-red: #FFC7CE;
+            --bg-amber: #FFEB9C;
+            --bg-purple: #E2D0F0;
+            --bg-grey: #F2F2F2;
+            --cat-1: #2F5496;
+            --cat-2: #C8102E;
+            --cat-3: #E68A00;
+            --cat-4: #7B2D8E;
+            --cat-5: #1a8a6a;
+            --cat-6: #34495e;
+            --cat-7: #2E7D32;
+            --cat-8: #D35400;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER BAR ===== */
+        .header-bar {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .back-btn {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .back-btn:hover { text-decoration: underline; }
+        .header-info { flex: 1; min-width: 0; }
+        .header-title {
+            font-size: 14pt;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .header-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 1px;
+        }
+        .status-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 14px;
+            border-radius: 12px;
+            color: var(--white);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .status-badge.active { background: #006600; }
+        .status-badge.complete { background: #2F5496; }
+        .status-badge.on_hold { background: #E68A00; }
+        .status-badge.archived { background: #9E9E9E; }
+
+        /* ===== TAB BAR ===== */
+        .tabs {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+            background: var(--white);
+            overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--text-light);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* ===== CONTENT AREA ===== */
+        .content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 16px 24px 48px;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ===== LOADING OVERLAY ===== */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            font-size: 1rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+        .loading-overlay.hidden { display: none; }
+        .loading-overlay::before {
+            content: '';
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== STAT CARDS ===== */
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            border-top: 3px solid var(--border);
+        }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .stat-label {
+            font-size: 0.68rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+
+        /* ===== SECTION HEADINGS ===== */
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 24px 0 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-title:first-child { margin-top: 0; }
+
+        /* ===== TABLES ===== */
+        .table-wrap {
+            overflow-x: auto;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            min-width: 700px;
+        }
+        thead th {
+            background: #f8f9fa;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            padding: 10px 10px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+        thead th.r { text-align: right; }
+        thead th.c { text-align: center; }
+        tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+        tbody td.c { text-align: center; }
+        tbody td.mono { font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.78rem; }
+        tbody tr:hover { background: #fafbfc; }
+        tbody tr.total-row {
+            font-weight: 700;
+            background: #f8f9fa;
+            border-top: 2px solid var(--border);
+        }
+        tbody tr.total-row td { padding: 10px 10px; }
+
+        /* Cell coloring */
+        .bg-green { background: var(--bg-green); }
+        .bg-red { background: var(--bg-red); }
+        .bg-amber { background: var(--bg-amber); }
+        .bg-purple { background: var(--bg-purple); }
+        .bg-grey { background: var(--bg-grey); }
+        .text-pos { color: var(--cost-positive); }
+        .text-neg { color: var(--cost-negative); }
+        .text-caution { color: var(--cost-caution); }
+        .text-purple { color: var(--cost-purple); }
+        .text-green { color: var(--cost-positive); }
+        .text-red { color: var(--cost-negative); }
+        .text-bold { font-weight: 700; }
+
+        /* Category dot */
+        .cat-dot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            color: var(--white);
+            font-size: 0.65rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Risk/Status pills */
+        .risk-pill {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .risk-pill.high { background: var(--bg-red); color: var(--cost-negative); }
+        .risk-pill.medium { background: var(--bg-amber); color: #8a6d00; }
+        .risk-pill.low { background: var(--bg-green); color: var(--cost-positive); }
+        .risk-pill.unbudgeted { background: var(--bg-purple); color: var(--cost-purple); }
+        .risk-pill.na { background: var(--bg-grey); color: var(--text-light); }
+        .risk-pill.over { background: var(--bg-red); color: var(--cost-negative); }
+        .risk-pill.at-risk { background: var(--bg-amber); color: #8a6d00; }
+        .risk-pill.ok { background: var(--bg-green); color: var(--cost-positive); }
+        .risk-pill.critical { background: var(--bg-red); color: var(--cost-negative); }
+        .risk-pill.warning { background: var(--bg-amber); color: #8a6d00; }
+
+        /* Forecast grid */
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .forecast-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .forecast-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+        .forecast-label {
+            font-size: 0.68rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+
+        /* Alert box */
+        .alert-box {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .alert-box.purple {
+            background: var(--bg-purple);
+            color: var(--cost-purple);
+            border: 1px solid #c9a0dc;
+        }
+
+        /* Margin summary grid */
+        .margin-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        /* Filter row */
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .filter-row select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-row select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,48,135,0.12);
+        }
+        .filter-count {
+            margin-left: auto;
+            font-size: 0.78rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        /* Inline category dropdown */
+        .cat-assign {
+            cursor: pointer;
+            text-decoration: underline dotted;
+        }
+        .cat-assign:hover { color: var(--accent); }
+        .cat-inline-select {
+            font-size: 0.78rem;
+            padding: 2px 4px;
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .stat-row { grid-template-columns: repeat(3, 1fr); }
+            .forecast-grid { grid-template-columns: repeat(2, 1fr); }
+            .margin-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .stat-row { grid-template-columns: repeat(2, 1fr); }
+            .header-bar { flex-wrap: wrap; gap: 8px; }
+            .tabs { padding: 0 12px; }
+            .tab-btn { padding: 10px 14px; font-size: 0.75rem; }
+            .content { padding: 12px 12px 48px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">Loading...</div>
+
+<!-- HEADER BAR -->
+<div class="header-bar">
+    <a href="cost_dashboard.html" class="back-btn">&larr; Back</a>
+    <div class="header-info">
+        <div class="header-title" id="hdr-title">--</div>
+        <div class="header-subtitle" id="hdr-subtitle">--</div>
+    </div>
+    <span class="status-badge" id="hdr-status">--</span>
+</div>
+
+<!-- TAB BAR -->
+<div class="tabs">
+    <button class="tab-btn active" data-tab="0">Project Dashboard</button>
+    <button class="tab-btn" data-tab="1">Cost Summary</button>
+    <button class="tab-btn" data-tab="2">Spend Analysis</button>
+    <button class="tab-btn" data-tab="3">All Transactions</button>
+    <button class="tab-btn" data-tab="4">Weekly Summary</button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+    <!-- TAB 0: PROJECT DASHBOARD -->
+    <div class="tab-panel active" id="tab-0"></div>
+
+    <!-- TAB 1: COST SUMMARY -->
+    <div class="tab-panel" id="tab-1"></div>
+
+    <!-- TAB 2: SPEND ANALYSIS -->
+    <div class="tab-panel" id="tab-2"></div>
+
+    <!-- TAB 3: ALL TRANSACTIONS -->
+    <div class="tab-panel" id="tab-3"></div>
+
+    <!-- TAB 4: WEEKLY SUMMARY -->
+    <div class="tab-panel" id="tab-4"></div>
+
+</div>
+
+<script src="mii-db.js"></script>
+<script src="cost_db.js"></script>
+<script>
+// ===== GLOBALS =====
+const CAT_COLORS = {
+    1:'#2F5496', 2:'#C8102E', 3:'#E68A00', 4:'#7B2D8E',
+    5:'#1a8a6a', 6:'#34495e', 7:'#2E7D32', 8:'#D35400'
+};
+const CAT_NAMES = {
+    1:'Labour', 2:'Materials', 3:'Plant & Equipment', 4:'Subcontractors',
+    5:'Preliminaries', 6:'Overheads', 7:'Consumables', 8:'Other'
+};
+
+let _jobId = null;
+let _data = null;          // cached analysis data
+let _tabLoaded = [false, false, false, false, false];
+let _tabDirty  = [true, true, true, true, true];
+
+// ===== HELPERS =====
+function esc(s) {
+    if (s == null) return '';
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
+function fmt(val, forceDecimals) {
+    if (val == null || isNaN(val)) return '--';
+    const n = Number(val);
+    const abs = Math.abs(n);
+    const sign = n < 0 ? '-' : '';
+    const hasDecimals = forceDecimals || (abs % 1 !== 0);
+    const formatted = abs.toLocaleString('en-GB', {
+        minimumFractionDigits: hasDecimals ? 2 : 0,
+        maximumFractionDigits: 2
+    });
+    return sign + '\u00A3' + formatted;
+}
+
+function pct(val) {
+    if (val == null || isNaN(val)) return '--';
+    return Number(val).toFixed(1) + '%';
+}
+
+function signedFmt(val) {
+    if (val == null || isNaN(val)) return '--';
+    const n = Number(val);
+    const prefix = n > 0 ? '+' : '';
+    return prefix + fmt(n);
+}
+
+function catDot(catNum) {
+    const color = CAT_COLORS[catNum] || '#999';
+    return '<span class="cat-dot" style="background:' + color + '">' + catNum + '</span>';
+}
+
+function catName(catNum) {
+    return CAT_NAMES[catNum] || 'Category ' + catNum;
+}
+
+function pctBgClass(val, hasNoBudget) {
+    if (hasNoBudget) return 'bg-purple';
+    if (val > 90) return 'bg-red';
+    if (val >= 70) return 'bg-amber';
+    if (val > 0) return 'bg-green';
+    return 'bg-grey';
+}
+
+function valColor(val) {
+    if (val == null) return '';
+    return Number(val) < 0 ? 'text-neg' : (Number(val) > 0 ? 'text-pos' : '');
+}
+
+function riskFlag(exposure, atCost) {
+    if (!atCost || atCost === 0) {
+        return exposure > 0
+            ? '<span class="risk-pill unbudgeted">UNBUDGETED</span>'
+            : '<span class="risk-pill na">N/A</span>';
+    }
+    const ratio = exposure / atCost;
+    if (ratio > 1) return '<span class="risk-pill high">HIGH</span>';
+    if (ratio > 0.8) return '<span class="risk-pill medium">MEDIUM</span>';
+    return '<span class="risk-pill low">LOW</span>';
+}
+
+function statusPill(text, cls) {
+    return '<span class="risk-pill ' + cls + '">' + text + '</span>';
+}
+
+function fmtDate(d) {
+    if (!d) return '--';
+    try {
+        const dt = new Date(d);
+        return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch(e) { return d; }
+}
+
+function getJobIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id');
+}
+
+// ===== TAB SWITCHING =====
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const idx = parseInt(this.dataset.tab);
+        switchTab(idx);
+    });
+});
+
+function switchTab(idx) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('.tab-btn[data-tab="' + idx + '"]').classList.add('active');
+    document.getElementById('tab-' + idx).classList.add('active');
+
+    if (_data && (!_tabLoaded[idx] || _tabDirty[idx])) {
+        renderTab(idx);
+        _tabLoaded[idx] = true;
+        _tabDirty[idx] = false;
+    }
+}
+
+// ===== DATA LOADING =====
+async function init() {
+    _jobId = getJobIdFromUrl();
+    if (!_jobId) {
+        window.location.href = 'cost_dashboard.html';
+        return;
+    }
+
+    try {
+        _data = await CostDB.getFullAnalysis(_jobId);
+        if (!_data || !_data.job) {
+            document.getElementById('loading-overlay').innerHTML = 'Job not found.';
+            return;
+        }
+        populateHeader(_data.job);
+        renderTab(0);
+        _tabLoaded[0] = true;
+        _tabDirty[0] = false;
+        document.getElementById('loading-overlay').classList.add('hidden');
+    } catch(e) {
+        console.error('Failed to load job data:', e);
+        document.getElementById('loading-overlay').innerHTML = 'Failed to load data. Check console.';
+    }
+}
+
+function populateHeader(job) {
+    document.getElementById('hdr-title').textContent = job.job_name || job.name || '--';
+    document.getElementById('hdr-subtitle').textContent =
+        (job.job_number || '') + (job.client ? ' \u2014 ' + job.client : '');
+    const badge = document.getElementById('hdr-status');
+    const status = (job.status || 'active').toLowerCase().replace(/\s+/g, '_');
+    badge.textContent = (job.status || 'Active').toUpperCase();
+    badge.className = 'status-badge ' + status;
+    document.title = (job.job_name || 'Cost Tracker') + ' — MII Engineering';
+}
+
+// ===== RENDER DISPATCHER =====
+function renderTab(idx) {
+    switch(idx) {
+        case 0: renderDashboard(); break;
+        case 1: renderCostSummary(); break;
+        case 2: renderSpendAnalysis(); break;
+        case 3: renderTransactions(); break;
+        case 4: renderWeeklySummary(); break;
+    }
+}
+
+// ===== TAB 0: PROJECT DASHBOARD =====
+function renderDashboard() {
+    const d = _data;
+    const job = d.job;
+    const cats = d.categories || [];
+    const totals = d.totals || {};
+
+    const budget = totals.budget_at_cost || 0;
+    const contract = totals.contract_value || 0;
+    const spent = totals.actual_spend || 0;
+    const committed = totals.committed || 0;
+    const exposure = totals.total_exposure || (spent + committed);
+    const budgetRemaining = budget - exposure;
+    const marginRemaining = contract - exposure;
+    const pctSpent = budget > 0 ? (spent / budget) * 100 : 0;
+    const revenue = totals.total_revenue || 0;
+
+    let html = '';
+
+    // Row 1 stat cards
+    html += '<div class="stat-row">';
+    html += statCard(fmt(budget), 'Budget (At Cost)', '#2F5496');
+    html += statCard(fmt(contract), 'Contract Value', '#003087');
+    html += statCard(fmt(spent), 'Spent (Actual)', '#CC0000');
+    html += statCard(fmt(committed), 'Committed', '#E68A00');
+    html += statCard(fmt(exposure), 'Total Exposure', '#CC0000');
+    html += '</div>';
+
+    // Row 2 stat cards
+    html += '<div class="stat-row">';
+    html += statCard(fmt(budgetRemaining), 'Budget Remaining', budgetRemaining >= 0 ? '#006600' : '#CC0000');
+    html += statCard(fmt(marginRemaining), 'Margin Remaining', marginRemaining >= 0 ? '#003087' : '#CC0000');
+    html += statCard(pct(pctSpent), '% Spent', '#E68A00');
+    html += statCard(fmt(revenue), 'Revenue (Billed)', '#006600');
+    html += '<div></div>'; // empty 5th slot
+    html += '</div>';
+
+    // Category Risk Analysis
+    html += '<h3 class="section-title">Category Risk Analysis</h3>';
+    html += '<div class="table-wrap"><table>';
+    html += '<thead><tr>';
+    html += '<th class="c">Cat</th><th>Category</th><th class="r">Budget</th><th class="r">Contract</th>';
+    html += '<th class="r">Spent+Committed</th><th class="c">% Used</th><th class="r">Budget Remaining</th>';
+    html += '<th class="c">Margin Status</th><th class="c">Risk Flag</th><th>Notes</th>';
+    html += '</tr></thead><tbody>';
+
+    cats.forEach(c => {
+        const catNum = c.category_number || c.cat;
+        const catBudget = c.budget_at_cost || 0;
+        const catContract = c.contract_value || 0;
+        const catSpent = (c.actual || 0) + (c.committed || 0);
+        const catUsed = catBudget > 0 ? (catSpent / catBudget) * 100 : (catSpent > 0 ? 100 : 0);
+        const catRemaining = catBudget - catSpent;
+        const noBudget = !catBudget || catBudget === 0;
+
+        // Margin status
+        let marginStatus;
+        if (catContract <= 0) {
+            marginStatus = '<span class="text-light">--</span>';
+        } else if (catSpent > catContract) {
+            marginStatus = '<span class="text-neg text-bold">OVER</span>';
+        } else if (catSpent / catContract > 0.8) {
+            marginStatus = '<span class="text-caution text-bold">TIGHT</span>';
+        } else {
+            marginStatus = '<span class="text-pos">HEALTHY</span>';
+        }
+
+        html += '<tr>';
+        html += '<td class="c">' + catDot(catNum) + '</td>';
+        html += '<td>' + esc(c.name || catName(catNum)) + '</td>';
+        html += '<td class="r mono">' + fmt(catBudget) + '</td>';
+        html += '<td class="r mono">' + fmt(catContract) + '</td>';
+        html += '<td class="r mono">' + fmt(catSpent) + '</td>';
+        html += '<td class="c ' + pctBgClass(catUsed, noBudget && catSpent > 0) + '">' + pct(catUsed) + '</td>';
+        html += '<td class="r mono ' + (catRemaining < 0 ? 'text-neg' : 'text-pos') + '">' + fmt(catRemaining) + '</td>';
+        html += '<td class="c">' + marginStatus + '</td>';
+        html += '<td class="c">' + riskFlag(catSpent, catBudget) + '</td>';
+        html += '<td>' + esc(c.notes || '') + '</td>';
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+
+    // Forecast section
+    const eac = exposure;
+    const forecastVsBudget = budget - eac;
+    const forecastMargin = contract - eac;
+    const forecastMarginPct = contract > 0 ? (forecastMargin / contract) * 100 : 0;
+
+    html += '<h3 class="section-title">Forecast</h3>';
+    html += '<div class="forecast-grid">';
+    html += forecastCard(fmt(eac), 'EAC (Estimate at Completion)');
+    html += forecastCard(signedFmt(forecastVsBudget), 'Forecast vs Budget', forecastVsBudget >= 0 ? 'text-pos' : 'text-neg');
+    html += forecastCard(signedFmt(forecastMargin), 'Forecast Final Margin', forecastMargin >= 0 ? 'text-pos' : 'text-neg');
+    html += forecastCard(pct(forecastMarginPct), 'Forecast Margin %', forecastMarginPct >= 0 ? 'text-pos' : 'text-neg');
+    html += '</div>';
+
+    document.getElementById('tab-0').innerHTML = html;
+}
+
+function statCard(value, label, borderColor) {
+    return '<div class="stat-card" style="border-top-color:' + borderColor + '">' +
+        '<div class="stat-value" style="color:' + borderColor + '">' + value + '</div>' +
+        '<div class="stat-label">' + label + '</div></div>';
+}
+
+function forecastCard(value, label, colorClass) {
+    return '<div class="forecast-card">' +
+        '<div class="forecast-value ' + (colorClass || '') + '">' + value + '</div>' +
+        '<div class="forecast-label">' + label + '</div></div>';
+}
+
+
+// ===== TAB 1: COST SUMMARY =====
+function renderCostSummary() {
+    const d = _data;
+    const cats = d.categories || [];
+    const totals = d.totals || {};
+    const transactions = d.transactions || [];
+
+    let html = '';
+
+    // Full financials table
+    html += '<h3 class="section-title">Full Financials</h3>';
+
+    // Check for unbudgeted spend
+    const unbudgetedCats = cats.filter(c => (!c.budget_at_cost || c.budget_at_cost === 0) && ((c.actual || 0) + (c.committed || 0)) > 0);
+    if (unbudgetedCats.length > 0) {
+        html += '<div class="alert-box purple">';
+        html += '<strong>Unbudgeted Spend Alert:</strong> ';
+        html += unbudgetedCats.map(c => esc(c.name || catName(c.category_number || c.cat))).join(', ');
+        html += ' have spend with no budget allocated.';
+        html += '</div>';
+    }
+
+    html += '<div class="table-wrap"><table>';
+    html += '<thead><tr>';
+    html += '<th class="c">Cat</th><th>Category</th><th class="r">Budget</th><th class="r">Contract</th>';
+    html += '<th class="r">Actual</th><th class="r">Committed</th><th class="r">Exposure</th>';
+    html += '<th class="r">Budget Var</th><th class="c">% Spent</th><th class="r">Built-in Margin</th>';
+    html += '<th class="r">Margin at Risk</th>';
+    html += '</tr></thead><tbody>';
+
+    let sumBudget = 0, sumContract = 0, sumActual = 0, sumCommitted = 0, sumExposure = 0;
+
+    cats.forEach(c => {
+        const catNum = c.category_number || c.cat;
+        const bgt = c.budget_at_cost || 0;
+        const ctr = c.contract_value || 0;
+        const act = c.actual || 0;
+        const com = c.committed || 0;
+        const exp = act + com;
+        const variance = bgt - exp;
+        const pctS = bgt > 0 ? (act / bgt) * 100 : (act > 0 ? 100 : 0);
+        const noBudget = !bgt || bgt === 0;
+        const builtInMargin = ctr - bgt;
+        const marginAtRisk = ctr - exp;
+
+        sumBudget += bgt; sumContract += ctr; sumActual += act; sumCommitted += com; sumExposure += exp;
+
+        let marginAtRiskCls;
+        if (marginAtRisk < 0) marginAtRiskCls = 'text-neg';
+        else if (marginAtRisk < builtInMargin * 0.5) marginAtRiskCls = 'text-caution';
+        else marginAtRiskCls = 'text-pos';
+
+        html += '<tr>';
+        html += '<td class="c">' + catDot(catNum) + '</td>';
+        html += '<td>' + esc(c.name || catName(catNum)) + '</td>';
+        html += '<td class="r mono">' + fmt(bgt) + '</td>';
+        html += '<td class="r mono">' + fmt(ctr) + '</td>';
+        html += '<td class="r mono">' + fmt(act) + '</td>';
+        html += '<td class="r mono">' + fmt(com) + '</td>';
+        html += '<td class="r mono">' + fmt(exp) + '</td>';
+        html += '<td class="r mono ' + (variance < 0 ? 'text-neg' : 'text-pos') + '">' + fmt(variance) + '</td>';
+        html += '<td class="c ' + pctBgClass(pctS, noBudget && act > 0) + '">' + pct(pctS) + '</td>';
+        html += '<td class="r mono">' + fmt(builtInMargin) + '</td>';
+        html += '<td class="r mono ' + marginAtRiskCls + '">' + fmt(marginAtRisk) + '</td>';
+        html += '</tr>';
+    });
+
+    // Total row
+    const totVar = sumBudget - sumExposure;
+    const totPctS = sumBudget > 0 ? (sumActual / sumBudget) * 100 : 0;
+    const totBIM = sumContract - sumBudget;
+    const totMAR = sumContract - sumExposure;
+
+    html += '<tr class="total-row">';
+    html += '<td></td><td>TOTAL</td>';
+    html += '<td class="r mono">' + fmt(sumBudget) + '</td>';
+    html += '<td class="r mono">' + fmt(sumContract) + '</td>';
+    html += '<td class="r mono">' + fmt(sumActual) + '</td>';
+    html += '<td class="r mono">' + fmt(sumCommitted) + '</td>';
+    html += '<td class="r mono">' + fmt(sumExposure) + '</td>';
+    html += '<td class="r mono ' + (totVar < 0 ? 'text-neg' : 'text-pos') + '">' + fmt(totVar) + '</td>';
+    html += '<td class="c">' + pct(totPctS) + '</td>';
+    html += '<td class="r mono">' + fmt(totBIM) + '</td>';
+    html += '<td class="r mono ' + (totMAR < 0 ? 'text-neg' : 'text-pos') + '">' + fmt(totMAR) + '</td>';
+    html += '</tr>';
+    html += '</tbody></table></div>';
+
+    // Revenue summary
+    const revTxns = transactions.filter(t => t.is_revenue || t.trans_type === 'revenue' || t.category === 'revenue');
+    if (revTxns.length > 0) {
+        html += '<h3 class="section-title">Revenue Summary</h3>';
+        html += '<div class="table-wrap"><table>';
+        html += '<thead><tr>';
+        html += '<th>Date</th><th>Description</th><th>Cost Code</th><th>PO Number</th><th class="r">Value</th><th class="r">Total</th>';
+        html += '</tr></thead><tbody>';
+
+        let runningTotal = 0;
+        revTxns.forEach(t => {
+            runningTotal += (t.value || t.total_cost || 0);
+            html += '<tr>';
+            html += '<td>' + fmtDate(t.date) + '</td>';
+            html += '<td>' + esc(t.description) + '</td>';
+            html += '<td class="mono">' + esc(t.cost_code) + '</td>';
+            html += '<td>' + esc(t.po_number || '') + '</td>';
+            html += '<td class="r mono text-green">' + fmt(t.value || t.total_cost) + '</td>';
+            html += '<td class="r mono text-green">' + fmt(runningTotal) + '</td>';
+            html += '</tr>';
+        });
+        html += '<tr class="total-row">';
+        html += '<td colspan="4">TOTAL</td>';
+        html += '<td class="r mono text-green">' + fmt(runningTotal) + '</td>';
+        html += '<td></td>';
+        html += '</tr>';
+        html += '</tbody></table></div>';
+    }
+
+    // Margin summary
+    const totalRevenue = totals.total_revenue || 0;
+    const budgetPerf = sumBudget - sumExposure;
+    const projMargin = sumContract - sumExposure;
+    const revVsCost = totalRevenue - sumActual;
+    const grossMarginPct = totalRevenue > 0 ? (revVsCost / totalRevenue) * 100 : 0;
+
+    html += '<h3 class="section-title">Margin Summary</h3>';
+    html += '<div class="margin-grid">';
+    html += forecastCard(signedFmt(budgetPerf), 'Budget Performance (' + (budgetPerf >= 0 ? 'under' : 'over') + ' budget)', budgetPerf >= 0 ? 'text-pos' : 'text-neg');
+    html += forecastCard(fmt(projMargin), 'Projected Margin', projMargin >= 0 ? 'text-pos' : 'text-neg');
+    html += forecastCard(signedFmt(revVsCost), 'Revenue vs Cost', revVsCost >= 0 ? 'text-pos' : 'text-neg');
+    html += forecastCard(pct(grossMarginPct), 'Gross Margin %', grossMarginPct >= 0 ? 'text-pos' : 'text-neg');
+    html += '</div>';
+
+    document.getElementById('tab-1').innerHTML = html;
+}
+
+
+// ===== TAB 2: SPEND ANALYSIS =====
+function renderSpendAnalysis() {
+    const d = _data;
+    const cats = d.categories || [];
+    const totals = d.totals || {};
+    const transactions = d.transactions || [];
+
+    const totalSpend = totals.actual_spend || 0;
+    const budget = totals.budget_at_cost || 0;
+    const budgetVar = budget - totalSpend;
+    const overBudgetCount = cats.filter(c => {
+        const b = c.budget_at_cost || 0;
+        return b > 0 && (c.actual || 0) > b;
+    }).length;
+
+    // Calculate avg monthly spend
+    const dates = transactions.filter(t => !t.is_revenue && t.trans_type !== 'revenue').map(t => new Date(t.date)).filter(d => !isNaN(d));
+    let avgMonthly = 0;
+    if (dates.length > 1) {
+        const minDate = new Date(Math.min(...dates));
+        const maxDate = new Date(Math.max(...dates));
+        const months = Math.max(1, (maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth()) + 1);
+        avgMonthly = totalSpend / months;
+    }
+
+    let html = '';
+
+    // Stat cards
+    html += '<div class="stat-row">';
+    html += statCard(fmt(totalSpend), 'Total Spend', '#CC0000');
+    html += statCard(signedFmt(budgetVar), 'Budget Variance', budgetVar >= 0 ? '#006600' : '#CC0000');
+    html += statCard(String(overBudgetCount), 'Categories Over Budget', overBudgetCount > 0 ? '#CC0000' : '#006600');
+    html += statCard(fmt(avgMonthly), 'Avg Monthly Spend', '#E68A00');
+    html += '<div></div>';
+    html += '</div>';
+
+    // Category variance table (sorted worst first)
+    html += '<h3 class="section-title">Category Variance (Worst First)</h3>';
+    const sortedCats = [...cats].sort((a, b) => {
+        const varA = (a.budget_at_cost || 0) - ((a.actual || 0) + (a.committed || 0));
+        const varB = (b.budget_at_cost || 0) - ((b.actual || 0) + (b.committed || 0));
+        return varA - varB;
+    });
+
+    html += '<div class="table-wrap"><table>';
+    html += '<thead><tr>';
+    html += '<th class="c">Cat</th><th>Category</th><th class="r">Budget</th><th class="r">Actual</th>';
+    html += '<th class="r">Committed</th><th class="r">Exposure</th><th class="r">Variance</th>';
+    html += '<th class="c">% Used</th><th class="c">Status</th>';
+    html += '</tr></thead><tbody>';
+
+    sortedCats.forEach(c => {
+        const catNum = c.category_number || c.cat;
+        const bgt = c.budget_at_cost || 0;
+        const act = c.actual || 0;
+        const com = c.committed || 0;
+        const exp = act + com;
+        const variance = bgt - exp;
+        const pctUsed = bgt > 0 ? (exp / bgt) * 100 : (exp > 0 ? 100 : 0);
+        const noBudget = !bgt || bgt === 0;
+
+        let statusHtml;
+        if (noBudget && exp > 0) statusHtml = statusPill('UNBUDGETED', 'unbudgeted');
+        else if (exp > bgt && bgt > 0) statusHtml = statusPill('OVER BUDGET', 'over');
+        else if (pctUsed > 80) statusHtml = statusPill('AT RISK', 'at-risk');
+        else statusHtml = statusPill('OK', 'ok');
+
+        html += '<tr>';
+        html += '<td class="c">' + catDot(catNum) + '</td>';
+        html += '<td>' + esc(c.name || catName(catNum)) + '</td>';
+        html += '<td class="r mono">' + fmt(bgt) + '</td>';
+        html += '<td class="r mono">' + fmt(act) + '</td>';
+        html += '<td class="r mono">' + fmt(com) + '</td>';
+        html += '<td class="r mono">' + fmt(exp) + '</td>';
+        html += '<td class="r mono ' + (variance < 0 ? 'text-neg' : 'text-pos') + '">' + fmt(variance) + '</td>';
+        html += '<td class="c ' + pctBgClass(pctUsed, noBudget && exp > 0) + '">' + pct(pctUsed) + '</td>';
+        html += '<td class="c">' + statusHtml + '</td>';
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+
+    // Overtime analysis
+    const otData = d.overtime_analysis || [];
+    if (otData.length > 0) {
+        html += '<h3 class="section-title">Overtime Analysis</h3>';
+        html += '<div class="table-wrap"><table>';
+        html += '<thead><tr>';
+        html += '<th>Trade</th><th class="r">Normal Hrs</th><th class="r">Normal Cost</th>';
+        html += '<th class="r">OT Hrs</th><th class="r">OT Cost</th><th class="r">OT Rate</th>';
+        html += '<th class="r">Normal Rate</th><th class="r">Rate Premium</th><th class="c">OT %</th>';
+        html += '</tr></thead><tbody>';
+
+        otData.forEach(ot => {
+            const otPct = ot.ot_percentage || 0;
+            html += '<tr>';
+            html += '<td>' + esc(ot.trade) + '</td>';
+            html += '<td class="r mono">' + (ot.normal_hours || 0).toFixed(1) + '</td>';
+            html += '<td class="r mono">' + fmt(ot.normal_cost) + '</td>';
+            html += '<td class="r mono">' + (ot.ot_hours || 0).toFixed(1) + '</td>';
+            html += '<td class="r mono">' + fmt(ot.ot_cost) + '</td>';
+            html += '<td class="r mono">' + fmt(ot.ot_rate, true) + '</td>';
+            html += '<td class="r mono">' + fmt(ot.normal_rate, true) + '</td>';
+            html += '<td class="r mono">' + fmt(ot.rate_premium, true) + '</td>';
+            html += '<td class="c ' + (otPct > 20 ? 'text-neg text-bold' : '') + '">' + pct(otPct) + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+    }
+
+    // Monthly spend trajectory
+    const monthly = d.monthly_spend || [];
+    if (monthly.length > 0) {
+        html += '<h3 class="section-title">Monthly Spend Trajectory</h3>';
+        html += '<div class="table-wrap"><table>';
+        html += '<thead><tr>';
+        html += '<th>Month</th><th class="r">Spend</th><th class="r">Cumulative</th>';
+        html += '<th class="c">% Budget</th><th class="c">% Contract</th><th class="c">Threshold</th>';
+        html += '</tr></thead><tbody>';
+
+        monthly.forEach(m => {
+            const pctBud = m.pct_budget || (budget > 0 ? (m.cumulative / budget) * 100 : 0);
+            const pctCon = m.pct_contract || (totals.contract_value > 0 ? (m.cumulative / totals.contract_value) * 100 : 0);
+            let threshold;
+            if (pctBud > 90) threshold = statusPill('CRITICAL', 'critical');
+            else if (pctBud >= 70) threshold = statusPill('WARNING', 'warning');
+            else threshold = statusPill('OK', 'ok');
+
+            html += '<tr>';
+            html += '<td>' + esc(m.month) + '</td>';
+            html += '<td class="r mono">' + fmt(m.spend) + '</td>';
+            html += '<td class="r mono">' + fmt(m.cumulative) + '</td>';
+            html += '<td class="c">' + pct(pctBud) + '</td>';
+            html += '<td class="c">' + pct(pctCon) + '</td>';
+            html += '<td class="c">' + threshold + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+    }
+
+    // Top 15 suppliers
+    const suppliers = d.top_suppliers || [];
+    if (suppliers.length > 0) {
+        html += '<h3 class="section-title">Top 15 Suppliers</h3>';
+        html += '<div class="table-wrap"><table>';
+        html += '<thead><tr>';
+        html += '<th class="c">Rank</th><th>Supplier</th><th class="r">Total Spend</th>';
+        html += '<th class="c">% of Project</th><th>Primary Category</th>';
+        html += '</tr></thead><tbody>';
+
+        suppliers.slice(0, 15).forEach((s, i) => {
+            const pctProj = totalSpend > 0 ? ((s.total_spend || 0) / totalSpend) * 100 : 0;
+            html += '<tr>';
+            html += '<td class="c">' + (i + 1) + '</td>';
+            html += '<td>' + esc(s.supplier || s.name) + '</td>';
+            html += '<td class="r mono">' + fmt(s.total_spend) + '</td>';
+            html += '<td class="c">' + pct(pctProj) + '</td>';
+            html += '<td>' + esc(s.primary_category || '') + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+    }
+
+    // Top 25 transactions
+    const sortedTxns = [...transactions]
+        .filter(t => !t.is_revenue && t.trans_type !== 'revenue')
+        .sort((a, b) => Math.abs(b.total_cost || 0) - Math.abs(a.total_cost || 0))
+        .slice(0, 25);
+
+    if (sortedTxns.length > 0) {
+        html += '<h3 class="section-title">Top 25 Transactions</h3>';
+        html += '<div class="table-wrap"><table>';
+        html += '<thead><tr>';
+        html += '<th class="c">Rank</th><th>Date</th><th>Category</th><th>Supplier</th>';
+        html += '<th>Cost Code</th><th>Description</th><th class="r">Total Cost</th>';
+        html += '</tr></thead><tbody>';
+
+        sortedTxns.forEach((t, i) => {
+            html += '<tr>';
+            html += '<td class="c">' + (i + 1) + '</td>';
+            html += '<td>' + fmtDate(t.date) + '</td>';
+            html += '<td>' + esc(t.category_name || '') + '</td>';
+            html += '<td>' + esc(t.supplier || t.employee || '') + '</td>';
+            html += '<td class="mono">' + esc(t.cost_code || '') + '</td>';
+            html += '<td>' + esc(t.description || '') + '</td>';
+            html += '<td class="r mono">' + fmt(t.total_cost) + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+    }
+
+    document.getElementById('tab-2').innerHTML = html;
+}
+
+
+// ===== TAB 3: ALL TRANSACTIONS =====
+function renderTransactions() {
+    const transactions = _data.transactions || [];
+    const cats = _data.categories || [];
+
+    let html = '';
+
+    // Filter row
+    html += '<div class="filter-row">';
+    html += '<select id="txn-filter-cat" onchange="applyTxnFilters()">';
+    html += '<option value="">All Categories</option>';
+    html += '<option value="revenue">Revenue</option>';
+    html += '<option value="unallocated">Unallocated</option>';
+    for (let i = 1; i <= 8; i++) {
+        html += '<option value="' + i + '">Cat ' + i + ' - ' + catName(i) + '</option>';
+    }
+    html += '</select>';
+
+    html += '<select id="txn-filter-type" onchange="applyTxnFilters()">';
+    html += '<option value="">All Types</option>';
+    html += '<option value="labour">Labour</option>';
+    html += '<option value="purchase">Purchase</option>';
+    html += '<option value="general_cost">General Cost</option>';
+    html += '<option value="commitment">Commitment</option>';
+    html += '</select>';
+
+    html += '<span class="filter-count" id="txn-count">' + transactions.length + ' transactions</span>';
+    html += '</div>';
+
+    // Table
+    html += '<div class="table-wrap"><table id="txn-table">';
+    html += '<thead><tr>';
+    html += '<th>Date</th><th>Source</th><th>Trans Type</th><th>Cost Code</th>';
+    html += '<th>Description</th><th>Supplier/Employee</th><th>PO</th>';
+    html += '<th class="r">Qty/Hrs</th><th class="r">Value</th><th class="r">Overhead</th>';
+    html += '<th class="r">Total Cost</th><th>Category</th>';
+    html += '</tr></thead>';
+    html += '<tbody id="txn-tbody">';
+    html += renderTxnRows(transactions);
+    html += '</tbody></table></div>';
+
+    document.getElementById('tab-3').innerHTML = html;
+}
+
+function renderTxnRows(txns) {
+    let html = '';
+    txns.forEach(t => {
+        const isRevenue = t.is_revenue || t.trans_type === 'revenue' || t.category === 'revenue';
+        const isNeg = (t.total_cost || 0) < 0;
+        const valClass = isRevenue ? 'text-green' : (isNeg ? 'text-neg' : '');
+        const catNum = t.category_number || t.cat;
+
+        // Category display - clickable for reassignment
+        let catDisplay;
+        if (catNum && catNum >= 1 && catNum <= 8) {
+            catDisplay = '<span class="cat-assign" onclick="startCatEdit(this, \'' + esc(t.id) + '\')">' +
+                catDot(catNum) + ' ' + esc(t.category_name || catName(catNum)) + '</span>';
+        } else if (isRevenue) {
+            catDisplay = '<span class="text-green">Revenue</span>';
+        } else {
+            catDisplay = '<span class="cat-assign text-purple" onclick="startCatEdit(this, \'' + esc(t.id) + '\')">Unallocated</span>';
+        }
+
+        html += '<tr data-cat="' + (isRevenue ? 'revenue' : (catNum || 'unallocated')) + '" data-type="' + esc(t.trans_type || '') + '">';
+        html += '<td>' + fmtDate(t.date) + '</td>';
+        html += '<td>' + esc(t.mapping_source || t.source || '') + '</td>';
+        html += '<td>' + esc(t.trans_type || '') + '</td>';
+        html += '<td class="mono">' + esc(t.cost_code || '') + '</td>';
+        html += '<td>' + esc(t.description || '') + '</td>';
+        html += '<td>' + esc(t.supplier || t.employee || '') + '</td>';
+        html += '<td>' + esc(t.po_number || '') + '</td>';
+        html += '<td class="r mono">' + (t.qty != null ? t.qty : (t.hours != null ? t.hours : '')) + '</td>';
+        html += '<td class="r mono ' + valClass + '">' + fmt(t.value) + '</td>';
+        html += '<td class="r mono ' + valClass + '">' + fmt(t.overhead) + '</td>';
+        html += '<td class="r mono ' + valClass + '">' + fmt(t.total_cost) + '</td>';
+        html += '<td>' + catDisplay + '</td>';
+        html += '</tr>';
+    });
+    return html;
+}
+
+function applyTxnFilters() {
+    const catFilter = document.getElementById('txn-filter-cat').value;
+    const typeFilter = document.getElementById('txn-filter-type').value;
+    const rows = document.querySelectorAll('#txn-tbody tr');
+    let visible = 0;
+
+    rows.forEach(row => {
+        const rowCat = row.getAttribute('data-cat');
+        const rowType = row.getAttribute('data-type');
+        let show = true;
+
+        if (catFilter) {
+            if (catFilter === 'unallocated') {
+                show = show && (rowCat === 'unallocated' || rowCat === '' || rowCat === 'null');
+            } else if (catFilter === 'revenue') {
+                show = show && rowCat === 'revenue';
+            } else {
+                show = show && rowCat === catFilter;
+            }
+        }
+        if (typeFilter) {
+            show = show && rowType === typeFilter;
+        }
+
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+
+    document.getElementById('txn-count').textContent = visible + ' transactions';
+}
+
+async function startCatEdit(el, txnId) {
+    // Replace the clicked element with an inline dropdown
+    const select = document.createElement('select');
+    select.className = 'cat-inline-select';
+    for (let i = 1; i <= 8; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = 'Cat ' + i + ' - ' + catName(i);
+        select.appendChild(opt);
+    }
+
+    // Find current category
+    const txn = (_data.transactions || []).find(t => t.id === txnId);
+    if (txn && txn.category_number) {
+        select.value = txn.category_number;
+    }
+
+    select.addEventListener('change', async function() {
+        const newCat = parseInt(this.value);
+        try {
+            await CostDB.manuallyMapTransaction(txnId, newCat);
+            await CostDB.applyMappings(_jobId);
+            // Reload data and refresh
+            _data = await CostDB.getFullAnalysis(_jobId);
+            _tabDirty = [true, true, true, true, true];
+            renderTransactions();
+        } catch(e) {
+            console.error('Category reassignment failed:', e);
+            alert('Failed to reassign category.');
+        }
+    });
+
+    select.addEventListener('blur', function() {
+        // Revert if no change was made
+        renderTransactions();
+    });
+
+    el.replaceWith(select);
+    select.focus();
+}
+
+
+// ===== TAB 4: WEEKLY SUMMARY =====
+function renderWeeklySummary() {
+    const transactions = _data.transactions || [];
+    const cats = _data.categories || [];
+
+    // Determine active categories (those with any spend)
+    const activeCats = [];
+    const catSpend = {};
+    transactions.forEach(t => {
+        if (t.is_revenue || t.trans_type === 'revenue') return;
+        const cn = t.category_number || t.cat;
+        if (cn && cn >= 1 && cn <= 8) {
+            if (!catSpend[cn]) catSpend[cn] = 0;
+            catSpend[cn] += Math.abs(t.total_cost || 0);
+        }
+    });
+    for (let i = 1; i <= 8; i++) {
+        if (catSpend[i] && catSpend[i] > 0) activeCats.push(i);
+    }
+
+    // Group transactions by week commencing (Monday)
+    const weekMap = {};
+    transactions.forEach(t => {
+        if (t.is_revenue || t.trans_type === 'revenue') return;
+        const d = new Date(t.date);
+        if (isNaN(d)) return;
+        // Get Monday of this week
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(d);
+        monday.setDate(diff);
+        const key = monday.toISOString().split('T')[0];
+
+        if (!weekMap[key]) {
+            weekMap[key] = { wc: key, txns: 0, cats: {} };
+            activeCats.forEach(c => weekMap[key].cats[c] = 0);
+        }
+        weekMap[key].txns++;
+        const cn = t.category_number || t.cat;
+        if (cn && weekMap[key].cats[cn] !== undefined) {
+            weekMap[key].cats[cn] += (t.total_cost || 0);
+        }
+    });
+
+    const weeks = Object.values(weekMap).sort((a, b) => a.wc.localeCompare(b.wc));
+
+    let html = '';
+    html += '<h3 class="section-title">Weekly Spend Summary</h3>';
+
+    if (weeks.length === 0) {
+        html += '<div style="text-align:center;padding:32px;color:var(--text-light)">No transaction data to summarise.</div>';
+        document.getElementById('tab-4').innerHTML = html;
+        return;
+    }
+
+    html += '<div class="table-wrap"><table>';
+    html += '<thead><tr>';
+    html += '<th>Week Commencing</th><th class="c">Txns</th>';
+    activeCats.forEach(c => {
+        html += '<th class="r" style="color:' + CAT_COLORS[c] + '">Cat ' + c + '</th>';
+    });
+    html += '<th class="r">Week Total</th><th class="r">Cumulative</th>';
+    html += '</tr></thead><tbody>';
+
+    let cumulative = 0;
+    weeks.forEach(w => {
+        let weekTotal = 0;
+        activeCats.forEach(c => weekTotal += (w.cats[c] || 0));
+        cumulative += weekTotal;
+
+        html += '<tr>';
+        html += '<td>' + fmtDate(w.wc) + '</td>';
+        html += '<td class="c">' + w.txns + '</td>';
+        activeCats.forEach(c => {
+            const val = w.cats[c] || 0;
+            html += '<td class="r mono">' + (val !== 0 ? fmt(val) : '--') + '</td>';
+        });
+        html += '<td class="r mono text-bold">' + fmt(weekTotal) + '</td>';
+        html += '<td class="r mono">' + fmt(cumulative) + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    document.getElementById('tab-4').innerHTML = html;
+}
+
+
+// ===== INIT =====
+if ('serviceWorker' in navigator && location.protocol === 'file:') {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.unregister(); });
+        if (regs.length) location.reload();
+    });
+}
+
+init();
+</script>
+</body>
+</html>

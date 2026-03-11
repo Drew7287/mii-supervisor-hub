@@ -1326,6 +1326,11 @@ function getStandardControls(hazard) {
     return matches.length > 0 ? matches.map(c => '\u2022 ' + c).join('\n') : '';
 }
 
+// ─── Export API Configuration ─────────────────────────────
+const EXPORT_API = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+    ? 'http://localhost:7071/api/export-rams'
+    : '/api/export-rams';
+
 // ─── AI Proxy Configuration ──────────────────────────────
 const AI_PROXY_URL = 'https://ramsbuilder-api.azurewebsites.net';
 const AI_PROXY_KEY = ''; // Set if proxy requires auth key
@@ -3562,160 +3567,107 @@ async function exportExcel() {
 
     const revision = (currentDoc.revision || 0) + 1;
     const jd = currentDoc.job_details || {};
-    const rl = typeof REQUIREMENTS_LIBRARY !== 'undefined' ? REQUIREMENTS_LIBRARY : {};
-    const req = currentDoc.requirements || {};
+    const filename = `${currentDoc.rams_number || 'RAMS-Document'}_Rev${String(revision).padStart(3,'0')}.xlsx`;
 
-    // Try template-based export first, fallback to basic export
-    let wb;
+    // Build JSON payload for the server-side export API
+    const payload = {
+        filename: filename,
+        revision: revision,
+        job_details: {
+            job_number: jd.job_number,
+            rams_reference: currentDoc.rams_number,
+            job_name: jd.job_name,
+            works_area: jd.works_area,
+            exact_location: jd.exact_location,
+            order_number: jd.order_number,
+            start_date: jd.date_of_assessment,
+            end_date: jd.end_date,
+            duration: jd.duration,
+            access_egress: jd.access_egress,
+            assembly_point: jd.assembly_point,
+            ambulance_point: jd.ambulance_point,
+            signing_book_location: jd.signing_book_location,
+            gas_safe_haven: jd.gas_safe_haven,
+            num_employees: jd.num_employees,
+            emergency_phone: jd.emergency_contact,
+            subcontractors: jd.subcontractors || 'N/A'
+        },
+        risk_assessments: (currentDoc.risk_assessments || []).map(ra => {
+            const h = MII_HAZARDS.find(hz => hz.id === ra.hazard_id);
+            return {
+                hazard_id: ra.hazard_id,
+                hazard_name: h ? h.name : ra.hazard_id,
+                category: h ? h.category : 'Other',
+                risk_description: ra.risk_description || '',
+                who_harmed: ra.who_harmed || 'Working party and others',
+                initial_l: ra.initial_l || 3,
+                initial_s: ra.initial_s || 3,
+                controls: ra.controls || '',
+                final_l: ra.final_l || 1,
+                final_s: ra.final_s || ra.initial_s || 3
+            };
+        }),
+        method_steps: (currentDoc.method_steps || []).map(s => s.description || s),
+        environment: {
+            questions: ((currentDoc.environment || {}).questions || []).map(q => ({
+                id: q.id,
+                question: q.question || '',
+                answer: q.answer || 'NO',
+                mechanism: q.mechanism || '',
+                control: q.control || ''
+            }))
+        },
+        requirements: {
+            equipment: (currentDoc.requirements || {}).equipment || [],
+            ppe: (currentDoc.requirements || {}).ppe || [],
+            coshh: (currentDoc.requirements || {}).coshh || []
+        },
+        technical_details: (currentDoc.technical_details || []).map(t => t.description || t)
+    };
+
+    // Find the export button and show loading state
+    const exportBtn = document.querySelector('[onclick="exportExcel()"]') || document.querySelector('.btn-success');
+    const originalBtnText = exportBtn ? exportBtn.innerHTML : '';
+    if (exportBtn) {
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<span>&#9203;</span> Generating...';
+    }
+
     try {
-        const resp = await fetch('rams_template.xlsx');
-        if (!resp.ok) throw new Error('Template not found');
-        const buf = await resp.arrayBuffer();
-        wb = XLSX.read(buf, { type: 'array' });
+        const resp = await fetch(EXPORT_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-        // ── Job Details sheet (template cell positions) ──
-        const wsJD = wb.Sheets['Job Details'];
-        if (wsJD) {
-            wsCell(wsJD, 3, 4, `${jd.job_number || ''} REV ${String(revision).padStart(3,'0')}`); // D3: Contractor Job Ref + Rev
-            wsCell(wsJD, 5, 1, 'MII Engineering Ltd');  // A5: Contractor Company
-            wsCell(wsJD, 5, 2, currentDoc.rams_number || ''); // B5: Safety Serial No
-            wsCell(wsJD, 5, 3, jd.works_area || '');    // C5: Works Area
-            wsCell(wsJD, 7, 1, jd.exact_location || ''); // A7: Exact location
-            wsCell(wsJD, 7, 4, jd.order_number || '');   // D7: Order number
-            wsCell(wsJD, 9, 1, jd.job_name || '');       // A9: Job description
-            wsCell(wsJD, 11, 1, jd.date_of_assessment || ''); // A11: Start date
-            wsCell(wsJD, 11, 2, jd.end_date || '');      // B11: End date
-            wsCell(wsJD, 11, 4, jd.duration || '');       // D11: Duration
-            wsCell(wsJD, 13, 1, jd.access_egress || ''); // A13: Access & egress
-            wsCell(wsJD, 14, 2, jd.assembly_point || ''); // B14: Assembly point
-            wsCell(wsJD, 15, 2, jd.ambulance_point || ''); // B15: First aid / ambulance
-            wsCell(wsJD, 16, 2, jd.signing_book_location || ''); // B16: Signing book
-            wsCell(wsJD, 17, 2, jd.gas_safe_haven || ''); // B17: Gas safe haven
-            wsCell(wsJD, 18, 2, jd.num_employees || ''); // B18: No. employees
-            wsCell(wsJD, 19, 2, jd.emergency_contact || ''); // B19: Emergency phone
-            wsCell(wsJD, 20, 2, jd.subcontractors || 'N/A'); // B20: Subcontractors
+        if (!resp.ok) {
+            const errText = await resp.text().catch(() => resp.statusText);
+            throw new Error(`API returned ${resp.status}: ${errText}`);
         }
 
-        // ── Risk Assessment sheet (data from row 4, cols A-K) ──
-        const wsRA = wb.Sheets['Risk Assessment'];
-        if (wsRA) {
-            const ras = currentDoc.risk_assessments || [];
-            // Group by category
-            const categoryOrder = [];
-            const categoryMap = {};
-            ras.forEach(ra => {
-                const h = MII_HAZARDS.find(hz => hz.id === ra.hazard_id);
-                const cat = h ? h.category : 'Other';
-                if (!categoryMap[cat]) { categoryMap[cat] = []; categoryOrder.push(cat); }
-                categoryMap[cat].push({ ra, h });
-            });
-            let row = 4;
-            let hazNum = 0;
-            categoryOrder.forEach(cat => {
-                // Category header row - write to col B (merged in template)
-                wsCell(wsRA, row, 2, `${cat} (${categoryMap[cat].length} hazard${categoryMap[cat].length !== 1 ? 's' : ''})`);
-                row++;
-                categoryMap[cat].forEach(({ ra, h }) => {
-                    hazNum++;
-                    const iScore = (ra.initial_l||1) * (ra.initial_s||1);
-                    const fScore = (ra.final_l||1) * (ra.final_s||1);
-                    wsCell(wsRA, row, 1, hazNum);           // A: #
-                    wsCell(wsRA, row, 2, h ? h.name : '?'); // B: Hazard
-                    wsCell(wsRA, row, 3, ra.risk_description || ''); // C: Risk description
-                    wsCell(wsRA, row, 4, ra.who_harmed || 'Working party and others'); // D: Who harmed
-                    wsCell(wsRA, row, 5, ra.initial_l || 3); // E: Init L
-                    wsCell(wsRA, row, 6, ra.initial_s || 3); // F: Init S
-                    wsCell(wsRA, row, 7, iScore);            // G: Init Score
-                    wsCell(wsRA, row, 8, ra.controls || ''); // H: Controls
-                    wsCell(wsRA, row, 9, ra.final_l || 1);   // I: Final L
-                    wsCell(wsRA, row, 10, ra.final_s || 1);  // J: Final S
-                    wsCell(wsRA, row, 11, fScore);           // K: Final Score
-                    row++;
-                });
-            });
-            // Summary row
-            row++;
-            wsCell(wsRA, row, 1, hazNum);
-            wsCell(wsRA, row, 2, 'Before Controls:');
-            wsCell(wsRA, row, 8, 'After Controls:');
-        }
-
-        // ── Method sheet (data from row 6, cols A-B) ──
-        const wsMethod = wb.Sheets['Method'];
-        if (wsMethod) {
-            const steps = currentDoc.method_steps || [];
-            steps.forEach((s, i) => {
-                const row = 6 + i;
-                wsCell(wsMethod, row, 1, i === 0 ? 1 : i + 1); // A: Step number
-                wsCell(wsMethod, row, 2, s.description || '');   // B: Description
-            });
-        }
-
-        // ── Equipment sheet (data from row 8, cols A-B) ──
-        const wsEquip = wb.Sheets['Equipment'];
-        if (wsEquip) {
-            const items = req.equipment || [];
-            items.forEach((name, i) => {
-                const lib = (rl.equipment || []).find(e => e.item === name);
-                wsCell(wsEquip, 8 + i, 1, name);
-                wsCell(wsEquip, 8 + i, 2, lib ? lib.safety_precaution : '');
-            });
-        }
-
-        // ── COSHH sheet (data from row 8, cols A-B) ──
-        const wsCOSHH = wb.Sheets['COSHH'];
-        if (wsCOSHH) {
-            const items = req.coshh || [];
-            items.forEach((name, i) => {
-                const lib = (rl.coshh_substances || []).find(e => e.substance === name);
-                wsCell(wsCOSHH, 8 + i, 1, name);
-                wsCell(wsCOSHH, 8 + i, 2, lib ? lib.storage_requirements : '');
-            });
-        }
-
-        // ── PPE sheet (data from row 8, cols A-B) ──
-        const wsPPE = wb.Sheets['PPE'];
-        if (wsPPE) {
-            const items = req.ppe || [];
-            items.forEach((name, i) => {
-                const lib = (rl.ppe || []).find(e => e.item === name);
-                wsCell(wsPPE, 8 + i, 1, name);
-                wsCell(wsPPE, 8 + i, 2, lib ? lib.standard : '');
-            });
-        }
-
-        // ── Technical sheet (data from row 6, cols A-B) ──
-        const wsTech = wb.Sheets['Technical'];
-        if (wsTech) {
-            const techs = currentDoc.technical_details || [];
-            techs.forEach((td, i) => {
-                wsCell(wsTech, 6 + i, 1, i + 1);
-                wsCell(wsTech, 6 + i, 2, td.description || '');
-            });
-        }
-
-        // ── Environment sheet (data from row 6, cols C-E) ──
-        const wsEnv = wb.Sheets['Environment'];
-        if (wsEnv) {
-            const envQuestions = (currentDoc.environment || {}).questions || [];
-            // Template has questions in B6:B14, map by order
-            ENVIRONMENT_LIBRARY.questions.forEach((q, i) => {
-                if (i >= 9) return; // Template only has rows 6-14
-                const saved = envQuestions.find(s => s.id === q.id) || {};
-                const answer = saved.answer || q.default_answer;
-                wsCell(wsEnv, 6 + i, 3, answer);  // C: Y/N
-                if (answer === 'YES') {
-                    wsCell(wsEnv, 6 + i, 4, saved.mechanism || ''); // D: Mechanism
-                    wsCell(wsEnv, 6 + i, 5, saved.control || '');   // E: Controls
-                }
-            });
-        }
+        // Receive binary xlsx and trigger download
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
     } catch (e) {
-        console.log('Template load failed, using basic export:', e.message);
-        // Fallback: basic export without template
-        wb = XLSX.utils.book_new();
+        console.warn('Server-side Excel export failed, falling back to client-side SheetJS export:', e.message);
+        // Fallback: basic client-side export without formatting
+        const wb = XLSX.utils.book_new();
         _exportBasicSheets(wb);
+        XLSX.writeFile(wb, filename);
+    } finally {
+        // Restore button state
+        if (exportBtn) {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalBtnText;
+        }
     }
 
     // ── Record revision history ──
@@ -3732,10 +3684,6 @@ async function exportExcel() {
     currentDoc.updated_at = new Date().toISOString();
     MiiDB.save('rams_documents', currentDoc);
     syncRamsToServer(currentDoc);
-
-    // ── Write file ──
-    const filename = (currentDoc.rams_number || 'RAMS-Document') + `_Rev${String(revision).padStart(3,'0')}.xlsx`;
-    XLSX.writeFile(wb, filename);
 }
 
 // Fallback basic export when template is unavailable
