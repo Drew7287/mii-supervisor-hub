@@ -3598,13 +3598,13 @@ async function exportExcel() {
                 hazard_id: ra.hazard_id,
                 hazard_name: h ? h.name : ra.hazard_id,
                 category: h ? h.category : 'Other',
-                risk_description: ra.risk_description || '',
-                who_harmed: ra.who_harmed || 'Working party and others',
-                initial_l: ra.initial_l || 3,
-                initial_s: ra.initial_s || 3,
-                controls: ra.controls || '',
-                final_l: ra.final_l || 1,
-                final_s: ra.final_s || ra.initial_s || 3
+                risk_description: ra.risk_description || (h ? h.risk_description : '') || '',
+                who_harmed: ra.who_harmed || (h ? h.who_harmed : '') || 'Working party and others',
+                initial_l: ra.initial_l || (h ? h.initial_likelihood : 3) || 3,
+                initial_s: ra.initial_s || (h ? h.initial_severity : 3) || 3,
+                controls: ra.controls || (h ? h.default_controls : '') || '',
+                final_l: ra.final_l || (h ? h.final_likelihood : 1) || 1,
+                final_s: ra.final_s || (h ? h.final_severity : 3) || 3
             };
         }),
         method_steps: (currentDoc.method_steps || []).map(s => s.description || s),
@@ -3618,9 +3618,21 @@ async function exportExcel() {
             }))
         },
         requirements: {
-            equipment: (currentDoc.requirements || {}).equipment || [],
-            ppe: (currentDoc.requirements || {}).ppe || [],
-            coshh: (currentDoc.requirements || {}).coshh || []
+            equipment: ((currentDoc.requirements || {}).equipment || []).map(eq => {
+                const lib = REQUIREMENTS_LIBRARY.equipment.find(l => l.item === (eq.item || eq.name || eq));
+                const name = eq.item || eq.name || eq;
+                return { item: name, safety_precaution: eq.safety_precaution || (lib ? lib.safety_precaution : '') || '' };
+            }),
+            ppe: ((currentDoc.requirements || {}).ppe || []).map(p => {
+                const lib = REQUIREMENTS_LIBRARY.ppe.find(l => l.item === (p.item || p.name || p));
+                const name = p.item || p.name || p;
+                return { item: name, standard: p.standard || (lib ? lib.standard : '') || '' };
+            }),
+            coshh: ((currentDoc.requirements || {}).coshh || []).map(c => {
+                const lib = (REQUIREMENTS_LIBRARY.coshh_substances || []).find(l => l.substance === (c.substance || c.name || c));
+                const name = c.substance || c.name || c;
+                return { substance: name, storage_requirements: c.storage_requirements || (lib ? lib.storage_requirements : '') || '' };
+            })
         },
         technical_details: (currentDoc.technical_details || []).map(t => t.description || t)
     };
