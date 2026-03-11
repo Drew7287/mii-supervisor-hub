@@ -1328,8 +1328,8 @@ function getStandardControls(hazard) {
 
 // ─── Export API Configuration ─────────────────────────────
 const EXPORT_API = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
-    ? 'http://localhost:7071/api/export-rams'
-    : '/api/export-rams';
+    ? 'https://mii-hub-api.azurewebsites.net/api/export-rams'
+    : 'https://mii-hub-api.azurewebsites.net/api/export-rams';
 
 // ─── AI Proxy Configuration ──────────────────────────────
 const AI_PROXY_URL = 'https://ramsbuilder-api.azurewebsites.net';
