@@ -490,20 +490,63 @@
         .toast.success { background: var(--success); }
 
 
-        /* ===== CERTIFICATES TAB ===== */
+                /* ===== CERTIFICATES TAB ===== */
+        .cert-mode-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+        .cert-mode-toggle button { padding: 8px 20px; border: 1px solid var(--border); border-radius: 6px; background: var(--white); font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--text-light); transition: all 0.2s; }
+        .cert-mode-toggle button.active { background: var(--accent); color: var(--white); border-color: var(--accent); }
+        .cert-mode-toggle button:not(.active):hover { background: var(--bg); }
         .cert-upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 32px 24px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--white); margin-bottom: 16px; }
         .cert-upload-zone:hover, .cert-upload-zone.dragover { border-color: var(--accent); background: rgba(0,120,212,0.04); }
         .cert-upload-zone .upload-icon { font-size: 2.2rem; margin-bottom: 8px; color: var(--text-light); }
         .cert-upload-zone .upload-text { font-size: 0.9rem; color: var(--text-light); margin-bottom: 4px; }
         .cert-upload-zone .upload-hint { font-size: 0.75rem; color: var(--text-light); }
-        .cert-preview { display: none; background: var(--white); border-radius: 8px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
-        .cert-preview.visible { display: block; }
-        .cert-preview-img { max-width: 100%; max-height: 300px; border-radius: 6px; border: 1px solid var(--border); display: block; margin: 0 auto 12px; }
-        .cert-preview-pdf { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg); border-radius: 6px; margin-bottom: 12px; }
-        .cert-preview-pdf .pdf-icon { font-size: 2rem; color: var(--danger); }
-        .cert-preview-pdf .pdf-name { font-size: 0.85rem; font-weight: 600; word-break: break-all; }
-        .cert-preview-pdf .pdf-size { font-size: 0.75rem; color: var(--text-light); }
-        .cert-preview-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .cert-form-panel { display: none; background: var(--white); border-radius: 8px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+        .cert-form-panel.visible { display: block; }
+        .cert-form-layout { display: grid; grid-template-columns: 1fr 200px; gap: 20px; }
+        .cert-form-fields .form-group { margin-bottom: 12px; }
+        .cert-form-fields label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-light); margin-bottom: 4px; }
+        .cert-form-fields input, .cert-form-fields textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+        .cert-form-fields input:focus, .cert-form-fields textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); }
+        .cert-form-fields textarea { min-height: 50px; resize: vertical; }
+        .cert-preview-container { display: flex; flex-direction: column; align-items: center; }
+        .cert-preview-container img { max-width: 100%; max-height: 200px; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; object-fit: contain; }
+        .cert-preview-container .pdf-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 160px; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); cursor: pointer; }
+        .cert-preview-container .pdf-preview .pdf-icon { font-size: 2.5rem; color: var(--danger); }
+        .cert-preview-container .pdf-preview .pdf-name { font-size: 0.75rem; color: var(--text-light); margin-top: 6px; word-break: break-all; text-align: center; padding: 0 8px; }
+        .cert-extract-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; background: var(--white); border-radius: 8px; padding: 12px 16px; box-shadow: var(--shadow); }
+        .cert-extract-bar input[type="file"] { display: none; }
+        .cert-extract-bar .file-label { flex: 1; font-size: 0.85rem; color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cert-dupe-warning { display: none; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.85rem; color: #856404; }
+        .cert-dupe-warning.visible { display: block; }
+        .cert-search-dropdown { position: relative; }
+        .cert-search-dropdown input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+        .cert-search-dropdown input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,120,212,0.15); }
+        .cert-dropdown-list { display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 40; background: var(--white); border: 1px solid var(--border); border-radius: 0 0 6px 6px; max-height: 220px; overflow-y: auto; box-shadow: var(--shadow-hover); }
+        .cert-dropdown-list.open { display: block; }
+        .cert-dropdown-item { padding: 8px 12px; font-size: 0.85rem; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+        .cert-dropdown-item:hover { background: rgba(0,120,212,0.06); }
+        .cert-dropdown-item.selected { background: rgba(0,120,212,0.1); font-weight: 600; }
+        .cert-dropdown-item.separator { border-top: 2px solid var(--border); color: var(--accent); font-weight: 600; }
+        .has-expiry-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .has-expiry-row label { margin-bottom: 0; }
+        .batch-results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 12px; }
+        .batch-results-table th { background: var(--primary); color: var(--white); padding: 8px 10px; text-align: left; font-weight: 600; font-size: 0.78rem; }
+        .batch-results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        .batch-results-table tr:hover { background: rgba(0,120,212,0.04); cursor: pointer; }
+        .batch-results-table tr.selected-row { background: rgba(0,120,212,0.1); }
+        .batch-status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+        .batch-status.ready { background: #d4edda; color: #155724; }
+        .batch-status.review { background: #fff3cd; color: #856404; }
+        .batch-status.error { background: #f8d7da; color: #721c24; }
+        .batch-status.update { background: #ffe0cc; color: #cc5500; }
+        .batch-status.saved { background: #cce5ff; color: #004085; }
+        .batch-status.skipped { background: #e2e3e5; color: #383d41; }
+        .batch-edit-panel { display: none; background: var(--white); border-radius: 8px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+        .batch-edit-panel.visible { display: block; }
+        .filing-queue-section { margin-top: 24px; }
+        .filing-queue-section h3 { font-size: 0.95rem; margin-bottom: 10px; }
+        .filing-item { display: flex; align-items: center; gap: 12px; background: var(--white); border-radius: 6px; padding: 10px 14px; margin-bottom: 6px; box-shadow: var(--shadow); font-size: 0.85rem; }
+        .filing-item .filing-name { flex: 1; }
         .cert-card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
         .cert-thumb { width: 56px; height: 56px; border-radius: 6px; border: 1px solid var(--border); object-fit: cover; flex-shrink: 0; cursor: pointer; }
         .cert-thumb-pdf { width: 56px; height: 56px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--danger); flex-shrink: 0; cursor: pointer; }
@@ -511,12 +554,13 @@
         .cert-emp { font-weight: 600; font-size: 0.9rem; }
         .cert-type { font-size: 0.8rem; color: var(--text-light); }
         .cert-date { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+        .cert-dates-row { display: flex; gap: 8px; margin-top: 2px; }
         .cert-actions { display: flex; gap: 8px; }
         .btn-view { padding: 5px 12px; background: var(--accent); color: var(--white); border: none; border-radius: 5px; font-size: 0.78rem; font-weight: 600; cursor: pointer; min-height: 36px; }
         .btn-view:hover { background: var(--primary-light); }
         .cert-viewer-content img { max-width: 100%; max-height: 75vh; display: block; margin: 0 auto; border-radius: 6px; }
         .cert-viewer-content iframe { width: 100%; height: 75vh; border: none; border-radius: 6px; }
-
+        .btn-extract { padding: 8px 16px; background: #6c757d; color: var(--white); border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: not-allowed; opacity: 0.6; }
         @media (max-width: 600px) {
             .stats-bar { grid-template-columns: repeat(2, 1fr); }
             .filter-bar { flex-direction: column; }
@@ -610,37 +654,126 @@
 
 <!-- ===================== CERTIFICATES TAB ===================== -->
 <div class="tab-panel" id="tab-certificates">
-    <div class="filter-bar" style="padding-top: 16px;">
-        <input type="text" id="cert-search" placeholder="Search by employee or training type...">
-        <select id="cert-filter-type">
-            <option value="">All Types</option>
-        </select>
+    <div class="cert-mode-toggle">
+        <button class="active" onclick="setCertMode('single')" id="cert-mode-single">Single Upload</button>
+        <button onclick="setCertMode('batch')" id="cert-mode-batch">Batch Upload</button>
     </div>
-    <div class="content">
+
+    <!-- SINGLE UPLOAD VIEW -->
+    <div id="cert-single-view">
+        <div class="cert-extract-bar">
+            <button class="btn-secondary" onclick="document.getElementById('cert-file-input').click()" style="min-height:40px;padding:8px 16px;">Select File...</button>
+            <span class="file-label" id="cert-file-label">No file selected</span>
+            <button class="btn-extract" id="cert-extract-btn" disabled title="AI extraction coming soon - enter details manually">Extract</button>
+            <input type="file" id="cert-file-input" accept="image/*,application/pdf" capture="environment">
+        </div>
+
         <div class="cert-upload-zone" id="cert-upload-zone">
             <div class="upload-icon">&#128247;</div>
-            <div class="upload-text">Tap to take photo or choose file</div>
+            <div class="upload-text">Drag &amp; drop a certificate here, or use Select File above</div>
             <div class="upload-hint">JPG, PNG or PDF (max 10MB)</div>
-            <input type="file" id="cert-file-input" accept="image/*,application/pdf" capture="environment" style="display:none;">
         </div>
-        <div class="cert-preview" id="cert-preview">
-            <div id="cert-preview-content"></div>
-            <div class="form-group" style="margin-top:12px;">
-                <label>Employee</label>
-                <select id="cert-employee" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;min-height:44px;"></select>
+
+        <div class="cert-form-panel" id="cert-form-panel">
+            <div class="cert-form-layout">
+                <div class="cert-form-fields">
+                    <div class="form-group">
+                        <label>Person Name</label>
+                        <div class="cert-search-dropdown" id="cert-emp-dropdown">
+                            <input type="text" id="cert-emp-search" placeholder="Type employee name..." autocomplete="off">
+                            <div class="cert-dropdown-list" id="cert-emp-list"></div>
+                        </div>
+                        <input type="hidden" id="cert-emp-value">
+                        <input type="hidden" id="cert-emp-name-value">
+                    </div>
+                    <div class="form-group">
+                        <label>Certificate Type</label>
+                        <div class="cert-search-dropdown" id="cert-type-dropdown">
+                            <input type="text" id="cert-type-search" placeholder="Type training type..." autocomplete="off">
+                            <div class="cert-dropdown-list" id="cert-type-list"></div>
+                        </div>
+                        <input type="hidden" id="cert-type-value">
+                        <input type="hidden" id="cert-type-name-value">
+                    </div>
+                    <div class="form-group">
+                        <label>Achieved Date</label>
+                        <input type="date" id="cert-achieved-date">
+                    </div>
+                    <div class="has-expiry-row">
+                        <input type="checkbox" id="cert-has-expiry" checked>
+                        <label for="cert-has-expiry" style="font-size:0.8rem;font-weight:600;color:var(--text-light);">Has Expiry</label>
+                    </div>
+                    <div class="form-group" id="cert-expiry-group">
+                        <label>Expiry Date</label>
+                        <input type="date" id="cert-expiry-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Certificate / Card Number</label>
+                        <input type="text" id="cert-cert-number" placeholder="e.g. SP-123456">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes (optional)</label>
+                        <textarea id="cert-notes" placeholder="e.g. Provider, issuing body..."></textarea>
+                    </div>
+                </div>
+                <div class="cert-preview-container" id="cert-preview-container">
+                    <div id="cert-preview-content"></div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Training Type</label>
-                <select id="cert-training-type" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;min-height:44px;"></select>
-            </div>
-            <div class="form-group">
-                <label>Notes (optional)</label>
-                <textarea id="cert-notes" placeholder="e.g. Card number, provider..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;font-family:inherit;min-height:60px;resize:vertical;"></textarea>
-            </div>
-            <div class="cert-preview-actions">
+
+            <div class="cert-dupe-warning" id="cert-dupe-warning"></div>
+
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
                 <button class="btn-secondary" onclick="cancelCertUpload()" style="min-height:44px;padding:10px 20px;">Cancel</button>
-                <button class="btn-primary" onclick="saveCertificate()" style="min-height:44px;padding:10px 20px;">Save Certificate</button>
+                <button class="btn-primary" id="cert-save-btn" onclick="saveCertificate()" disabled style="min-height:44px;padding:10px 20px;">Save Record</button>
             </div>
+        </div>
+    </div>
+
+    <!-- BATCH UPLOAD VIEW -->
+    <div id="cert-batch-view" style="display:none;">
+        <div class="cert-extract-bar">
+            <button class="btn-secondary" onclick="document.getElementById('cert-batch-input').click()" style="min-height:40px;padding:8px 16px;">Select Files...</button>
+            <span class="file-label" id="cert-batch-label">No files selected</span>
+            <button class="btn-extract" id="cert-batch-extract-btn" disabled title="AI extraction coming soon - enter details manually">Extract All</button>
+            <input type="file" id="cert-batch-input" multiple accept="image/*,application/pdf">
+        </div>
+
+        <div class="cert-upload-zone" id="cert-batch-zone">
+            <div class="upload-icon">&#128195;</div>
+            <div class="upload-text">Drag &amp; drop multiple certificates here</div>
+            <div class="upload-hint">JPG, PNG or PDF (max 10MB each)</div>
+        </div>
+
+        <div id="cert-batch-results" style="display:none;">
+            <div style="overflow-x:auto;">
+                <table class="batch-results-table">
+                    <thead><tr><th>File</th><th>Employee</th><th>Training Type</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="cert-batch-tbody"></tbody>
+                </table>
+            </div>
+            <div class="batch-edit-panel" id="cert-batch-edit"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+                <button class="btn-secondary" onclick="clearBatchFiles()" style="min-height:44px;padding:10px 16px;">Clear All</button>
+                <button class="btn-primary" id="cert-batch-save-btn" onclick="saveAllBatchValid()" disabled style="min-height:44px;padding:10px 20px;">Save All Valid (0)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILING QUEUE -->
+    <div class="filing-queue-section" id="cert-filing-section" style="display:none;">
+        <h3>Filing Queue <span id="filing-count" style="font-size:0.8rem;color:var(--text-light);"></span></h3>
+        <div id="cert-filing-list"></div>
+        <div style="margin-top:8px;text-align:right;">
+            <button class="btn-secondary" onclick="markAllFiled()" style="padding:6px 14px;font-size:0.8rem;">Mark All as Filed</button>
+        </div>
+    </div>
+
+    <!-- SAVED CERTIFICATES LIST -->
+    <div style="margin-top:20px;">
+        <div class="filter-bar">
+            <input type="text" id="cert-search" placeholder="Search by employee or training type...">
+            <select id="cert-filter-type"><option value="">All Types</option></select>
         </div>
         <div id="cert-list"></div>
     </div>
@@ -749,6 +882,75 @@
         <div class="modal-body cert-viewer-content" id="cert-viewer-content"></div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeCertViewer()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== ADD EMPLOYEE MODAL ===================== -->
+<div class="modal-overlay" id="add-emp-modal">
+    <div class="modal" style="max-width:440px;">
+        <div class="modal-header">
+            <h2>Add New Employee</h2>
+            <button class="modal-close" onclick="closeAddEmployeeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group" style="margin-bottom:12px;">
+                <label style="font-size:0.8rem;font-weight:600;">Employee Type</label>
+                <div style="display:flex;gap:8px;margin-top:4px;">
+                    <button class="btn-secondary active" id="emp-type-direct" onclick="toggleEmpType('direct')" style="flex:1;padding:8px;">Direct Employee</button>
+                    <button class="btn-secondary" id="emp-type-agency" onclick="toggleEmpType('agency')" style="flex:1;padding:8px;">Agency Worker</button>
+                </div>
+            </div>
+            <div class="form-group" id="emp-number-group">
+                <label>Employee Number</label>
+                <input type="text" id="new-emp-number" placeholder="e.g. H032" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;">
+            </div>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="new-emp-name" placeholder="e.g. John Smith" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;">
+            </div>
+            <div class="form-group">
+                <label>Trade</label>
+                <input type="text" id="new-emp-trade" placeholder="e.g. Electrician" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;">
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--border);">
+            <button class="btn-secondary" onclick="closeAddEmployeeModal()">Cancel</button>
+            <button class="btn-primary" onclick="saveNewEmployee()">Save Employee</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== BROWSE EMPLOYEES MODAL ===================== -->
+<div class="modal-overlay" id="browse-emp-modal">
+    <div class="modal" style="max-width:560px;">
+        <div class="modal-header">
+            <h2>Browse Employees</h2>
+            <button class="modal-close" onclick="document.getElementById('browse-emp-modal').classList.remove('open')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="text" id="browse-emp-search" placeholder="Search employees..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" oninput="filterBrowseEmployees()">
+            <div id="browse-emp-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;"></div>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--border);">
+            <button class="btn-secondary" onclick="document.getElementById('browse-emp-modal').classList.remove('open')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== BROWSE TRAINING TYPES MODAL ===================== -->
+<div class="modal-overlay" id="browse-types-modal">
+    <div class="modal" style="max-width:560px;">
+        <div class="modal-header">
+            <h2>Browse Training Types</h2>
+            <button class="modal-close" onclick="document.getElementById('browse-types-modal').classList.remove('open')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="text" id="browse-type-search" placeholder="Search training types..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" oninput="filterBrowseTypes()">
+            <div id="browse-type-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;"></div>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--border);">
+            <button class="btn-secondary" onclick="document.getElementById('browse-types-modal').classList.remove('open')">Cancel</button>
         </div>
     </div>
 </div>
@@ -1291,6 +1493,14 @@ async function saveType() {
         }
         closeTypeModal();
         toast(id ? 'Type updated' : 'Type created', 'success');
+        // If created from cert upload, auto-select the new type
+        if (!id && document.getElementById('cert-type-search')) {
+            var newCode = document.getElementById('type-code').value.trim();
+            var newName = document.getElementById('type-name').value.trim();
+            if (newCode && typeof _certSelectTypeCallback === 'function') {
+                _certSelectTypeCallback(newCode, newName);
+            }
+        }
         _typesCache = null;
         loadTypes();
     } catch (e) {
@@ -1319,205 +1529,945 @@ function toast(msg, type) {
 }
 
 // Certificates
-let _certFileData = null;
-let _certFileName = null;
-let _certFileType = null;
-let _certDebounce = null;
-let _certSetup = false;
+var _certFileData = null;
+var _certFileName = null;
+var _certFileType = null;
+var _certDebounce = null;
+var _certSetup = false;
+var _certEmployees = [];
+var _certMode = 'single';
+var _certDupeRecord = null;
+var _certSelectTypeCallback = null;
+var _batchEntries = [];
+var _batchSelectedIdx = -1;
 
+// ---- Fuzzy matching utilities ----
+function levenshteinDistance(a, b) {
+    var m = a.length, n = b.length;
+    var dp = [];
+    for (var i = 0; i <= m; i++) {
+        dp[i] = [i];
+        for (var j = 1; j <= n; j++) {
+            dp[i][j] = i === 0 ? j : 0;
+        }
+    }
+    for (var i = 1; i <= m; i++) {
+        for (var j = 1; j <= n; j++) {
+            if (a[i-1] === b[j-1]) dp[i][j] = dp[i-1][j-1];
+            else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+        }
+    }
+    return dp[m][n];
+}
+
+function sequenceMatcherRatio(a, b) {
+    var maxLen = Math.max(a.length, b.length);
+    if (maxLen === 0) return 1.0;
+    return 1 - (levenshteinDistance(a, b) / maxLen);
+}
+
+function namePartsScore(name1, name2) {
+    var parts1 = name1.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+    var parts2 = name2.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+    if (!parts1.length || !parts2.length) return 0;
+    var set1 = new Set(parts1);
+    var set2 = new Set(parts2);
+    var matching = 0;
+    set1.forEach(function(p1) {
+        set2.forEach(function(p2) {
+            if (p1 === p2) matching += 1;
+            else if (p1.length === 1 && p2.startsWith(p1)) matching += 0.5;
+            else if (p2.length === 1 && p1.startsWith(p2)) matching += 0.5;
+        });
+    });
+    return matching / Math.max(set1.size, set2.size);
+}
+
+function fuzzyMatchEmployees(name, employees, minScore) {
+    if (minScore === undefined) minScore = 0.4;
+    if (!name || name.length < 2) return [];
+    var nameLower = name.toLowerCase().trim();
+    return employees.map(function(emp) {
+        var empLower = (emp.name || '').toLowerCase().trim();
+        var s1 = sequenceMatcherRatio(nameLower, empLower);
+        var s2 = namePartsScore(nameLower, empLower);
+        var s3 = empLower.indexOf(nameLower) !== -1 ? 0.7 : 0;
+        return { employee_number: emp.employee_number, name: emp.name, trade: emp.trade, score: Math.max(s1, s2, s3) };
+    }).filter(function(m) { return m.score >= minScore; })
+      .sort(function(a, b) { return b.score - a.score; })
+      .slice(0, 10);
+}
+
+var KEYWORD_MAPPINGS = {
+    'ccnsg': ['ccnsg', 'safety passport', 'contractor safety'],
+    'ipaf': ['ipaf', 'powered access', 'cherry picker', 'scissor lift', 'mewp', 'boom'],
+    'cscs': ['cscs', 'construction skills', 'site card'],
+    'first_aid': ['first aid', 'appointed person', 'emergency first', 'first aider'],
+    'manual_handling': ['manual handling', 'kinetic lifting'],
+    'confined_space': ['confined space', 'low risk', 'medium risk', 'high risk confined'],
+    'working_at_height': ['working at height', 'harness', 'wah'],
+    'abrasive_wheels': ['abrasive wheel', 'grinding wheel', 'cutting disc'],
+    'face_fit': ['face fit', 'rpe', 'mask fit'],
+    'asbestos': ['asbestos', 'cat a', 'cat b', 'asbestos awareness'],
+    'fire_safety': ['fire warden', 'fire marshal', 'fire safety', 'fire awareness'],
+    'compex': ['compex', 'ex01', 'ex02', 'ex03', 'ex04', 'atex'],
+    'iosh': ['iosh', 'managing safely', 'working safely'],
+    'nebosh': ['nebosh', 'national examination', 'general certificate safety'],
+    'sssts': ['sssts', 'site supervisor', 'supervisor safety'],
+    'smsts': ['smsts', 'site manager', 'manager safety training']
+};
+
+function fuzzyMatchTrainingTypes(query, types, minScore) {
+    if (minScore === undefined) minScore = 0.3;
+    if (!query || query.length < 2) return [];
+    var qLower = query.toLowerCase().trim();
+    return types.map(function(t) {
+        var codeLower = (t.code || '').toLowerCase();
+        var nameLower = (t.name || '').toLowerCase();
+        var s1 = Math.max(sequenceMatcherRatio(qLower, codeLower), sequenceMatcherRatio(qLower, nameLower));
+        var s2 = (codeLower.indexOf(qLower) !== -1 || nameLower.indexOf(qLower) !== -1) ? 0.7 : 0;
+        var s3 = 0;
+        Object.keys(KEYWORD_MAPPINGS).forEach(function(key) {
+            var keywords = KEYWORD_MAPPINGS[key];
+            var queryMatch = keywords.some(function(kw) { return qLower.indexOf(kw) !== -1 || kw.indexOf(qLower) !== -1; });
+            var typeMatch = keywords.some(function(kw) { return codeLower.indexOf(kw) !== -1 || nameLower.indexOf(kw) !== -1; });
+            if (queryMatch && typeMatch) s3 = Math.max(s3, 0.8);
+        });
+        return { code: t.code, name: t.name, category: t.category, score: Math.max(s1, s2, s3) };
+    }).filter(function(m) { return m.score >= minScore; })
+      .sort(function(a, b) { return b.score - a.score; })
+      .slice(0, 10);
+}
+
+// ---- Employee cache ----
+async function getEmployeesForCert() {
+    if (_certEmployees.length) return _certEmployees;
+    try {
+        var pairs = await MiiDB.getEmployeePairs();
+        _certEmployees = pairs.map(function(p) { return { employee_number: p[0], name: p[1], trade: '' }; });
+    } catch(e) {}
+    if (\!_certEmployees.length) {
+        try {
+            var emps = await MiiDB.getAll('employees');
+            _certEmployees = emps.map(function(emp) { return { employee_number: emp.employee_number, name: emp.name, trade: emp.trade || '' }; });
+        } catch(e2) {}
+    }
+    if (\!_certEmployees.length) {
+        try {
+            var res = await fetch(MII_API + '/employees', { headers: authHeaders() });
+            var data = await res.json();
+            var list = data.employees || data;
+            _certEmployees = list.map(function(emp) { return { employee_number: emp.employee_number, name: emp.name, trade: emp.trade || '' }; });
+        } catch(e3) { console.warn('Could not load employees for cert dropdown'); }
+    }
+    _certEmployees.sort(function(a, b) { return a.name.localeCompare(b.name); });
+    return _certEmployees;
+}
+
+// ---- Mode toggle ----
+function setCertMode(mode) {
+    _certMode = mode;
+    document.getElementById('cert-mode-single').classList.toggle('active', mode === 'single');
+    document.getElementById('cert-mode-batch').classList.toggle('active', mode === 'batch');
+    document.getElementById('cert-single-view').style.display = mode === 'single' ? '' : 'none';
+    document.getElementById('cert-batch-view').style.display = mode === 'batch' ? '' : 'none';
+}
+
+// ---- Tab load ----
 function loadCertificatesTab() {
     if (!_certSetup) {
         setupCertUploadZone();
-        populateCertDropdowns();
+        setupBatchUploadZone();
+        setupSearchDropdown('cert-emp-search', 'cert-emp-list', 'employee');
+        setupSearchDropdown('cert-type-search', 'cert-type-list', 'training_type');
+        document.getElementById('cert-has-expiry').addEventListener('change', function() {
+            document.getElementById('cert-expiry-group').style.display = this.checked ? '' : 'none';
+        });
+        populateCertFilterDropdown();
+        document.getElementById('cert-search').addEventListener('input', function() {
+            clearTimeout(_certDebounce); _certDebounce = setTimeout(loadCertificates, 300);
+        });
+        document.getElementById('cert-filter-type').addEventListener('change', loadCertificates);
+        document.getElementById('cert-viewer-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeCertViewer();
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#cert-emp-dropdown')) document.getElementById('cert-emp-list').classList.remove('open');
+            if (!e.target.closest('#cert-type-dropdown')) document.getElementById('cert-type-list').classList.remove('open');
+        });
         _certSetup = true;
     }
     loadCertificates();
+    loadFilingQueue();
 }
 
+// ---- Upload zones ----
 function setupCertUploadZone() {
-    const zone = document.getElementById("cert-upload-zone");
-    const input = document.getElementById("cert-file-input");
-    zone.addEventListener("click", function(e) { if (e.target !== input) input.click(); });
-    zone.addEventListener("dragover", function(e) { e.preventDefault(); zone.classList.add("dragover"); });
-    zone.addEventListener("dragleave", function() { zone.classList.remove("dragover"); });
-    zone.addEventListener("drop", function(e) {
-        e.preventDefault(); zone.classList.remove("dragover");
+    var zone = document.getElementById('cert-upload-zone');
+    var input = document.getElementById('cert-file-input');
+    zone.addEventListener('click', function(e) { if (e.target !== input) input.click(); });
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('dragover'); });
+    zone.addEventListener('drop', function(e) {
+        e.preventDefault(); zone.classList.remove('dragover');
         if (e.dataTransfer.files.length) handleCertFile(e.dataTransfer.files[0]);
     });
-    input.addEventListener("change", function() { if (input.files.length) handleCertFile(input.files[0]); });
-    document.getElementById("cert-search").addEventListener("input", function() {
-        clearTimeout(_certDebounce); _certDebounce = setTimeout(loadCertificates, 300);
-    });
-    document.getElementById("cert-filter-type").addEventListener("change", loadCertificates);
-    document.getElementById("cert-viewer-modal").addEventListener("click", function(e) {
-        if (e.target === this) closeCertViewer();
-    });
+    input.addEventListener('change', function() { if (input.files.length) handleCertFile(input.files[0]); });
 }
 
+function setupBatchUploadZone() {
+    var zone = document.getElementById('cert-batch-zone');
+    var input = document.getElementById('cert-batch-input');
+    zone.addEventListener('click', function(e) { if (e.target !== input) input.click(); });
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('dragover'); });
+    zone.addEventListener('drop', function(e) {
+        e.preventDefault(); zone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleBatchFiles(e.dataTransfer.files);
+    });
+    input.addEventListener('change', function() { if (input.files.length) handleBatchFiles(input.files); });
+}
+
+// ---- Handle single file ----
 function handleCertFile(file) {
-    var validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
-    if (validTypes.indexOf(file.type) === -1) { toast("Please select a JPG, PNG or PDF file", "error"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast("File too large. Maximum 10MB.", "error"); return; }
+    var validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    if (validTypes.indexOf(file.type) === -1) { toast('Please select a JPG, PNG or PDF file', 'error'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast('File too large. Maximum 10MB.', 'error'); return; }
     _certFileName = file.name;
     _certFileType = file.type;
     var reader = new FileReader();
-    reader.onload = function(e) { _certFileData = e.target.result; showCertPreview(); };
+    reader.onload = function(e) {
+        _certFileData = e.target.result;
+        showCertFormPanel();
+    };
     reader.readAsDataURL(file);
 }
-function showCertPreview() {
-    var previewEl = document.getElementById("cert-preview");
-    var contentEl = document.getElementById("cert-preview-content");
-    if (_certFileType === "application/pdf") {
-        contentEl.innerHTML = '<div class="cert-preview-pdf"><span class="pdf-icon">&#128196;</span><div><div class="pdf-name">' + esc(_certFileName) + '</div><div class="pdf-size">PDF Document</div></div></div>';
+
+function showCertFormPanel() {
+    var previewEl = document.getElementById('cert-preview-content');
+    if (_certFileType === 'application/pdf') {
+        previewEl.innerHTML = '<div class="pdf-preview" onclick="openCertPreviewFull()"><span class="pdf-icon">&#128196;</span><div class="pdf-name">' + esc(_certFileName) + '</div></div>';
     } else {
-        contentEl.innerHTML = '<img class="cert-preview-img" src="' + _certFileData + '" alt="Certificate preview">';
+        previewEl.innerHTML = '<img src="' + _certFileData + '" alt="Certificate preview" onclick="openCertPreviewFull()">';
     }
-    previewEl.classList.add("visible");
-    document.getElementById("cert-upload-zone").style.display = "none";
+    document.getElementById('cert-form-panel').classList.add('visible');
+    document.getElementById('cert-upload-zone').style.display = 'none';
+    document.getElementById('cert-file-label').textContent = _certFileName;
+    updateSaveButtonState();
 }
 
 function cancelCertUpload() {
     _certFileData = null; _certFileName = null; _certFileType = null;
-    document.getElementById("cert-preview").classList.remove("visible");
-    document.getElementById("cert-preview-content").innerHTML = "";
-    document.getElementById("cert-upload-zone").style.display = "";
-    document.getElementById("cert-file-input").value = "";
-    document.getElementById("cert-employee").value = "";
-    document.getElementById("cert-training-type").value = "";
-    document.getElementById("cert-notes").value = "";
+    _certDupeRecord = null;
+    document.getElementById('cert-form-panel').classList.remove('visible');
+    document.getElementById('cert-preview-content').innerHTML = '';
+    document.getElementById('cert-upload-zone').style.display = '';
+    document.getElementById('cert-file-input').value = '';
+    document.getElementById('cert-file-label').textContent = 'No file selected';
+    document.getElementById('cert-emp-search').value = '';
+    document.getElementById('cert-emp-value').value = '';
+    document.getElementById('cert-emp-name-value').value = '';
+    document.getElementById('cert-type-search').value = '';
+    document.getElementById('cert-type-value').value = '';
+    document.getElementById('cert-type-name-value').value = '';
+    document.getElementById('cert-achieved-date').value = '';
+    document.getElementById('cert-expiry-date').value = '';
+    document.getElementById('cert-cert-number').value = '';
+    document.getElementById('cert-notes').value = '';
+    document.getElementById('cert-has-expiry').checked = true;
+    document.getElementById('cert-expiry-group').style.display = '';
+    document.getElementById('cert-dupe-warning').classList.remove('visible');
+    document.getElementById('cert-save-btn').textContent = 'Save Record';
 }
 
-async function populateCertDropdowns() {
-    var empSel = document.getElementById("cert-employee");
-    empSel.innerHTML = '<option value="">Select employee...</option>';
-    try {
-        var pairs = await MiiDB.getEmployeePairs();
-        pairs.forEach(function(p) {
-            var opt = document.createElement("option");
-            opt.value = p[0]; opt.textContent = p[1] + " (" + p[0] + ")";
-            empSel.appendChild(opt);
-        });
-    } catch(e) {
-        try {
-            var res = await fetch(MII_API + "/employees", { headers: authHeaders() });
-            var data = await res.json();
-            var emps = data.employees || data;
-            emps.sort(function(a, b) { return a.name.localeCompare(b.name); });
-            emps.forEach(function(emp) {
-                var opt = document.createElement("option");
-                opt.value = emp.employee_number; opt.textContent = emp.name + " (" + emp.employee_number + ")";
-                empSel.appendChild(opt);
-            });
-        } catch(e2) { console.warn("Could not load employees for cert dropdown"); }
+function openCertPreviewFull() {
+    if (!_certFileData) return;
+    document.getElementById('cert-viewer-title').textContent = _certFileName || 'Certificate Preview';
+    var contentEl = document.getElementById('cert-viewer-content');
+    if (_certFileType === 'application/pdf') {
+        contentEl.innerHTML = '<iframe src="' + _certFileData + '"></iframe>';
+    } else {
+        contentEl.innerHTML = '<img src="' + _certFileData + '" alt="Certificate">';
     }
-    await loadTypesCache();
-    var typeSel = document.getElementById("cert-training-type");
-    typeSel.innerHTML = '<option value="">Select training type...</option>';
-    (_typesCache || []).forEach(function(t) {
-        var opt = document.createElement("option");
-        opt.value = t.code; opt.textContent = t.code + " - " + t.name;
-        typeSel.appendChild(opt);
+    document.getElementById('cert-viewer-modal').classList.add('open');
+}
+
+// ---- Search dropdown ----
+function setupSearchDropdown(inputId, listId, type) {
+    var input = document.getElementById(inputId);
+    var debounce = null;
+    input.addEventListener('input', function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(function() { populateDropdown(inputId, listId, type); }, 200);
     });
-    var filterSel = document.getElementById("cert-filter-type");
+    input.addEventListener('focus', function() {
+        if (input.value.length >= 2) populateDropdown(inputId, listId, type);
+    });
+}
+
+async function populateDropdown(inputId, listId, type) {
+    var input = document.getElementById(inputId);
+    var list = document.getElementById(listId);
+    var query = input.value.trim();
+    if (query.length < 2) { list.classList.remove('open'); return; }
+
+    var items = '';
+    if (type === 'employee') {
+        var emps = await getEmployeesForCert();
+        var matches = fuzzyMatchEmployees(query, emps);
+        matches.forEach(function(m) {
+            var pct = Math.round(m.score * 100);
+            items += '<div class="cert-dropdown-item" data-value="' + esc(m.employee_number) + '" data-name="' + esc(m.name) + '" onclick="selectDropdownItem(this, 'employee')">' +
+                esc(m.employee_number) + ' - ' + esc(m.name) + ' (' + pct + '%)</div>';
+        });
+        items += '<div class="cert-dropdown-item separator" onclick="openBrowseEmployees()">Browse All Employees...</div>';
+        items += '<div class="cert-dropdown-item separator" onclick="openAddEmployeeModal()">+ Add New Employee...</div>';
+    } else {
+        await loadTypesCache();
+        var matches = fuzzyMatchTrainingTypes(query, _typesCache || []);
+        matches.forEach(function(m) {
+            var pct = Math.round(m.score * 100);
+            items += '<div class="cert-dropdown-item" data-value="' + esc(m.code) + '" data-name="' + esc(m.name) + '" onclick="selectDropdownItem(this, 'training_type')">' +
+                esc(m.code) + ' - ' + esc(m.name) + ' (' + pct + '%)</div>';
+        });
+        items += '<div class="cert-dropdown-item separator" onclick="openBrowseTypes()">Browse All Training Types...</div>';
+        items += '<div class="cert-dropdown-item separator" onclick="openAddTrainingType()">+ Add New Training Type...</div>';
+    }
+    list.innerHTML = items;
+    list.classList.add('open');
+}
+
+function selectDropdownItem(el, type) {
+    var value = el.getAttribute('data-value');
+    var name = el.getAttribute('data-name');
+    if (type === 'employee') {
+        document.getElementById('cert-emp-search').value = name;
+        document.getElementById('cert-emp-value').value = value;
+        document.getElementById('cert-emp-name-value').value = name;
+        document.getElementById('cert-emp-list').classList.remove('open');
+    } else {
+        document.getElementById('cert-type-search').value = name;
+        document.getElementById('cert-type-value').value = value;
+        document.getElementById('cert-type-name-value').value = name;
+        document.getElementById('cert-type-list').classList.remove('open');
+    }
+    updateSaveButtonState();
+    checkDuplicateCert();
+}
+
+function updateSaveButtonState() {
+    var empVal = document.getElementById('cert-emp-value').value;
+    var typeVal = document.getElementById('cert-type-value').value;
+    var hasFile = !!_certFileData;
+    var btn = document.getElementById('cert-save-btn');
+    btn.disabled = !(empVal && typeVal && hasFile);
+}
+
+async function checkDuplicateCert() {
+    var empNum = document.getElementById('cert-emp-value').value;
+    var typeCode = document.getElementById('cert-type-value').value;
+    var warning = document.getElementById('cert-dupe-warning');
+    if (!empNum || !typeCode) { warning.classList.remove('visible'); _certDupeRecord = null; return; }
+    try {
+        var certs = await MiiDB.getAll('certificates');
+        var existing = certs.find(function(c) {
+            return c.employee_number === empNum && (c.training_type === typeCode || c.training_type_code === typeCode);
+        });
+        if (existing) {
+            _certDupeRecord = existing;
+            var expiry = existing.expiry_date ? ' (expires ' + existing.expiry_date + ')' : '';
+            warning.innerHTML = '<strong>Existing record found</strong> for this employee and training type' + expiry + '. Saving will update the existing record.';
+            warning.classList.add('visible');
+            document.getElementById('cert-save-btn').textContent = 'Update Record';
+        } else {
+            _certDupeRecord = null;
+            warning.classList.remove('visible');
+            document.getElementById('cert-save-btn').textContent = 'Save Record';
+        }
+    } catch(e) { console.warn('Dupe check failed:', e); }
+}
+
+// ---- Save certificate ----
+async function saveCertificate() {
+    var empNum = document.getElementById('cert-emp-value').value;
+    var empName = document.getElementById('cert-emp-name-value').value;
+    var typeCode = document.getElementById('cert-type-value').value;
+    var typeName = document.getElementById('cert-type-name-value').value;
+    var achievedDate = document.getElementById('cert-achieved-date').value;
+    var hasExpiry = document.getElementById('cert-has-expiry').checked;
+    var expiryDate = hasExpiry ? document.getElementById('cert-expiry-date').value : '';
+    var certNumber = document.getElementById('cert-cert-number').value.trim();
+    var notes = document.getElementById('cert-notes').value.trim();
+
+    if (!empNum) { toast('Please select an employee', 'error'); return; }
+    if (!typeCode) { toast('Please select a training type', 'error'); return; }
+    if (!_certFileData) { toast('No file selected', 'error'); return; }
+
+    var status = 'current';
+    if (expiryDate) {
+        var exp = new Date(expiryDate);
+        var today = new Date();
+        today.setHours(0,0,0,0);
+        var thirtyDays = new Date(today);
+        thirtyDays.setDate(thirtyDays.getDate() + 30);
+        if (exp < today) status = 'expired';
+        else if (exp <= thirtyDays) status = 'expiring_soon';
+    }
+
+    var cert = {
+        id: _certDupeRecord ? _certDupeRecord.id : 'CERT-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+        employee_number: empNum,
+        employee_name: empName,
+        training_type_code: typeCode,
+        training_type_name: typeName,
+        training_type: typeCode,
+        achieved_date: achievedDate || null,
+        expiry_date: expiryDate || null,
+        certificate_number: certNumber || null,
+        status: status,
+        file_data: _certFileData,
+        file_name: _certFileName,
+        file_type: _certFileType,
+        notes: notes,
+        filing_status: 'pending',
+        uploaded_at: _certDupeRecord ? _certDupeRecord.uploaded_at : new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+
+    try {
+        await MiiDB.save('certificates', cert);
+        toast(_certDupeRecord ? 'Certificate updated' : 'Certificate saved', 'success');
+        cancelCertUpload();
+        loadCertificates();
+        loadFilingQueue();
+    } catch(e) { console.error('Failed to save certificate:', e); toast('Failed to save certificate', 'error'); }
+}
+
+// ---- Filing queue ----
+async function loadFilingQueue() {
+    try {
+        var certs = await MiiDB.getAll('certificates');
+        var pending = certs.filter(function(c) { return c.filing_status === 'pending'; });
+        var section = document.getElementById('cert-filing-section');
+        var list = document.getElementById('cert-filing-list');
+        var count = document.getElementById('filing-count');
+        if (!pending.length) { section.style.display = 'none'; return; }
+        section.style.display = '';
+        count.textContent = '(' + pending.length + ' pending)';
+        list.innerHTML = pending.map(function(c) {
+            var fname = buildFilingName(c);
+            var cq = String.fromCharCode(39);
+            return '<div class="filing-item"><span class="filing-name">' + esc(fname) + '</span>' +
+                '<button class="btn-view" onclick="downloadForFiling(' + cq + c.id + cq + ')">Download</button>' +
+                '<button class="btn-secondary" onclick="markAsFiled(' + cq + c.id + cq + ')" style="padding:5px 10px;font-size:0.78rem;">Filed</button></div>';
+        }).join('');
+    } catch(e) { console.warn('Filing queue load failed:', e); }
+}
+
+function buildFilingName(cert) {
+    var empName = cert.employee_name || cert.employee_number || 'Unknown';
+    var certType = cert.training_type_name || cert.training_type_code || cert.training_type || 'Certificate';
+    var ext = '.pdf';
+    if (cert.file_type && cert.file_type.indexOf('png') !== -1) ext = '.png';
+    else if (cert.file_type && cert.file_type.indexOf('jpeg') !== -1) ext = '.jpg';
+    else if (cert.file_type && cert.file_type.indexOf('jpg') !== -1) ext = '.jpg';
+    else if (cert.file_name) {
+        var dotIdx = cert.file_name.lastIndexOf('.');
+        if (dotIdx !== -1) ext = cert.file_name.substring(dotIdx);
+    }
+    if (cert.expiry_date) {
+        return empName + ' - ' + certType + ' exp ' + cert.expiry_date + ext;
+    }
+    return empName + ' - ' + certType + ext;
+}
+
+async function downloadForFiling(id) {
+    try {
+        var cert = await MiiDB.get('certificates', id);
+        if (!cert || !cert.file_data) { toast('Certificate data not found', 'error'); return; }
+        var fname = buildFilingName(cert);
+        var a = document.createElement('a');
+        a.href = cert.file_data;
+        a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } catch(e) { toast('Download failed', 'error'); }
+}
+
+async function markAsFiled(id) {
+    try {
+        var cert = await MiiDB.get('certificates', id);
+        if (cert) {
+            cert.filing_status = 'filed';
+            cert.filed_at = new Date().toISOString();
+            await MiiDB.save('certificates', cert);
+            toast('Marked as filed', 'success');
+            loadFilingQueue();
+        }
+    } catch(e) { toast('Failed to update', 'error'); }
+}
+
+async function markAllFiled() {
+    try {
+        var certs = await MiiDB.getAll('certificates');
+        var pending = certs.filter(function(c) { return c.filing_status === 'pending'; });
+        for (var i = 0; i < pending.length; i++) {
+            pending[i].filing_status = 'filed';
+            pending[i].filed_at = new Date().toISOString();
+            await MiiDB.save('certificates', pending[i]);
+        }
+        toast(pending.length + ' certificates marked as filed', 'success');
+        loadFilingQueue();
+    } catch(e) { toast('Failed to update', 'error'); }
+}
+
+// ---- Certificate filter dropdown ----
+async function populateCertFilterDropdown() {
+    await loadTypesCache();
+    var filterSel = document.getElementById('cert-filter-type');
     filterSel.innerHTML = '<option value="">All Types</option>';
     (_typesCache || []).forEach(function(t) {
-        var opt = document.createElement("option");
-        opt.value = t.code; opt.textContent = t.code + " - " + t.name;
+        var opt = document.createElement('option');
+        opt.value = t.code; opt.textContent = t.code + ' - ' + t.name;
         filterSel.appendChild(opt);
     });
 }
-async function saveCertificate() {
-    var empNum = document.getElementById("cert-employee").value;
-    var trainingType = document.getElementById("cert-training-type").value;
-    var notes = document.getElementById("cert-notes").value.trim();
-    if (!empNum) { toast("Please select an employee", "error"); return; }
-    if (!trainingType) { toast("Please select a training type", "error"); return; }
-    if (!_certFileData) { toast("No file selected", "error"); return; }
-    var empName = empNum;
-    var empOpt = document.querySelector("#cert-employee option:checked");
-    if (empOpt && empOpt.value) empName = empOpt.textContent;
-    var cert = {
-        id: "CERT-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7),
-        employee_number: empNum, employee_name: empName,
-        training_type: trainingType, file_data: _certFileData,
-        file_name: _certFileName, file_type: _certFileType,
-        notes: notes, uploaded_at: new Date().toISOString()
-    };
-    try {
-        await MiiDB.save("certificates", cert);
-        toast("Certificate saved", "success");
-        cancelCertUpload(); loadCertificates();
-    } catch(e) { console.error("Failed to save certificate:", e); toast("Failed to save certificate", "error"); }
-}
 
+// ---- Load certificates list ----
 async function loadCertificates() {
-    var listEl = document.getElementById("cert-list");
+    var listEl = document.getElementById('cert-list');
     try {
-        var certs = await MiiDB.getAll("certificates");
-        var search = (document.getElementById("cert-search").value || "").trim().toLowerCase();
+        var certs = await MiiDB.getAll('certificates');
+        var search = (document.getElementById('cert-search').value || '').trim().toLowerCase();
         if (search) {
             certs = certs.filter(function(c) {
-                return (c.employee_name || "").toLowerCase().indexOf(search) !== -1 ||
-                       (c.employee_number || "").toLowerCase().indexOf(search) !== -1 ||
-                       (c.training_type || "").toLowerCase().indexOf(search) !== -1 ||
-                       (c.file_name || "").toLowerCase().indexOf(search) !== -1;
+                return (c.employee_name || '').toLowerCase().indexOf(search) !== -1 ||
+                       (c.employee_number || '').toLowerCase().indexOf(search) !== -1 ||
+                       (c.training_type || '').toLowerCase().indexOf(search) !== -1 ||
+                       (c.training_type_name || '').toLowerCase().indexOf(search) !== -1 ||
+                       (c.training_type_code || '').toLowerCase().indexOf(search) !== -1 ||
+                       (c.file_name || '').toLowerCase().indexOf(search) !== -1;
             });
         }
-        var typeFilter = document.getElementById("cert-filter-type").value;
-        if (typeFilter) certs = certs.filter(function(c) { return c.training_type === typeFilter; });
-        certs.sort(function(a, b) { return new Date(b.uploaded_at) - new Date(a.uploaded_at); });
+        var typeFilter = document.getElementById('cert-filter-type').value;
+        if (typeFilter) certs = certs.filter(function(c) { return c.training_type === typeFilter || c.training_type_code === typeFilter; });
+        certs.sort(function(a, b) { return new Date(b.uploaded_at || 0) - new Date(a.uploaded_at || 0); });
         if (!certs.length) {
             listEl.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>' +
-                (search || typeFilter ? "No certificates match your search" : "No certificates uploaded yet") + '</p></div>';
+                (search || typeFilter ? 'No certificates match your search' : 'No certificates uploaded yet') + '</p></div>';
             return;
         }
         listEl.innerHTML = certs.map(function(c) {
             var thumb;
-            if (c.file_type === "application/pdf") {
-                thumb = '<div class="cert-thumb-pdf" onclick="viewCertificate(' + String.fromCharCode(39) + c.id + String.fromCharCode(39) + ')">&#128196;</div>';
+            var q = String.fromCharCode(39);
+            if (c.file_type === 'application/pdf') {
+                thumb = '<div class="cert-thumb-pdf" onclick="viewCertificate(' + q + c.id + q + ')">&#128196;</div>';
             } else {
-                thumb = '<img class="cert-thumb" src="' + c.file_data + '" alt="Cert" onclick="viewCertificate(' + String.fromCharCode(39) + c.id + String.fromCharCode(39) + ')">';
+                thumb = '<img class="cert-thumb" src="' + c.file_data + '" alt="Cert" onclick="viewCertificate(' + q + c.id + q + ')">';
             }
-            var uploadDate = "";
-            try { var d = new Date(c.uploaded_at); uploadDate = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); } catch(err) {}
+            var uploadDate = '';
+            try { var d = new Date(c.uploaded_at); uploadDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); } catch(err) {}
+            var typeName = c.training_type_name || c.training_type_code || c.training_type || '';
+            var datesHtml = '';
+            if (c.achieved_date || c.expiry_date) {
+                datesHtml = '<div class="cert-dates-row">';
+                if (c.achieved_date) datesHtml += '<span>Achieved: ' + esc(c.achieved_date) + '</span>';
+                if (c.expiry_date) datesHtml += '<span>Expires: ' + esc(c.expiry_date) + '</span>';
+                datesHtml += '</div>';
+            }
+            var statusBadge = '';
+            if (c.status === 'expired') statusBadge = '<span class="batch-status error">Expired</span> ';
+            else if (c.status === 'expiring_soon') statusBadge = '<span class="batch-status review">Expiring</span> ';
             return '<div class="cert-card">' + thumb +
-                '<div class="cert-info"><div class="cert-emp">' + esc(c.employee_name || c.employee_number) + '</div>' +
-                '<div class="cert-type">' + esc(c.training_type) + ' &middot; ' + esc(c.file_name) + '</div>' +
-                (c.notes ? '<div class="cert-date">' + esc(c.notes) + '</div>' : "") +
+                '<div class="cert-info"><div class="cert-emp">' + statusBadge + esc(c.employee_name || c.employee_number) + '</div>' +
+                '<div class="cert-type">' + esc(typeName) + (c.certificate_number ? ' &middot; #' + esc(c.certificate_number) : '') + '</div>' +
+                datesHtml +
+                (c.notes ? '<div class="cert-date">' + esc(c.notes) + '</div>' : '') +
                 '<div class="cert-date">Uploaded ' + uploadDate + '</div></div>' +
                 '<div class="cert-actions">' +
-                '<button class="btn-view" onclick="viewCertificate(' + String.fromCharCode(39) + c.id + String.fromCharCode(39) + ')">View</button>' +
-                '<button class="btn-delete" onclick="deleteCertificate(' + String.fromCharCode(39) + c.id + String.fromCharCode(39) + ')">Del</button>' +
+                '<button class="btn-view" onclick="viewCertificate(' + q + c.id + q + ')">View</button>' +
+                '<button class="btn-delete" onclick="deleteCertificate(' + q + c.id + q + ')">Del</button>' +
                 '</div></div>';
-        }).join("");
-    } catch(e) { console.error("Failed to load certificates:", e); listEl.innerHTML = '<div class="empty-state"><p>Failed to load certificates</p></div>'; }
+        }).join('');
+    } catch(e) { console.error('Failed to load certificates:', e); listEl.innerHTML = '<div class="empty-state"><p>Failed to load certificates</p></div>'; }
 }
+
 async function viewCertificate(id) {
     try {
-        var cert = await MiiDB.get("certificates", id);
-        if (!cert) { toast("Certificate not found", "error"); return; }
-        document.getElementById("cert-viewer-title").textContent = (cert.employee_name || cert.employee_number) + " - " + cert.training_type;
-        var contentEl = document.getElementById("cert-viewer-content");
-        if (cert.file_type === "application/pdf") {
+        var cert = await MiiDB.get('certificates', id);
+        if (\!cert) { toast('Certificate not found', 'error'); return; }
+        var dispName = (cert.employee_name || cert.employee_number) + ' - ' + (cert.training_type_name || cert.training_type_code || cert.training_type);
+        document.getElementById('cert-viewer-title').textContent = dispName;
+        var contentEl = document.getElementById('cert-viewer-content');
+        if (cert.file_type === 'application/pdf') {
             contentEl.innerHTML = '<iframe src="' + cert.file_data + '"></iframe>';
         } else {
             contentEl.innerHTML = '<img src="' + cert.file_data + '" alt="Certificate">';
         }
-        document.getElementById("cert-viewer-modal").classList.add("open");
-    } catch(e) { toast("Failed to load certificate", "error"); }
+        document.getElementById('cert-viewer-modal').classList.add('open');
+    } catch(e) { toast('Failed to load certificate', 'error'); }
 }
 
 function closeCertViewer() {
-    document.getElementById("cert-viewer-modal").classList.remove("open");
-    document.getElementById("cert-viewer-content").innerHTML = "";
+    document.getElementById('cert-viewer-modal').classList.remove('open');
+    document.getElementById('cert-viewer-content').innerHTML = '';
 }
 
 async function deleteCertificate(id) {
-    if (!confirm("Delete this certificate?")) return;
+    if (\!confirm('Delete this certificate?')) return;
     try {
-        await MiiDB.remove("certificates", id);
-        toast("Certificate deleted", "success"); loadCertificates();
-    } catch(e) { toast("Failed to delete", "error"); }
+        await MiiDB.remove('certificates', id);
+        toast('Certificate deleted', 'success');
+        loadCertificates();
+        loadFilingQueue();
+    } catch(e) { toast('Failed to delete', 'error'); }
+}
+
+// ---- Add Employee modal ----
+function openAddEmployeeModal() {
+    document.getElementById('cert-emp-list').classList.remove('open');
+    document.getElementById('add-emp-modal').classList.add('open');
+    document.getElementById('new-emp-number').value = '';
+    document.getElementById('new-emp-name').value = '';
+    document.getElementById('new-emp-trade').value = '';
+    toggleEmpType('direct');
+}
+
+function closeAddEmployeeModal() {
+    document.getElementById('add-emp-modal').classList.remove('open');
+}
+
+function toggleEmpType(type) {
+    var directBtn = document.getElementById('emp-type-direct');
+    var agencyBtn = document.getElementById('emp-type-agency');
+    var numGroup = document.getElementById('emp-number-group');
+    if (type === 'direct') {
+        directBtn.classList.add('active');
+        agencyBtn.classList.remove('active');
+        numGroup.style.display = '';
+    } else {
+        directBtn.classList.remove('active');
+        agencyBtn.classList.add('active');
+        numGroup.style.display = 'none';
+    }
+}
+
+async function saveNewEmployee() {
+    var isDirect = document.getElementById('emp-type-direct').classList.contains('active');
+    var empNum = isDirect ? document.getElementById('new-emp-number').value.trim() : 'AGN-' + Date.now();
+    var empName = document.getElementById('new-emp-name').value.trim();
+    var empTrade = document.getElementById('new-emp-trade').value.trim();
+    if (\!empName) { toast('Please enter employee name', 'error'); return; }
+    if (isDirect && \!empNum) { toast('Please enter employee number', 'error'); return; }
+    try {
+        var emp = { employee_number: empNum, name: empName, trade: empTrade, is_active: true, created_at: new Date().toISOString() };
+        await MiiDB.save('employees', emp);
+        _certEmployees = [];
+        closeAddEmployeeModal();
+        toast('Employee added', 'success');
+        document.getElementById('cert-emp-search').value = empName;
+        document.getElementById('cert-emp-value').value = empNum;
+        document.getElementById('cert-emp-name-value').value = empName;
+        updateSaveButtonState();
+        checkDuplicateCert();
+    } catch(e) { toast('Failed to save employee: ' + e.message, 'error'); }
+}
+
+// ---- Add Training Type (reuses existing type modal) ----
+function openAddTrainingType() {
+    document.getElementById('cert-type-list').classList.remove('open');
+    _certSelectTypeCallback = function(code, name) {
+        document.getElementById('cert-type-search').value = name;
+        document.getElementById('cert-type-value').value = code;
+        document.getElementById('cert-type-name-value').value = name;
+        _certSelectTypeCallback = null;
+        _typesCache = null;
+        updateSaveButtonState();
+        checkDuplicateCert();
+    };
+    openTypeModal();
+}
+
+// ---- Browse Employees ----
+function openBrowseEmployees() {
+    document.getElementById('cert-emp-list').classList.remove('open');
+    document.getElementById('browse-emp-modal').classList.add('open');
+    document.getElementById('browse-emp-search').value = '';
+    filterBrowseEmployees();
+}
+
+async function filterBrowseEmployees() {
+    var query = (document.getElementById('browse-emp-search').value || '').toLowerCase();
+    var emps = await getEmployeesForCert();
+    var filtered = emps;
+    if (query.length >= 1) {
+        filtered = emps.filter(function(e) {
+            return e.name.toLowerCase().indexOf(query) !== -1 || e.employee_number.toLowerCase().indexOf(query) !== -1;
+        });
+    }
+    var list = document.getElementById('browse-emp-list');
+    if (!filtered.length) {
+        list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-light);">No employees found</div>';
+        return;
+    }
+    list.innerHTML = filtered.slice(0, 50).map(function(e) {
+        var cq = String.fromCharCode(39);
+        return '<div class="cert-dropdown-item" onclick="selectBrowseEmployee(' + cq + esc(e.employee_number) + cq + ', ' + cq + esc(e.name) + cq + ')" style="padding:10px 14px;">' +
+            '<strong>' + esc(e.employee_number) + '</strong> - ' + esc(e.name) +
+            (e.trade ? ' <span style="color:var(--text-light);">(' + esc(e.trade) + ')</span>' : '') + '</div>';
+    }).join('');
+}
+
+function selectBrowseEmployee(empNum, empName) {
+    document.getElementById('cert-emp-search').value = empName;
+    document.getElementById('cert-emp-value').value = empNum;
+    document.getElementById('cert-emp-name-value').value = empName;
+    document.getElementById('browse-emp-modal').classList.remove('open');
+    updateSaveButtonState();
+    checkDuplicateCert();
+}
+
+// ---- Browse Training Types ----
+function openBrowseTypes() {
+    document.getElementById('cert-type-list').classList.remove('open');
+    document.getElementById('browse-types-modal').classList.add('open');
+    document.getElementById('browse-type-search').value = '';
+    filterBrowseTypes();
+}
+
+async function filterBrowseTypes() {
+    await loadTypesCache();
+    var query = (document.getElementById('browse-type-search').value || '').toLowerCase();
+    var types = _typesCache || [];
+    var filtered = types;
+    if (query.length >= 1) {
+        filtered = types.filter(function(t) {
+            return t.code.toLowerCase().indexOf(query) !== -1 || t.name.toLowerCase().indexOf(query) !== -1;
+        });
+    }
+    var list = document.getElementById('browse-type-list');
+    if (!filtered.length) {
+        list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-light);">No training types found</div>';
+        return;
+    }
+    list.innerHTML = filtered.map(function(t) {
+        var cq = String.fromCharCode(39);
+        return '<div class="cert-dropdown-item" onclick="selectBrowseType(' + cq + esc(t.code) + cq + ', ' + cq + esc(t.name) + cq + ')" style="padding:10px 14px;">' +
+            '<strong>' + esc(t.code) + '</strong> - ' + esc(t.name) +
+            (t.category ? ' <span style="color:var(--text-light);">(' + esc(t.category) + ')</span>' : '') + '</div>';
+    }).join('');
+}
+
+function selectBrowseType(code, name) {
+    document.getElementById('cert-type-search').value = name;
+    document.getElementById('cert-type-value').value = code;
+    document.getElementById('cert-type-name-value').value = name;
+    document.getElementById('browse-types-modal').classList.remove('open');
+    updateSaveButtonState();
+    checkDuplicateCert();
+}
+
+// ---- Batch upload ----
+function handleBatchFiles(files) {
+    var validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    _batchEntries = [];
+    var fileArr = Array.from(files);
+    var validFiles = fileArr.filter(function(f) {
+        return validTypes.indexOf(f.type) !== -1 && f.size <= 10 * 1024 * 1024;
+    });
+    if (validFiles.length < fileArr.length) {
+        toast((fileArr.length - validFiles.length) + ' file(s) skipped (invalid type or too large)', 'error');
+    }
+    if (!validFiles.length) return;
+    document.getElementById('cert-batch-label').textContent = validFiles.length + ' file(s) selected';
+    document.getElementById('cert-batch-zone').style.display = 'none';
+    document.getElementById('cert-batch-results').style.display = '';
+
+    var loaded = 0;
+    validFiles.forEach(function(file, idx) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            _batchEntries.push({
+                idx: idx,
+                file_name: file.name,
+                file_type: file.type,
+                file_data: e.target.result,
+                employee_number: '',
+                employee_name: '',
+                training_type_code: '',
+                training_type_name: '',
+                achieved_date: '',
+                expiry_date: '',
+                status: 'review'
+            });
+            loaded++;
+            if (loaded === validFiles.length) {
+                _batchEntries.sort(function(a, b) { return a.idx - b.idx; });
+                renderBatchTable();
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderBatchTable() {
+    var tbody = document.getElementById('cert-batch-tbody');
+    var readyCount = _batchEntries.filter(function(e) { return e.status === 'ready' || e.status === 'update'; }).length;
+    document.getElementById('cert-batch-save-btn').textContent = 'Save All Valid (' + readyCount + ')';
+    document.getElementById('cert-batch-save-btn').disabled = readyCount === 0;
+
+    tbody.innerHTML = _batchEntries.map(function(entry, idx) {
+        var rowClass = idx === _batchSelectedIdx ? ' class="selected-row"' : '';
+        return '<tr' + rowClass + ' onclick="selectBatchRow(' + idx + ')">' +
+            '<td>' + esc(entry.file_name) + '</td>' +
+            '<td>' + (entry.employee_name ? esc(entry.employee_name) : '<em style="color:var(--text-light)">Not set</em>') + '</td>' +
+            '<td>' + (entry.training_type_name ? esc(entry.training_type_name) : '<em style="color:var(--text-light)">Not set</em>') + '</td>' +
+            '<td><span class="batch-status ' + entry.status + '">' + entry.status.charAt(0).toUpperCase() + entry.status.slice(1) + '</span></td>' +
+            '<td><button class="btn-delete" onclick="event.stopPropagation();removeBatchEntryAt(' + idx + ')" style="padding:2px 8px;font-size:0.75rem;">X</button></td></tr>';
+    }).join('');
+}
+
+function removeBatchEntryAt(idx) {
+    _batchEntries.splice(idx, 1);
+    if (_batchSelectedIdx >= _batchEntries.length) _batchSelectedIdx = -1;
+    if (_batchSelectedIdx === idx) {
+        _batchSelectedIdx = -1;
+        document.getElementById('cert-batch-edit').classList.remove('visible');
+    }
+    renderBatchTable();
+    if (!_batchEntries.length) clearBatchFiles();
+}
+
+function clearBatchFiles() {
+    _batchEntries = [];
+    _batchSelectedIdx = -1;
+    document.getElementById('cert-batch-input').value = '';
+    document.getElementById('cert-batch-label').textContent = 'No files selected';
+    document.getElementById('cert-batch-zone').style.display = '';
+    document.getElementById('cert-batch-results').style.display = 'none';
+    document.getElementById('cert-batch-edit').classList.remove('visible');
+}
+
+function selectBatchRow(idx) {
+    _batchSelectedIdx = idx;
+    renderBatchTable();
+    var entry = _batchEntries[idx];
+    if (!entry) return;
+    var panel = document.getElementById('cert-batch-edit');
+    panel.classList.add('visible');
+    var previewHtml = '';
+    if (entry.file_type === 'application/pdf') {
+        previewHtml = '<div class="pdf-preview" style="width:120px;height:100px;"><span class="pdf-icon">&#128196;</span></div>';
+    } else {
+        previewHtml = '<img src="' + entry.file_data + '" style="max-width:120px;max-height:100px;border-radius:6px;border:1px solid var(--border);">';
+    }
+    panel.innerHTML = '<div style="display:flex;gap:16px;align-items:flex-start;">' +
+        '<div>' + previewHtml + '</div>' +
+        '<div style="flex:1;">' +
+        '<div class="form-group" style="margin-bottom:8px;">' +
+        '<label style="font-size:0.8rem;font-weight:600;color:var(--text-light);">Employee</label>' +
+        '<select id="batch-emp-select" onchange="applyBatchEdit()" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;"></select></div>' +
+        '<div class="form-group" style="margin-bottom:8px;">' +
+        '<label style="font-size:0.8rem;font-weight:600;color:var(--text-light);">Training Type</label>' +
+        '<select id="batch-type-select" onchange="applyBatchEdit()" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;"></select></div>' +
+        '<div style="display:flex;gap:8px;">' +
+        '<div class="form-group" style="flex:1;margin-bottom:0;">' +
+        '<label style="font-size:0.8rem;font-weight:600;color:var(--text-light);">Achieved</label>' +
+        '<input type="date" id="batch-achieved" value="' + (entry.achieved_date || '') + '" onchange="applyBatchEdit()" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;"></div>' +
+        '<div class="form-group" style="flex:1;margin-bottom:0;">' +
+        '<label style="font-size:0.8rem;font-weight:600;color:var(--text-light);">Expiry</label>' +
+        '<input type="date" id="batch-expiry" value="' + (entry.expiry_date || '') + '" onchange="applyBatchEdit()" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;"></div></div>' +
+        '</div></div>';
+
+    getEmployeesForCert().then(function(emps) {
+        var empSel = document.getElementById('batch-emp-select');
+        empSel.innerHTML = '<option value="">-- Select Employee --</option>';
+        emps.forEach(function(e) {
+            var opt = document.createElement('option');
+            opt.value = e.employee_number;
+            opt.textContent = e.employee_number + ' - ' + e.name;
+            opt.setAttribute('data-name', e.name);
+            if (e.employee_number === entry.employee_number) opt.selected = true;
+            empSel.appendChild(opt);
+        });
+    });
+    loadTypesCache().then(function() {
+        var typeSel = document.getElementById('batch-type-select');
+        typeSel.innerHTML = '<option value="">-- Select Training Type --</option>';
+        (_typesCache || []).forEach(function(t) {
+            var opt = document.createElement('option');
+            opt.value = t.code;
+            opt.textContent = t.code + ' - ' + t.name;
+            opt.setAttribute('data-name', t.name);
+            if (t.code === entry.training_type_code) opt.selected = true;
+            typeSel.appendChild(opt);
+        });
+    });
+}
+
+function applyBatchEdit() {
+    if (_batchSelectedIdx < 0 || _batchSelectedIdx >= _batchEntries.length) return;
+    var entry = _batchEntries[_batchSelectedIdx];
+    var empSel = document.getElementById('batch-emp-select');
+    var typeSel = document.getElementById('batch-type-select');
+    entry.employee_number = empSel.value;
+    var empOpt = empSel.options[empSel.selectedIndex];
+    entry.employee_name = empOpt ? (empOpt.getAttribute('data-name') || '') : '';
+    entry.training_type_code = typeSel.value;
+    var typeOpt = typeSel.options[typeSel.selectedIndex];
+    entry.training_type_name = typeOpt ? (typeOpt.getAttribute('data-name') || '') : '';
+    entry.achieved_date = document.getElementById('batch-achieved').value || '';
+    entry.expiry_date = document.getElementById('batch-expiry').value || '';
+    entry.status = (entry.employee_number && entry.training_type_code) ? 'ready' : 'review';
+    renderBatchTable();
+}
+
+async function saveAllBatchValid() {
+    var toSave = _batchEntries.filter(function(e) { return e.status === 'ready' || e.status === 'update'; });
+    if (!toSave.length) { toast('No valid entries to save', 'error'); return; }
+    var savedCount = 0;
+    for (var i = 0; i < toSave.length; i++) {
+        var entry = toSave[i];
+        var status = 'current';
+        if (entry.expiry_date) {
+            var exp = new Date(entry.expiry_date);
+            var today = new Date(); today.setHours(0,0,0,0);
+            var td = new Date(today); td.setDate(td.getDate() + 30);
+            if (exp < today) status = 'expired';
+            else if (exp <= td) status = 'expiring_soon';
+        }
+        var cert = {
+            id: 'CERT-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+            employee_number: entry.employee_number,
+            employee_name: entry.employee_name,
+            training_type_code: entry.training_type_code,
+            training_type_name: entry.training_type_name,
+            training_type: entry.training_type_code,
+            achieved_date: entry.achieved_date || null,
+            expiry_date: entry.expiry_date || null,
+            status: status,
+            file_data: entry.file_data,
+            file_name: entry.file_name,
+            file_type: entry.file_type,
+            notes: '',
+            filing_status: 'pending',
+            uploaded_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        try {
+            await MiiDB.save('certificates', cert);
+            entry.status = 'saved';
+            savedCount++;
+        } catch(e) {
+            entry.status = 'error';
+            console.error('Failed to save batch entry:', e);
+        }
+    }
+    renderBatchTable();
+    toast(savedCount + ' certificate(s) saved', 'success');
+    loadCertificates();
+    loadFilingQueue();
 }
 
 </script>
