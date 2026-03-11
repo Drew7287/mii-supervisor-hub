@@ -17,7 +17,7 @@
   'use strict';
 
   const DB_NAME = 'mii-hub';
-  const DB_VERSION = 6;
+  const DB_VERSION = 7;
 
   // IndexedDB store name → localStorage key mapping
   const STORE_LS_MAP = {
@@ -53,6 +53,7 @@
     'sheq_observations',
     'powra',
     'certificates',
+    'rams_documents',
   ];
 
   // Reference data stores (pulled from server, not pushed via sync_queue)
@@ -77,7 +78,7 @@
 
         // Create array-based stores with keyPath=id
         // Stores with custom indexes are handled individually below
-        const INDEXED_STORES = ['daily_reports', 'havs_entries', 'certificates'];
+        const INDEXED_STORES = ['daily_reports', 'havs_entries', 'certificates', 'rams_documents'];
         ARRAY_STORES.forEach((name) => {
           if (!INDEXED_STORES.includes(name) && !db.objectStoreNames.contains(name)) {
             db.createObjectStore(name, { keyPath: 'id' });
@@ -104,6 +105,13 @@
           const certStore = db.createObjectStore('certificates', { keyPath: 'id' });
           certStore.createIndex('employee_number', 'employee_number', { unique: false });
           certStore.createIndex('training_type', 'training_type', { unique: false });
+        }
+
+        // rams_documents store with indexes for status and RAMS number lookups
+        if (!db.objectStoreNames.contains('rams_documents')) {
+          const ramsStore = db.createObjectStore('rams_documents', { keyPath: 'id' });
+          ramsStore.createIndex('status', 'status', { unique: false });
+          ramsStore.createIndex('rams_number', 'rams_number', { unique: false });
         }
 
         // Reference data stores (keyed by employee_number)

@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAMS Builder - MII Engineering</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --primary: #003366;
+    --primary-light: #004d99;
+    --accent: #0078d4;
+    --success: #28a745;
+    --warning: #e6a000;
+    --danger: #dc3545;
+    --orange: #fd7e14;
+    --bg: #f0f2f5;
+    --white: #ffffff;
+    --border: #d0d5dd;
+    --text: #1a1a1a;
+    --text-light: #667085;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+.topbar { background: var(--primary); color: var(--white); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+.topbar h1 { font-size: 1.05rem; font-weight: 700; }
+.topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+.topbar a:hover { color: #fff; }
+.content { max-width: 960px; margin: 0 auto; padding: 20px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; min-height: 44px; transition: background 0.15s, opacity 0.15s; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--primary); color: var(--white); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-light); }
+.btn-accent { background: var(--accent); color: var(--white); }
+.btn-accent:hover:not(:disabled) { background: #006abf; }
+.btn-success { background: var(--success); color: var(--white); }
+.btn-success:hover:not(:disabled) { background: #22963e; }
+.btn-danger { background: var(--danger); color: var(--white); }
+.btn-danger:hover:not(:disabled) { background: #c82333; }
+.btn-outline { background: var(--white); color: var(--text); border: 1.5px solid var(--border); }
+.btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; min-height: 36px; }
+
+/* Cards */
+.card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+
+/* Form elements */
+label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+input[type="text"], input[type="date"], input[type="number"], textarea, select {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 6px;
+    font-size: 0.95rem; font-family: inherit; margin-bottom: 14px; outline: none; transition: border-color 0.15s;
+    background: var(--white); color: var(--text);
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:600px) { .form-row { grid-template-columns: 1fr; } }
+
+/* Step indicator */
+.steps-bar { display: flex; gap: 4px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 4px; }
+.step-pill { padding: 8px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; background: #e8ecf0; color: var(--text-light); cursor: pointer; min-height: 36px; display: flex; align-items: center; }
+.step-pill.active { background: var(--accent); color: var(--white); }
+.step-pill.done { background: var(--success); color: var(--white); }
+
+/* Wizard nav */
+.wizard-nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+/* Hazard cards */
+.hazard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.hazard-card { background: var(--white); border: 2px solid var(--border); border-radius: 8px; padding: 14px; cursor: pointer; transition: border-color 0.15s; }
+.hazard-card:hover { border-color: var(--accent); }
+.hazard-card.selected { border-color: var(--success); background: #f0faf3; }
+.hazard-card .hname { font-weight: 700; font-size: 0.9rem; margin-bottom: 6px; }
+.hazard-card .hpreview { font-size: 0.78rem; color: var(--text-light); line-height: 1.4; max-height: 3.2em; overflow: hidden; }
+.hazard-check { float: right; width: 22px; height: 22px; accent-color: var(--success); }
+
+/* Risk assessment */
+.ra-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.ra-card h4 { font-size: 0.95rem; margin-bottom: 12px; color: var(--primary); }
+.ra-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+@media(max-width:600px) { .ra-grid { grid-template-columns: 1fr; } }
+.risk-score { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; font-weight: 800; font-size: 1.1rem; color: var(--white); }
+.risk-low { background: var(--success); }
+.risk-med { background: var(--warning); }
+.risk-high { background: var(--orange); }
+.risk-crit { background: var(--danger); }
+
+/* Review checks */
+.check-list { list-style: none; }
+.check-list li { padding: 8px 0; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+.check-pass { color: var(--success); font-weight: 700; }
+.check-fail { color: var(--danger); font-weight: 700; }
+
+/* Method steps */
+.method-step { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+.method-step .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.method-step .step-num { background: var(--primary); color: var(--white); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+.step-actions { display: flex; gap: 6px; }
+
+/* PPE grid */
+.ppe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.ppe-item { display: flex; align-items: center; gap: 8px; padding: 10px; background: var(--white); border: 1.5px solid var(--border); border-radius: 6px; cursor: pointer; min-height: 44px; }
+.ppe-item.checked { border-color: var(--success); background: #f0faf3; }
+.ppe-item input { width: 20px; height: 20px; accent-color: var(--success); }
+
+/* Document list */
+.doc-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--white); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 10px; cursor: pointer; transition: box-shadow 0.15s; }
+.doc-row:hover { box-shadow: var(--shadow-hover); }
+.doc-info { flex: 1; }
+.doc-title { font-weight: 700; font-size: 0.95rem; }
+.doc-meta { font-size: 0.8rem; color: var(--text-light); margin-top: 2px; }
+.status-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.status-draft { background: #e8ecf0; color: var(--text-light); }
+.status-review { background: #fff3cd; color: #856404; }
+.status-approved { background: #d4edda; color: #155724; }
+
+/* Collapsible sections in review */
+.review-section { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.review-section-header { background: #f8f9fa; padding: 12px 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.review-section-body { padding: 16px; }
+.review-section-body.collapsed { display: none; }
+
+/* Search */
+.search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+.search-bar input { flex: 1; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+.empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+/* Env factor row */
+.env-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 8px; align-items: end; }
+@media(max-width:600px) { .env-row { grid-template-columns: 1fr; } }
+
+/* Print styles */
+@media print {
+    body { background: white; font-size: 10pt; }
+    .topbar, .steps-bar, .wizard-nav, .btn, .search-bar, #list-view, .no-print { display: none !important; }
+    .content { max-width: 100%; padding: 0; }
+    .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    .review-section-body.collapsed { display: block !important; }
+    .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
+    .print-header h2 { color: var(--primary); font-size: 16pt; }
+    .print-header p { font-size: 9pt; color: var(--text-light); }
+    .sig-block { display: grid !important; grid-template-columns: 1fr 1fr 1fr; gap: 30px; margin-top: 40px; page-break-inside: avoid; }
+    .sig-line { border-top: 1px solid #333; padding-top: 6px; font-size: 9pt; }
+    .sig-line .sig-label { font-weight: 700; }
+    .sig-line .sig-date { margin-top: 20px; border-top: 1px solid #999; padding-top: 4px; font-size: 8pt; color: var(--text-light); }
+}
+.print-header { display: none; }
+.sig-block { display: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>RAMS Builder</h1>
+    <a href="hub.html">&larr; Back to Hub</a>
+</div>
+
+<!-- PRINT HEADER (only shows in print) -->
+<div class="print-header">
+    <h2>MII Engineering Ltd</h2>
+    <p>Risk Assessment &amp; Method Statement</p>
+</div>
+
+<div class="content">
+
+<!-- ════════ LIST VIEW ════════ -->
+<div id="list-view">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="font-size:1.3rem;color:var(--primary);">RAMS Documents</h2>
+        <button class="btn btn-primary" onclick="newDocument()">+ New RAMS</button>
+    </div>
+    <div class="search-bar">
+        <input type="text" id="doc-search" placeholder="Search by name, number or client..." oninput="renderDocList()">
+    </div>
+    <div id="doc-list"></div>
+</div>
+
+<!-- ════════ WIZARD VIEW ════════ -->
+<div id="wizard-view" style="display:none;">
+
+    <!-- Step pills -->
+    <div class="steps-bar" id="steps-bar"></div>
+
+    <!-- Step 1: Job Details -->
+    <div class="wizard-step" id="step-0">
+        <h3 style="margin-bottom:16px;color:var(--primary);">Job Details</h3>
+        <div class="card">
+            <div class="form-row">
+                <div><label>Job Number *</label><input type="text" id="f-job-number" placeholder="e.g. SW4455"></div>
+                <div><label>RAMS Number</label><input type="text" id="f-rams-number" placeholder="Auto-generated"></div>
+            </div>
+            <label>Job Name *</label><input type="text" id="f-job-name" placeholder="e.g. Hirwaun Power Station Maintenance">
+            <div class="form-row">
+                <div><label>Location</label><input type="text" id="f-location" placeholder="Site location"></div>
+                <div><label>Client</label><input type="text" id="f-client" placeholder="Client name"></div>
+            </div>
+            <label>Scope of Works *</label><textarea id="f-scope" rows="3" placeholder="Brief description of works"></textarea>
+            <div class="form-row">
+                <div><label>Assessment Date</label><input type="date" id="f-date-start"></div>
+                <div><label>End Date</label><input type="date" id="f-date-end"></div>
+            </div>
+            <h4 style="margin:16px 0 10px;color:var(--primary);font-size:0.95rem;">Personnel</h4>
+            <div class="form-row">
+                <div><label>Assessor Name</label><input type="text" id="f-assessor"></div>
+                <div><label>H&amp;S Reviewer</label><input type="text" id="f-hs-reviewer"></div>
+            </div>
+            <div class="form-row">
+                <div><label>Site Supervisor</label><input type="text" id="f-supervisor"></div>
+                <div><label>Emergency Contact</label><input type="text" id="f-emergency"></div>
+            </div>
+            <div class="form-row">
+                <div><label>First Aider</label><input type="text" id="f-first-aider"></div>
+                <div><label>Fire Warden</label><input type="text" id="f-fire-warden"></div>
+            </div>
+            <div class="form-row">
+                <div><label>Nearest Hospital</label><input type="text" id="f-hospital"></div>
+                <div><label>Hospital Address</label><input type="text" id="f-hospital-addr"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Method Statement -->
+    <div class="wizard-step" id="step-1" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="color:var(--primary);">Method Statement</h3>
+            <button class="btn btn-accent btn-sm" onclick="addMethodStep()">+ Add Step</button>
+        </div>
+        <div id="method-steps"></div>
+    </div>
+
+    <!-- Step 3: Hazard Selection -->
+    <div class="wizard-step" id="step-2" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="color:var(--primary);">Select Hazards</h3>
+            <span id="hazard-count" style="font-size:0.85rem;color:var(--text-light);">0 selected</span>
+        </div>
+        <div class="search-bar" style="margin-bottom:12px;">
+            <input type="text" id="hazard-search" placeholder="Search hazards..." oninput="renderHazards()">
+        </div>
+        <div class="hazard-grid" id="hazard-grid"></div>
+    </div>
+
+    <!-- Step 4: Risk Assessment -->
+    <div class="wizard-step" id="step-3" style="display:none;">
+        <h3 style="margin-bottom:16px;color:var(--primary);">Risk Assessment</h3>
+        <div id="ra-cards"></div>
+    </div>
+
+    <!-- Step 5: Requirements -->
+    <div class="wizard-step" id="step-4" style="display:none;">
+        <h3 style="margin-bottom:16px;color:var(--primary);">Requirements</h3>
+        <div class="card">
+            <h4 style="margin-bottom:12px;">Personal Protective Equipment</h4>
+            <div class="ppe-grid" id="ppe-grid"></div>
+        </div>
+        <div class="card">
+            <h4 style="margin-bottom:12px;">Permits Required</h4>
+            <div class="ppe-grid" id="permits-grid"></div>
+        </div>
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h4>Equipment Needed</h4>
+                <button class="btn btn-outline btn-sm" onclick="addEquipItem()">+ Add</button>
+            </div>
+            <div id="equip-list"></div>
+        </div>
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h4>Training Requirements</h4>
+                <button class="btn btn-outline btn-sm" onclick="addTrainingItem()">+ Add</button>
+            </div>
+            <div id="training-list"></div>
+        </div>
+    </div>
+
+    <!-- Step 6: Environment -->
+    <div class="wizard-step" id="step-5" style="display:none;">
+        <h3 style="margin-bottom:16px;color:var(--primary);">Environmental Assessment</h3>
+        <div class="card">
+            <label>Waste Generation</label>
+            <select id="f-waste" onchange="document.getElementById('f-waste-detail').style.display=this.value==='yes'?'block':'none'">
+                <option value="no">No</option><option value="yes">Yes</option>
+            </select>
+            <textarea id="f-waste-detail" style="display:none" placeholder="Describe waste types and disposal methods"></textarea>
+            <label>Noise Level</label>
+            <select id="f-noise">
+                <option value="low">Low (normal conversation)</option>
+                <option value="medium">Medium (raised voice needed)</option>
+                <option value="high">High (hearing protection required)</option>
+            </select>
+            <textarea id="f-noise-controls" placeholder="Noise control measures (if applicable)"></textarea>
+            <label>Weather Considerations</label>
+            <textarea id="f-weather" placeholder="e.g. Wind restrictions for lifting, rain precautions"></textarea>
+        </div>
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h4>Environmental Factors</h4>
+                <button class="btn btn-outline btn-sm" onclick="addEnvFactor()">+ Add Factor</button>
+            </div>
+            <div id="env-factors"></div>
+        </div>
+    </div>
+
+    <!-- Step 7: Review -->
+    <div class="wizard-step" id="step-6" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+            <h3 style="color:var(--primary);">Review &amp; Export</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="runAIReview()">&#9881; AI Review</button>
+                <button class="btn btn-accent btn-sm" onclick="exportPDF()">&#128438; Export PDF</button>
+            </div>
+        </div>
+        <div id="ai-review-results" style="display:none;" class="card"></div>
+        <div id="review-content"></div>
+
+        <!-- Signature block for print -->
+        <div class="sig-block">
+            <div class="sig-line"><div class="sig-label">Assessor</div><div style="height:40px;"></div><div class="sig-date">Date: _______________</div></div>
+            <div class="sig-line"><div class="sig-label">H&amp;S Reviewer</div><div style="height:40px;"></div><div class="sig-date">Date: _______________</div></div>
+            <div class="sig-line"><div class="sig-label">Site Manager</div><div style="height:40px;"></div><div class="sig-date">Date: _______________</div></div>
+        </div>
+    </div>
+
+    <!-- Wizard navigation -->
+    <div class="wizard-nav">
+        <button class="btn btn-outline" id="btn-back" onclick="wizardBack()">&#8592; Back</button>
+        <div style="display:flex;gap:8px;">
+            <button class="btn btn-success" onclick="saveDraft()">Save Draft</button>
+            <button class="btn btn-primary" id="btn-next" onclick="wizardNext()">Next &#8594;</button>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// MII RAMS BUILDER - Application Logic
+// ═══════════════════════════════════════════════════════════
+
+const MII_HAZARDS = [{"id": "7ec2fe89-c120-4b7d-8df8-4ca7082249e8", "name": "Hazardous Surroundings & Environments", "category": "OTHER", "default_controls": "Always remain vigilant of your surroundings and be aware of frequent changes to your surroundings that could be a threat to your health and safety.  Only use mobile phones in designated areas. Please report any personal or professional sources of stress that may be distracting you. Always pay attention to other nearby work activities that may effect you. Physical stressors such as fatigue/tiredness, increased temperatures, high levels of noise etc can effect your decision making when in a hazardous environment."}, {"id": "77076fda-46b2-4c25-8b5a-264163d4c6e4", "name": "Inadequate/ Incompetent Supervision", "category": "OTHER", "default_controls": "Correct Supervisor resource allocated to all work activities.  This will consider chargehand, supervisor and senior supervisor level.  MII Engineering have established minimum qualifications for all supervisor levels, which will be implemented in all circumstances.  Roles and Responsibilities of supervisors have been established and documented, along with associated KPI targets for critical functions (Workplace Inspection Completion etc.)"}, {"id": "4ffc3bf6-023e-43d5-b275-427417e101fa", "name": "Poor Lighting", "category": "OTHER", "default_controls": "Ensure adequate levels of lighting are provided before commencing any work. If the area is poorly lit then use task lighting, preferably battery operated to avoid trailing leads. If you feel that light is becoming a nuisance raise your concerns with your supervisor."}, {"id": "bcbdebd0-832a-44f3-963e-3bc035e63def", "name": "Slips, Trips and Falls \\ Poor Housekeeping", "category": "OTHER", "default_controls": "Ensure housekeeping standards are maintained and kept at an acceptable level throughout the day. Adequately protect or re-route trailing leads. Ensure all equipment is returned to a storage area when not in use. Ensure that you look where you’re going at all times and maintain your full attention on any movement across site, particularly when approaching steps or changes in level.  Do not become distracted, as this increases the risk of fall."}, {"id": "1bc8ff18-aef0-45e1-bd61-a995f3c31f74", "name": "Trapping / Pinch Points", "category": "OTHER", "default_controls": "Always use the right tool for the job and identify any pinch or trapping points in your work area. Be aware of anything in your work area that has the potential to move and create pinch/trapping points. Never operate machinery without the appropriate machine guards in place. Always be aware of where you place your body especially if they are placed \"between\" any two moving or static objects."}, {"id": "f900cbfb-e65b-450f-958c-c8529affb3bf", "name": "Unauthorised or Inadequate Access and Egress", "category": "OTHER", "default_controls": "Always stick to designated walkways where possible, maintain three points of contact when ascending or descending stairways. Adhere to all warning signage when entering plant areas. Ensure access to work areas is only achieved via designated and appropriate safe working platforms. When entering any area ensure you are aware of plant status. You must report any issues or concerns with access and egress – Stepping across openings, climbing over plant, making exaggerated steps up or down and walking up and down slopes is NOT Safe Access/ Egress."}, {"id": "fe6255a4-40d7-450b-8dcc-dd08f393b33c", "name": "Hand Tools", "category": "OTHER", "default_controls": "Always use hand tools correctly and for their intended purpose, never improvise. Ensure they are free from damage and fit for purpose prior to use by carrying out a visual inspection of the tool, if any defects are found do not use and source a suitable replacement. Keep hand tools free from contaminates such as oil & grease that lead to loss of grip of the tool. Ensure tools such as wrenches and spanners are located correctly on the work piece before pressure is applied.  Wherever possible, ensure you use a tool specifically sized for the task, rather than an adjustable tool (Spanners etc.). When using striking tools e.g. sledge hammers, ensure that all persons are a safe distance away for the duration of the task."}, {"id": "179aade5-a3e5-4029-82af-bd79b368d549", "name": "Manual Handling", "category": "OTHER", "default_controls": "Manual handling must be avoided whenever practicable – Mechanical lifting aids (FLT, cranes, trolleys etc.) must be utilised if available.  If MH unavoidable, the weight of the object to be handled or the force required to complete the task must be known and any proposed routes of travel must be inspected beforehand.  Team lifting can reduce the risk of injury if communication throughout is suitable and sufficient.  Suitable PPE must be worn during MH, with gloves that offer suitable grip (Welding gauntlets are NOT suitable)."}, {"id": "b31a7efb-418d-4337-9fef-04a988c4d5f6", "name": "Objects falling from above", "category": "OTHER", "default_controls": "Maintain regular communication with relevant working parties above and below you.  Ensure barriers and warning signs are erected to prevent persons from walking under elevated work areas. Alternatively, a “look out” must be assigned to re – direct people from the area. Access into these areas must be restricted until the work has been completed or until the risk of falling objects has been eliminated. Maintain good housekeeping standards at all times, Suitable containers must be supplied to store loose objects, ensure toe-boards are in place around exposed edges, report any gaps or openings in elevated platforms immediately."}, {"id": "5744aa52-dc53-44ad-9788-2c11e309a8fa", "name": "Sharp Edges", "category": "OTHER", "default_controls": "Avoid handling sharp objects wherever possible, use alternative methods of handling materials and objects such as trays, jigs, lift trucks etc. When handling material with sharp edges the appropriate PPE should be worn at all times.  Sharp edges on produced work should be de-burred, where sharp edges cannot be removed then the appropriate wrapping/padding should be used to cover the sharp edges. When using tools with exposed edges always ensure the tool is in good condition, always use the right tool for the job and always ensure the tool is replaced back into a protective covering or sheath."}, {"id": "2783bdfb-fbad-473d-8f7f-6c7deb9997b5", "name": "Lift Operations", "category": "OTHER", "default_controls": "No lift should be carried out without an adequate lift plan being in place. Ensure all members of the working party involved with the lift have acknowledged and understood the contents of the lift plan. Ensure all lifting accessories are compliant. Avoid contact with suspend loads whenever possible, e.g. use push sticks / guide ropes. Never walk under suspended loads and keep non-essential personnel away from the area, establish an exclusion zone, consider physical barriers, signage and safety lookouts. All roles and responsibilities must be clearly defined and a suitable level of resource must be assigned. Employees are not permitted to assume multiple roles within the same operation."}, {"id": "abb40f3a-271d-42b3-b2c3-2e9e01f3e31d", "name": "Stored Energy", "category": "OTHER", "default_controls": "Ensure plant has been isolated and permits issued prior to starting work. Ensure any stored, potential or mechanical energy in a system has been dissipated or secured prior to starting any work. Ensure any latent energy in systems has been dissipated prior to starting work."}, {"id": "ddb2243a-95f7-4ff3-b47b-07d8e190357c", "name": "Working at Height", "category": "OTHER", "default_controls": "Ensure all open edges are suitably protected and suitable safe working platforms are in place. Instances where edge protection is not possible personal protective measures such as personal harnesses and lanyards must be used and connected to a designated and approved anchor point, inspect all equipment thoroughly before use and report any defects immediately. Do not use defective equipment under any circumstance. Scaffold must be checked by a competent person. Erect barriers or use covers to prevent falls through openings in the floor."}, {"id": "4320bdf6-ed57-4c43-820f-03d4fe0ca3bc", "name": "Flying / Ejected Objects", "category": "OTHER", "default_controls": "Never stand in the \\u2018line of fire’ of potentially ejected objects. Always wear the correct PPE for the task you are carrying out. Use screens or barriers wherever possible. Ensure that the area around your work activates that have the potential to produce flying/ejected objects is cordoned off. Use appropriate signage where necessary. If you have any concerns raise them with your supervisor immediately."}, {"id": "812a4429-3e2e-44dd-b6d4-36dd2805c3d1", "name": "Angle Grinders", "category": "OTHER", "default_controls": "All employees who use angle grinders must be competent to do so. Carry out a pre-use inspection of the grinder and ensure all safety features (guards, handles etc) are in place and used during operation. The correct size grinder and the correct type of disc must always be used for the task and only competent people are permitted to change the disc. Where practicable, suitably secure the work piece before work commences. Select the correct PPE for the task and always hold the angle grinder with both hands during it's operation. All 110v angle grinders must hold an in-date PAT tag. Never stand in the \\u2018line of fire’ of potentially ejected objects."}, {"id": "f517df42-f30c-43b9-8a35-09d8a5910405", "name": "Cranes (Mobile, Overhead Etc)", "category": "OTHER", "default_controls": "Always be mindful of cranes operating in your work area. All cranes must be subject to a thorough examination and a regular maintenance programme. Complete pre-use inspection checklists where required. Ensure the crane operator is trained and competent and ensure all crane movements are controlled by a competent banksman. Ensure that loads are never transported over populated areas, use suitable mass notification devices e.g. air horns, to warn people in the area of a crane operation. Never walk under suspended loads, remove non-essential personnel from the area and use a safety person or barriers/warning signs where required."}, {"id": "72487525-0e4f-4374-84d1-30e542f435dd", "name": "MEWPS", "category": "OTHER", "default_controls": "Ensure all relevant certification is provided and in place prior to use. Only trained and competent personnel permitted to operate MEWP. Ensure the Safe Working Load of the machine is displayed and adhered to, ensure a \"pre-flight\" check has been carried out and only use the platform and boom for the work for which it was intended. Ensure you keep your arms inside the confines of the platform while it's moving. Suitable barriers, cones, lights etc should be put in place to restrict access underneath when required. Ensure you wear a safety harness and that it is attached to the platform and that you wear all other relevant PPE. Moving parts must be adequately guarded and when the MEWP is not in use it should be immobilised at ground level. Ensure you have read and understood the rescue plan, raise any concerns with your supervisor."}, {"id": "de9b774c-2a17-464a-b236-bd05be2a1801", "name": "Poor Ground Conditions", "category": "OTHER", "default_controls": "If you feel ground conditions are not suitable in your work area e.g. uneven or slippery surfaces, ground shifting beneath your feet, raise your concerns with your supervisor immediately."}, {"id": "bf540676-02c8-430f-ae9d-6a93471761d5", "name": "Rotating Equipment", "category": "OTHER", "default_controls": "Equipment must have its motive force isolated – electrically, pneumatically or hydraulically; a  certificate of isolation is required. Ensure all relevant permits have been obtained and any stored energy has been dissipated prior to starting work. Where practicable, physical prevention should installed."}, {"id": "5145cbc1-a518-4aa7-b954-7df697aa33b9", "name": "Fork Lift Trucks (Including Telehandlers)", "category": "OTHER", "default_controls": "Only personnel who hold a valid licence are permitted to operate Fork Lift  Trucks. Ensure a pre-use inspection of the equipment is carried out prior to use. Always adhere to the 3 Meter rule and remain constantly aware of your surroundings, a Banksman must be in place where necessary. If you leave the vehicle for any amount of time ensure the engine is switched off and keys  removed. Always operate within the safe working load of the vehicle. If a FLT or Telehandler is used to fit anything that is not palletised then a suitable lift plan must be created for the operation."}, {"id": "fcc50e66-13ab-4212-aaaf-fd7fb3cb5426", "name": "Heavy plant and Road Traffic", "category": "OTHER", "default_controls": "Be aware of road traffic and heavy plant in your work area. Use designated crossings where possible otherwise ensure any crossing is completely clear of traffic before crossing. Wear appropriate PPE to ensure your are visible at all times. Always make eye contact with drivers of plant vehicles before entering their operating vicinity. Adhere to the three meter rule at all times. Adhere to local area rules, and site level crossing rules."}, {"id": "109b011b-2348-4bb7-bd6d-6321ae5c4714", "name": "Scaffold", "category": "OTHER", "default_controls": "Fixed Scaffold\n\nScaffold must be planned according the requirements including loads, platforms, safe passage, access/egress, protection against weather etc. Scaffold should only be erected, adjusted and dismantled by a competent person. Do not tamper with scaffold and report any defects immediately. Ensure that any scaffold used holds a current and in-date Scaff tag, if scaffold is found to be out of compliance the Scaff tag must be removed. Always maintain three points of contact when traversing ladders, make use of mechanical means of transporting materials and tools too and from scaffold platforms. Never stretch or reach outside of a scaffold, whether it is fixed or mobile and always use designated access points. \n\nMobile Scaffold\n\nThe construction of mobile scaffold must only be carried out by those who hold a current certificate. Ensure a pre-use inspection is carried out prior to use and a formal inspection carried out every seven days by a competent person. Only use recognised access points."}, {"id": "9917b67f-2709-496d-8b7f-106063d7dd52", "name": "Slips, Trips and Falls / Poor Housekeeping", "category": "OTHER", "default_controls": "• Good housekeeping maintained\n• Cables and hoses routed safely\n• Walkways kept clear\n• Clean up spills immediately\n• Appropriate footwear worn"}, {"id": "0dfeb5fb-9c11-40d1-9d6b-af38b7a56796", "name": "Use of Harnesses", "category": "OTHER", "default_controls": "Ensure the correct harness is used for the task, if unsure seek advice from your supervisor. Harnesses must be regularly inspected by a competent person every six months. Harnesses must be stored in-line with manufactures guidelines when not in use. Harnesses must be visually inspected prior to use and recorded on a inspection checklist. Only attach your lanyard to approved anchor points, if you are unsure of approved anchor points raise your concerns with your supervisor. When using fall restraint harnesses the lanyard must be adjusted to ensure you do not leave the platform/carrier."}, {"id": "37a6b996-ae08-4128-a2eb-617830d04a66", "name": "Use of Machinery", "category": "OTHER", "default_controls": "Machinery should be kept in a efficient and maintained state and subject to regular preventative maintenance. All persons who use the machinery or supervise the use of machinery should have access to the relevant safety information such as written instructions and methods etc. Any persons using machinery should receive adequate training in it's use and purpose and carry out a pre-use inspection. Ensure all guards whether fixed or otherwise are in place and in good condition prior to use. Report any defects or malfunctions immediately, do not use any machinery that has defects or is malfunctioning. Be aware of any surface that may become hot due to the operation of the machine and ensure any LEV and extraction units are in a good state of repair and are functioning correctly."}, {"id": "33fccc19-4f58-4045-9ca6-71f7320e8945", "name": "Use of Mobile Lifting Frames/ Portable Gantries", "category": "OTHER", "default_controls": "All controls listed for associated Lift Operation Hazard must be in place.  Ensure that a valid thorough examination certificate is held for the equipment.  Lifting frame/ portable gantry must be erected/ assembled as per the instructions/ assembly manual, which must be available to the relevant employees and strictly followed with every assembly.  Ensure safe manual handling techniques are implemented throughout assembly period.  All technical specifications must be applied (Torque values etc.) during assembly.  Any equipment required to complete assembly (Torque wrenches etc.) must be calibrated if required.  The Working Load Limit for the equipment must be known to all and must never be exceeded.  Consider trial assemblies and trial lifts prior to deeming equipment fit-for-use if required.  Carry out a visual inspection of the equipment before each time it is used - If any damage or concern is noted, do not use and quarantine immediately."}, {"id": "96b2b96a-7d1f-4708-8434-dad14f037141", "name": "Airborne Dust", "category": "OTHER", "default_controls": "Ensure that suitable PPE and RPE is selected based on the level of risk and amount of dust in area e.g. Spoggles in areas of high dust levels. Ensure your aware of the location of your nearest eye wash station."}, {"id": "bb4a2f7f-f046-48fa-94a8-bd310c13861c", "name": "Hand-arm Vibration", "category": "OTHER", "default_controls": "Exposure to vibration must be monitored and recorded by employees on an ongoing basis.  Any employees who exceed the daily (in 8 hours) Action value (2.5 m/s\\u00b2/ 100 points) are fully aware of the health risks and controls to minimise them.  The daily Limit Value (5 m/s\\u00b2 / 400 points) must never be exceeded.  Plan the task so that it is broken up with other activities and rotate the task amongst several employees to minimise exposure."}, {"id": "56a233dc-e943-4a2d-99fd-3b6dfb26bc0a", "name": "Hazardous Noise Levels", "category": "OTHER", "default_controls": "If high levels of noise exist in your work area then take steps to reduce your exposure. Assess whether the work can be carried out elsewhere or if the source of noise can be isolated completely. Always wear hearing protection in areas classed as noise-hazard zones.  Adhere to awareness signs and site rules.  Hearing protection must always be worn during activities with the potential to create hazardous noise levels - When close to the use of angle grinders, impact guns, noisy mobile plant etc."}, {"id": "8ab28508-9a7b-4c77-9c6d-8babd5669653", "name": "Hot Work", "category": "OTHER", "default_controls": "A Hot-Work Certificate and/or assessment must be in place prior to carrying out hot work. Ensure the area is inspected prior to hot works taking place, remove all combustible materials, protect any vulnerable equipment from damage with the use of appropriate fire blankets, if necessary douse the area prior to starting hot works. Fume created from any hot-work activity is hazardous and suitable RPE must be used.  \n\nEnsure the below are in place: \n\n•\tCompetent Fire Watch on all appropriate levels, fire watch must stay for 1 hour after hot works have finished\n•\tMeans of Extinguishing\n•\tScreens as required\n•\tAppropriate PPE & RPE"}, {"id": "04119233-8dbc-4866-90d9-3c9c5a67ca6e", "name": "Electrical Power", "category": "OTHER", "default_controls": "Never carry out work on live plant or machinery. Ensure that suitable isolation controls are put in place prior to carrying out any works on electrical equipment. Raise any concerns with your supervisor. The supervisor will inform you when he is going to cancel the isolations, and from that moment on you must not return to that work area for any reason. Raise any concerns with your supervisor immediately. All electrical cables must be treated as live unless proven otherwise."}, {"id": "77cc3cf0-54f0-4ef2-a1e7-732b45d372b7", "name": "Portable Electrical Equipment", "category": "OTHER", "default_controls": "All portable electrical equipment MUST hold a current and in-date PAT Tag and all guarding and safety features must be in place. If the tool your are provided is out of compliance then return it to the stores and request a compliant tool. Carry out a pre-use inspection of the equipment, check for: \n•Damage to the cable sheath;\n•Damage to the plug, e.g. the casing is cracking, the pins are bent or signs of overheating;     \n•Inadequate joints, including taped joints in the cable;\n•The outer sheath of the cable not being effectively secured where it enters the plug or the equipment. Obvious evidence would be if the coloured insulation of the internal cable cores were showing;\n•The equipment being subjected to conditions for     which it is not suitable, e.g. it is wet or excessively contaminated;\n•Damage to the external casing of the equipment or there are some loose parts or screws; and\n•Overheating - Burn marks or discoloration.\nAlways report faulty equipment. Do not attempt to carry out repairs unless you are authorised to do so. Use battery operated equipment where possible, all site equipment must be 110v."}, {"id": "fa072dbb-e8aa-4410-a408-b3914797926e", "name": "Welding Sets", "category": "OTHER", "default_controls": "Ensure set is earthed close to the job (1.5M of welding operation). Ensure spark arrestor is fitted. Inspect cables and set for condition pre-use. Fire extinguishers to be readily available. Drip tray to be placed beneath any fuel sets. Fuel to be stored in metal jerry cans, remote from areas of hot work, in a well ventilated area and clearly identified. Spill kits to be readily available. Route weld cables away from walkways and maintain good housekeeping. Be aware that parts of the welding set can become hot to touch, do not touch areas of the set that have become hot through constant use."}, {"id": "e68d238c-8957-421c-9d11-311947f2c7f8", "name": "Welding", "category": "OTHER", "default_controls": "Ensure the area is inspected prior to hot works taking place, remove all combustible materials, protect any vulnerable equipment from damage with the use of appropriate fire blankets, if necessary douse the area prior to starting hot works. All leads must be routed with care to avoid a tripping hazard.\n\nEnsure the below are in place: \n\n•\tCompetent Fire Watch on all appropriate levels, fire watch must stay for 1 hour after hot works have finished\n•\tMeans of Extinguishing\n•\tScreens as required\n•\tAppropriate PPE\n•\tSuitable Respiratory Protective Equipment is MANDATORY                                                                                        •\tUtilise LEV (Portable units or fixed) where available and practical;                                                                                                                    •\tWhere possible, take steps to improve ventilation in the area - Consider natural and forced (Fans and air movers etc.) measures                                                       \n•\tCarry out pre-use inspection of all leads\n•\tEnsure Earth clamp is within 1.5M of welding operation"}, {"id": "c97b0e1f-f260-4b0d-b69f-381cb919548d", "name": "Extreme Temperatures", "category": "OTHER", "default_controls": "Personnel should be able to recognise the symptoms of heat stress: An inability to concentrate, muscle cramps, heat rash, Severe thirst (late symptom of heat stress), fainting, heat exhaustion (fatigue, giddiness, nausea, headache, moist skin) heat stroke (hot dry skin, confusion, convulsions and eventual loss of consciousness. If you or anyone in your working party experience any of these symptoms they should contact their supervisor immediately. Ensure your are acclimatised to the conditions, gradual exposure to heat levels and to the work along with lighter duties to those unused to working in high heat conditions. Drink small amounts of water on a regular basis but avoid high caffeinated drinks such as tea and coffee. Avoid eating hot and heavy meals and take regular rest breaks in a cool well ventilated area. Try to limit work activates during the hottest part of the day/shift and give your body time to cool down before re-entering the area. Remember that your physical condition can reduce your ability to deal with the heat. Age, weight,\nfitness, health conditions (heart disease or high blood pressure), recent illness, or medications can all\naffect your ability to withstand high temperatures. If you have any concerns, please raise these with\nyour supervisor"}, {"id": "6e99a235-1fd5-4b4a-a612-3d27351d9d47", "name": "Oil and Grease", "category": "OTHER", "default_controls": "It's important to monitor the condition of your work area at all times. Small spillages of oil and grease can be dealt with quickly by the working party, report large amounts of oil & grease spillages to your supervisor so cleaning measures can be taken. Where oil and grease cannot be avoided extra care should be taken to ensure a firm footing, pay particular attention to the state of your foot ware when your work involves climbing ladders, staircases and/or stepping over workplace fixtures or machinery parts (cable trays etc). Always wear gloves when working around oil and grease, wear disposable gloves underneath your regular gloves if necessary, this can cause sweating to remove the disposable gloves during break times to allow your hands to breath. Make use of barrier cream at every opportunity. Ensure your equipment remains free from oil and grease this can cause you to loose grip during operation. Remember to wash your hands before eating, drinking or smoking. Keep open wounds covered when working with oil and grease."}, {"id": "b386b6d7-76fb-4905-97e8-54c4affc1717", "name": "Other Working Parties in the Area", "category": "OTHER", "default_controls": "Be aware of other working parties working in the same area, consider those working above and below you. Work should be planned in conjunction with other working parties with on-going communication to ensure safe operations at all times."}];
+
+const PPE_ITEMS = [
+    'Hard Hat','Hi-Vis Vest','Safety Boots','Safety Gloves','Safety Goggles/Glasses',
+    'Ear Defenders','Safety Harness','RPE (Face Mask)','Welding Mask','Fire Retardant Clothing'
+];
+const PERMIT_ITEMS = ['Hot Work','Confined Space','Working at Height','Excavation','Electrical Isolation'];
+const STEP_NAMES = ["Job Details", "Method", "Hazards", "Risk Assessment", "Requirements", "Environment", "Review"];
+
+// Pre-selected hazard names (MII rule: always include)
+const AUTO_HAZARDS = ['Working at Height', 'Objects falling from above'];
+
+let currentDoc = null;
+let currentStep = 0;
+
+// ─── Document List ────────────────────────────────────────
+
+async function renderDocList() {
+    const docs = await MiiDB.getAll('rams_documents');
+    const search = (document.getElementById('doc-search').value || '').toLowerCase();
+    const filtered = docs.filter(d => {
+        if (!search) return true;
+        const jd = d.job_details || {};
+        return (jd.job_name||'').toLowerCase().includes(search)
+            || (d.rams_number||'').toLowerCase().includes(search)
+            || (jd.client||'').toLowerCase().includes(search)
+            || (jd.job_number||'').toLowerCase().includes(search);
+    }).sort((a,b) => (b.updated_at||'').localeCompare(a.updated_at||''));
+
+    const el = document.getElementById('doc-list');
+    if (filtered.length === 0) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">&#128209;</div><p>No RAMS documents yet.<br>Click <b>+ New RAMS</b> to get started.</p></div>';
+        return;
+    }
+    el.innerHTML = filtered.map(d => {
+        const jd = d.job_details || {};
+        const sc = d.status === 'approved' ? 'status-approved' : d.status === 'review' ? 'status-review' : 'status-draft';
+        const date = d.updated_at ? new Date(d.updated_at).toLocaleDateString('en-GB') : '';
+        return `<div class="doc-row" onclick="editDocument('${d.id}')">
+            <div class="doc-info">
+                <div class="doc-title">${d.rams_number || 'No Number'} - ${jd.job_name || 'Untitled'}</div>
+                <div class="doc-meta">${jd.client || ''} &middot; ${jd.job_number || ''} &middot; ${date}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span class="status-badge ${sc}">${d.status || 'draft'}</span>
+                <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteDocument('${d.id}')" title="Delete">&#128465;</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function newDocument() {
+    const docs = await MiiDB.getAll('rams_documents');
+    const nextNum = (docs.length + 1).toString().padStart(4, '0');
+    currentDoc = {
+        id: 'RAMS-' + crypto.randomUUID(),
+        rams_number: 'MII-2026-' + nextNum,
+        status: 'draft',
+        job_details: {},
+        method_steps: [
+            { step_number: 1, description: '', responsible_person: '', section: 'Pre-Work Checks' },
+            { step_number: 2, description: '', responsible_person: '', section: 'Main Activity' },
+            { step_number: 3, description: '', responsible_person: '', section: 'Post-Work / Handback' }
+        ],
+        selected_hazards: AUTO_HAZARDS.map(name => {
+            const h = MII_HAZARDS.find(hz => hz.name === name);
+            return h ? h.id : null;
+        }).filter(Boolean),
+        risk_assessments: [],
+        requirements: { ppe: [], equipment: [], permits: [], training: [] },
+        environment: { waste_generated: 'no', waste_details: '', noise_level: 'low', noise_controls: '', weather: '', factors: [] },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    currentStep = 0;
+    showWizard();
+}
+
+async function editDocument(id) {
+    currentDoc = await MiiDB.get('rams_documents', id);
+    if (!currentDoc) return;
+    currentStep = 0;
+    showWizard();
+}
+
+async function deleteDocument(id) {
+    if (!confirm('Delete this RAMS document? This cannot be undone.')) return;
+    await MiiDB.remove('rams_documents', id);
+    renderDocList();
+}
+
+// ─── Wizard Navigation ────────────────────────────────────
+
+function showWizard() {
+    document.getElementById('list-view').style.display = 'none';
+    document.getElementById('wizard-view').style.display = 'block';
+    populateStep(currentStep);
+    updateStepBar();
+    updateNavButtons();
+}
+
+function showList() {
+    document.getElementById('list-view').style.display = 'block';
+    document.getElementById('wizard-view').style.display = 'none';
+    currentDoc = null;
+    renderDocList();
+}
+
+function wizardNext() {
+    collectStepData(currentStep);
+    if (currentStep < STEP_NAMES.length - 1) {
+        currentStep++;
+        populateStep(currentStep);
+        updateStepBar();
+        updateNavButtons();
+    }
+}
+
+function wizardBack() {
+    collectStepData(currentStep);
+    if (currentStep > 0) {
+        currentStep--;
+        populateStep(currentStep);
+        updateStepBar();
+        updateNavButtons();
+    } else {
+        showList();
+    }
+}
+
+function goToStep(idx) {
+    collectStepData(currentStep);
+    currentStep = idx;
+    populateStep(currentStep);
+    updateStepBar();
+    updateNavButtons();
+}
+
+function updateStepBar() {
+    const bar = document.getElementById('steps-bar');
+    bar.innerHTML = STEP_NAMES.map((name, i) => {
+        const cls = i === currentStep ? 'active' : i < currentStep ? 'done' : '';
+        return `<div class="step-pill ${cls}" onclick="goToStep(${i})">${i+1}. ${name}</div>`;
+    }).join('');
+}
+
+function updateNavButtons() {
+    document.getElementById('btn-back').textContent = currentStep === 0 ? '\u2190 Cancel' : '\u2190 Back';
+    const nextBtn = document.getElementById('btn-next');
+    if (currentStep === STEP_NAMES.length - 1) {
+        nextBtn.style.display = 'none';
+    } else {
+        nextBtn.style.display = '';
+        nextBtn.textContent = 'Next \u2192';
+    }
+    // Show all steps, hide non-current
+    document.querySelectorAll('.wizard-step').forEach((el, i) => {
+        el.style.display = i === currentStep ? 'block' : 'none';
+    });
+}
+
+// ─── Populate Steps ───────────────────────────────────────
+
+function populateStep(step) {
+    const d = currentDoc;
+    const jd = d.job_details || {};
+    switch(step) {
+        case 0: // Job Details
+            document.getElementById('f-job-number').value = jd.job_number || '';
+            document.getElementById('f-rams-number').value = d.rams_number || '';
+            document.getElementById('f-job-name').value = jd.job_name || '';
+            document.getElementById('f-location').value = jd.location || '';
+            document.getElementById('f-client').value = jd.client || '';
+            document.getElementById('f-scope').value = jd.scope_of_works || '';
+            document.getElementById('f-date-start').value = jd.date_of_assessment || '';
+            document.getElementById('f-date-end').value = jd.end_date || '';
+            document.getElementById('f-assessor').value = jd.assessor_name || '';
+            document.getElementById('f-hs-reviewer').value = jd.hs_reviewer_name || '';
+            document.getElementById('f-supervisor').value = jd.site_supervisor || '';
+            document.getElementById('f-emergency').value = jd.emergency_contact || '';
+            document.getElementById('f-first-aider').value = jd.first_aider || '';
+            document.getElementById('f-fire-warden').value = jd.fire_warden || '';
+            document.getElementById('f-hospital').value = jd.nearest_hospital || '';
+            document.getElementById('f-hospital-addr').value = jd.hospital_address || '';
+            break;
+        case 1: renderMethodSteps(); break;
+        case 2: renderHazards(); break;
+        case 3: renderRiskAssessment(); break;
+        case 4: renderRequirements(); break;
+        case 5: renderEnvironment(); break;
+        case 6: renderReview(); break;
+    }
+}
+
+// ─── Collect Step Data ────────────────────────────────────
+
+function collectStepData(step) {
+    const d = currentDoc;
+    switch(step) {
+        case 0:
+            d.rams_number = document.getElementById('f-rams-number').value;
+            d.job_details = {
+                job_number: document.getElementById('f-job-number').value,
+                job_name: document.getElementById('f-job-name').value,
+                location: document.getElementById('f-location').value,
+                client: document.getElementById('f-client').value,
+                scope_of_works: document.getElementById('f-scope').value,
+                date_of_assessment: document.getElementById('f-date-start').value,
+                end_date: document.getElementById('f-date-end').value,
+                assessor_name: document.getElementById('f-assessor').value,
+                hs_reviewer_name: document.getElementById('f-hs-reviewer').value,
+                site_supervisor: document.getElementById('f-supervisor').value,
+                emergency_contact: document.getElementById('f-emergency').value,
+                first_aider: document.getElementById('f-first-aider').value,
+                fire_warden: document.getElementById('f-fire-warden').value,
+                nearest_hospital: document.getElementById('f-hospital').value,
+                hospital_address: document.getElementById('f-hospital-addr').value,
+            };
+            break;
+        case 1: collectMethodSteps(); break;
+        case 4: collectRequirements(); break;
+        case 5: collectEnvironment(); break;
+    }
+}
+
+// ─── Method Statement ─────────────────────────────────────
+
+function renderMethodSteps() {
+    const el = document.getElementById('method-steps');
+    const steps = currentDoc.method_steps || [];
+    el.innerHTML = steps.map((s, i) => `
+        <div class="method-step">
+            <div class="step-header">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="step-num">${i+1}</div>
+                    ${s.section ? '<span style="font-size:0.78rem;color:var(--text-light);">'+s.section+'</span>' : ''}
+                </div>
+                <div class="step-actions">
+                    <button class="btn btn-outline btn-sm" onclick="moveStep(${i},-1)" ${i===0?'disabled':''}>&#9650;</button>
+                    <button class="btn btn-outline btn-sm" onclick="moveStep(${i},1)" ${i===steps.length-1?'disabled':''}>&#9660;</button>
+                    <button class="btn btn-danger btn-sm" onclick="removeStep(${i})">&#10005;</button>
+                </div>
+            </div>
+            <textarea id="ms-desc-${i}" rows="3" placeholder="Describe this step...">${escHtml(s.description||'')}</textarea>
+            <input type="text" id="ms-resp-${i}" placeholder="Responsible person" value="${escHtml(s.responsible_person||'')}">
+        </div>
+    `).join('');
+}
+
+function collectMethodSteps() {
+    const steps = currentDoc.method_steps || [];
+    steps.forEach((s, i) => {
+        const desc = document.getElementById('ms-desc-'+i);
+        const resp = document.getElementById('ms-resp-'+i);
+        if (desc) s.description = desc.value;
+        if (resp) s.responsible_person = resp.value;
+    });
+}
+
+function addMethodStep() {
+    collectMethodSteps();
+    currentDoc.method_steps.push({ step_number: currentDoc.method_steps.length+1, description: '', responsible_person: '', section: '' });
+    renderMethodSteps();
+}
+
+function removeStep(idx) {
+    if (currentDoc.method_steps.length <= 1) return;
+    collectMethodSteps();
+    currentDoc.method_steps.splice(idx, 1);
+    currentDoc.method_steps.forEach((s,i) => s.step_number = i+1);
+    renderMethodSteps();
+}
+
+function moveStep(idx, dir) {
+    collectMethodSteps();
+    const steps = currentDoc.method_steps;
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= steps.length) return;
+    [steps[idx], steps[newIdx]] = [steps[newIdx], steps[idx]];
+    steps.forEach((s,i) => s.step_number = i+1);
+    renderMethodSteps();
+}
+
+// ─── Hazard Selection ─────────────────────────────────────
+
+function renderHazards() {
+    const search = (document.getElementById('hazard-search')?.value || '').toLowerCase();
+    const selected = new Set(currentDoc.selected_hazards || []);
+    const grid = document.getElementById('hazard-grid');
+    const filtered = MII_HAZARDS.filter(h => !search || h.name.toLowerCase().includes(search));
+    grid.innerHTML = filtered.map(h => {
+        const sel = selected.has(h.id);
+        const preview = (h.default_controls||'').substring(0, 120) + (h.default_controls.length > 120 ? '...' : '');
+        return `<div class="hazard-card ${sel?'selected':''}" onclick="toggleHazard('${h.id}')">
+            <input type="checkbox" class="hazard-check" ${sel?'checked':''} tabindex="-1">
+            <div class="hname">${escHtml(h.name)}</div>
+            <div class="hpreview">${escHtml(preview)}</div>
+        </div>`;
+    }).join('');
+    document.getElementById('hazard-count').textContent = selected.size + ' selected';
+}
+
+function toggleHazard(id) {
+    const sel = currentDoc.selected_hazards;
+    const idx = sel.indexOf(id);
+    if (idx >= 0) sel.splice(idx, 1);
+    else sel.push(id);
+    renderHazards();
+}
+
+// ─── Risk Assessment ──────────────────────────────────────
+
+function renderRiskAssessment() {
+    const el = document.getElementById('ra-cards');
+    const selected = currentDoc.selected_hazards || [];
+    if (selected.length === 0) {
+        el.innerHTML = '<div class="empty-state"><p>No hazards selected. Go back to Step 3 to select hazards.</p></div>';
+        return;
+    }
+    // Ensure risk_assessments array matches selected hazards
+    const existing = {};
+    (currentDoc.risk_assessments || []).forEach(ra => existing[ra.hazard_id] = ra);
+    currentDoc.risk_assessments = selected.map(hid => {
+        if (existing[hid]) return existing[hid];
+        const h = MII_HAZARDS.find(hz => hz.id === hid);
+        return { hazard_id: hid, initial_l: 3, initial_s: 3, controls: h ? h.default_controls : '', final_l: 2, final_s: 2 };
+    });
+
+    el.innerHTML = currentDoc.risk_assessments.map((ra, i) => {
+        const h = MII_HAZARDS.find(hz => hz.id === ra.hazard_id);
+        const iScore = (ra.initial_l||1) * (ra.initial_s||1);
+        const fScore = (ra.final_l||1) * (ra.final_s||1);
+        return `<div class="ra-card">
+            <h4>${escHtml(h ? h.name : 'Unknown Hazard')}</h4>
+            <div class="ra-grid">
+                <div>
+                    <label>Initial Likelihood</label>
+                    <select id="ra-il-${i}" onchange="updateRiskScore(${i})">
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.initial_l==v?'selected':''}>${v} - ${['Very Low','Low','Medium','High','Very High'][v-1]}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label>Initial Severity</label>
+                    <select id="ra-is-${i}" onchange="updateRiskScore(${i})">
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.initial_s==v?'selected':''}>${v} - ${['Insignificant','Minor','Moderate','Major','Catastrophic'][v-1]}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="text-align:center;">
+                    <label>Score</label>
+                    <div class="risk-score ${riskClass(iScore)}" id="ra-iscore-${i}">${iScore}</div>
+                </div>
+            </div>
+            <label>Control Measures</label>
+            <textarea id="ra-ctrl-${i}" rows="4">${escHtml(ra.controls||'')}</textarea>
+            <div class="ra-grid">
+                <div>
+                    <label>Residual Likelihood</label>
+                    <select id="ra-fl-${i}" onchange="updateRiskScore(${i})">
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.final_l==v?'selected':''}>${v} - ${['Very Low','Low','Medium','High','Very High'][v-1]}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label>Residual Severity</label>
+                    <select id="ra-fs-${i}" onchange="updateRiskScore(${i})">
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${ra.final_s==v?'selected':''}>${v} - ${['Insignificant','Minor','Moderate','Major','Catastrophic'][v-1]}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="text-align:center;">
+                    <label>Score</label>
+                    <div class="risk-score ${riskClass(fScore)}" id="ra-fscore-${i}">${fScore}</div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function updateRiskScore(idx) {
+    const il = +document.getElementById('ra-il-'+idx).value;
+    const is_ = +document.getElementById('ra-is-'+idx).value;
+    const fl = +document.getElementById('ra-fl-'+idx).value;
+    const fs = +document.getElementById('ra-fs-'+idx).value;
+    const iScore = il * is_;
+    const fScore = fl * fs;
+    const iEl = document.getElementById('ra-iscore-'+idx);
+    const fEl = document.getElementById('ra-fscore-'+idx);
+    iEl.textContent = iScore;
+    iEl.className = 'risk-score ' + riskClass(iScore);
+    fEl.textContent = fScore;
+    fEl.className = 'risk-score ' + riskClass(fScore);
+    // Update data
+    currentDoc.risk_assessments[idx].initial_l = il;
+    currentDoc.risk_assessments[idx].initial_s = is_;
+    currentDoc.risk_assessments[idx].final_l = fl;
+    currentDoc.risk_assessments[idx].final_s = fs;
+    currentDoc.risk_assessments[idx].controls = document.getElementById('ra-ctrl-'+idx).value;
+}
+
+function riskClass(score) {
+    if (score <= 4) return 'risk-low';
+    if (score <= 9) return 'risk-med';
+    if (score <= 15) return 'risk-high';
+    return 'risk-crit';
+}
+
+// ─── Requirements ─────────────────────────────────────────
+
+function renderRequirements() {
+    const req = currentDoc.requirements || {};
+    // PPE
+    const ppeGrid = document.getElementById('ppe-grid');
+    ppeGrid.innerHTML = PPE_ITEMS.map(item => {
+        const checked = (req.ppe || []).includes(item);
+        return `<label class="ppe-item ${checked?'checked':''}" onclick="this.classList.toggle('checked')">
+            <input type="checkbox" value="${escHtml(item)}" ${checked?'checked':''} onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${escHtml(item)}
+        </label>`;
+    }).join('');
+    // Permits
+    const permGrid = document.getElementById('permits-grid');
+    permGrid.innerHTML = PERMIT_ITEMS.map(item => {
+        const checked = (req.permits || []).includes(item);
+        return `<label class="ppe-item ${checked?'checked':''}" onclick="this.classList.toggle('checked')">
+            <input type="checkbox" value="${escHtml(item)}" ${checked?'checked':''} onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${escHtml(item)}
+        </label>`;
+    }).join('');
+    // Equipment
+    renderListItems('equip-list', req.equipment || []);
+    // Training
+    renderListItems('training-list', req.training || []);
+}
+
+function renderListItems(containerId, items) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = items.map((item, i) => `
+        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+            <input type="text" class="list-item" value="${escHtml(item)}" style="margin-bottom:0;">
+            <button class="btn btn-danger btn-sm" onclick="removeListItem('${containerId}',${i})">&#10005;</button>
+        </div>
+    `).join('');
+}
+
+function addEquipItem() { collectRequirements(); currentDoc.requirements.equipment.push(''); renderRequirements(); }
+function addTrainingItem() { collectRequirements(); currentDoc.requirements.training.push(''); renderRequirements(); }
+function removeListItem(containerId, idx) {
+    collectRequirements();
+    if (containerId === 'equip-list') currentDoc.requirements.equipment.splice(idx, 1);
+    else currentDoc.requirements.training.splice(idx, 1);
+    renderRequirements();
+}
+
+function collectRequirements() {
+    const ppeChecked = [...document.querySelectorAll('#ppe-grid input:checked')].map(el => el.value);
+    const permChecked = [...document.querySelectorAll('#permits-grid input:checked')].map(el => el.value);
+    const equip = [...document.querySelectorAll('#equip-list .list-item')].map(el => el.value).filter(Boolean);
+    const training = [...document.querySelectorAll('#training-list .list-item')].map(el => el.value).filter(Boolean);
+    currentDoc.requirements = { ppe: ppeChecked, permits: permChecked, equipment: equip, training: training };
+}
+
+// ─── Environment ──────────────────────────────────────────
+
+function renderEnvironment() {
+    const env = currentDoc.environment || {};
+    document.getElementById('f-waste').value = env.waste_generated || 'no';
+    document.getElementById('f-waste-detail').value = env.waste_details || '';
+    document.getElementById('f-waste-detail').style.display = env.waste_generated === 'yes' ? 'block' : 'none';
+    document.getElementById('f-noise').value = env.noise_level || 'low';
+    document.getElementById('f-noise-controls').value = env.noise_controls || '';
+    document.getElementById('f-weather').value = env.weather || '';
+    renderEnvFactors(env.factors || []);
+}
+
+function renderEnvFactors(factors) {
+    const el = document.getElementById('env-factors');
+    el.innerHTML = factors.map((f, i) => `
+        <div class="env-row">
+            <div><label>Factor</label><input type="text" class="ef-factor" value="${escHtml(f.factor||'')}" style="margin-bottom:0;"></div>
+            <div><label>Assessment</label><input type="text" class="ef-assess" value="${escHtml(f.assessment||'')}" style="margin-bottom:0;"></div>
+            <div><label>Mitigation</label><input type="text" class="ef-mitig" value="${escHtml(f.mitigation||'')}" style="margin-bottom:0;"></div>
+            <button class="btn btn-danger btn-sm" onclick="removeEnvFactor(${i})" style="margin-bottom:0;">&#10005;</button>
+        </div>
+    `).join('');
+}
+
+function addEnvFactor() {
+    collectEnvironment();
+    currentDoc.environment.factors.push({ factor: '', assessment: '', mitigation: '' });
+    renderEnvFactors(currentDoc.environment.factors);
+}
+
+function removeEnvFactor(idx) {
+    collectEnvironment();
+    currentDoc.environment.factors.splice(idx, 1);
+    renderEnvFactors(currentDoc.environment.factors);
+}
+
+function collectEnvironment() {
+    currentDoc.environment = {
+        waste_generated: document.getElementById('f-waste').value,
+        waste_details: document.getElementById('f-waste-detail').value,
+        noise_level: document.getElementById('f-noise').value,
+        noise_controls: document.getElementById('f-noise-controls').value,
+        weather: document.getElementById('f-weather').value,
+        factors: [...document.querySelectorAll('.env-row')].map(row => ({
+            factor: row.querySelector('.ef-factor')?.value || '',
+            assessment: row.querySelector('.ef-assess')?.value || '',
+            mitigation: row.querySelector('.ef-mitig')?.value || '',
+        }))
+    };
+}
+
+// ─── Review ───────────────────────────────────────────────
+
+function renderReview() {
+    // Collect all current data first
+    collectStepData(currentStep);
+
+    const d = currentDoc;
+    const jd = d.job_details || {};
+    const req = d.requirements || {};
+    const env = d.environment || {};
+
+    let html = '';
+
+    // Job Details
+    html += reviewSection('Job Details', `
+        <table style="width:100%;font-size:0.9rem;">
+            <tr><td style="padding:4px 8px;font-weight:600;width:35%;">RAMS Number</td><td>${escHtml(d.rams_number||'')}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">Job Number</td><td>${escHtml(jd.job_number||'')}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">Job Name</td><td>${escHtml(jd.job_name||'')}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">Client</td><td>${escHtml(jd.client||'')}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">Location</td><td>${escHtml(jd.location||'')}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">Scope</td><td>${escHtml(jd.scope_of_works||'')}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">Assessment Date</td><td>${jd.date_of_assessment||''}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">Assessor</td><td>${escHtml(jd.assessor_name||'')}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">H&amp;S Reviewer</td><td>${escHtml(jd.hs_reviewer_name||'')}</td></tr>
+            <tr><td style="padding:4px 8px;font-weight:600;">Site Supervisor</td><td>${escHtml(jd.site_supervisor||'')}</td></tr>
+        </table>
+    `);
+
+    // Method
+    const steps = d.method_steps || [];
+    html += reviewSection('Method Statement', steps.map((s,i) => `
+        <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+            <div class="step-num">${i+1}</div>
+            <div style="flex:1;">
+                <div style="font-size:0.9rem;">${escHtml(s.description || '(empty)')}</div>
+                ${s.responsible_person ? '<div style="font-size:0.78rem;color:var(--text-light);margin-top:2px;">Responsible: '+escHtml(s.responsible_person)+'</div>' : ''}
+            </div>
+        </div>
+    `).join(''));
+
+    // Risk Assessment
+    const ras = d.risk_assessments || [];
+    html += reviewSection('Risk Assessment', `
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+            <thead><tr style="background:#f8f9fa;">
+                <th style="padding:8px;text-align:left;border-bottom:2px solid var(--border);">Hazard</th>
+                <th style="padding:8px;text-align:center;border-bottom:2px solid var(--border);">Initial</th>
+                <th style="padding:8px;text-align:center;border-bottom:2px solid var(--border);">Residual</th>
+            </tr></thead>
+            <tbody>${ras.map(ra => {
+                const h = MII_HAZARDS.find(hz => hz.id === ra.hazard_id);
+                const iS = (ra.initial_l||1)*(ra.initial_s||1);
+                const fS = (ra.final_l||1)*(ra.final_s||1);
+                return `<tr>
+                    <td style="padding:8px;border-bottom:1px solid #f0f0f0;">${escHtml(h?h.name:'?')}</td>
+                    <td style="padding:8px;text-align:center;border-bottom:1px solid #f0f0f0;"><span class="risk-score ${riskClass(iS)}" style="width:36px;height:36px;font-size:0.9rem;">${iS}</span></td>
+                    <td style="padding:8px;text-align:center;border-bottom:1px solid #f0f0f0;"><span class="risk-score ${riskClass(fS)}" style="width:36px;height:36px;font-size:0.9rem;">${fS}</span></td>
+                </tr>`;
+            }).join('')}</tbody>
+        </table>
+    `);
+
+    // Requirements
+    html += reviewSection('Requirements', `
+        <p style="margin-bottom:8px;"><strong>PPE:</strong> ${(req.ppe||[]).join(', ') || 'None selected'}</p>
+        <p style="margin-bottom:8px;"><strong>Permits:</strong> ${(req.permits||[]).join(', ') || 'None required'}</p>
+        <p style="margin-bottom:8px;"><strong>Equipment:</strong> ${(req.equipment||[]).filter(Boolean).join(', ') || 'None specified'}</p>
+        <p><strong>Training:</strong> ${(req.training||[]).filter(Boolean).join(', ') || 'None specified'}</p>
+    `);
+
+    // Environment
+    html += reviewSection('Environment', `
+        <p style="margin-bottom:8px;"><strong>Waste:</strong> ${env.waste_generated === 'yes' ? 'Yes - ' + escHtml(env.waste_details||'') : 'No'}</p>
+        <p style="margin-bottom:8px;"><strong>Noise:</strong> ${escHtml(env.noise_level||'low')}</p>
+        <p><strong>Weather:</strong> ${escHtml(env.weather||'No specific considerations')}</p>
+    `);
+
+    document.getElementById('review-content').innerHTML = html;
+}
+
+function reviewSection(title, content) {
+    return `<div class="review-section">
+        <div class="review-section-header" onclick="this.nextElementSibling.classList.toggle('collapsed')">${title} <span>&#9660;</span></div>
+        <div class="review-section-body">${content}</div>
+    </div>`;
+}
+
+// ─── AI Review (rule-based) ───────────────────────────────
+
+function runAIReview() {
+    collectStepData(currentStep);
+    const d = currentDoc;
+    const checks = [];
+    const sel = d.selected_hazards || [];
+
+    // WAH
+    const wahId = MII_HAZARDS.find(h => h.name === 'Working at Height')?.id;
+    checks.push({ name: 'Working at Height hazard included', pass: sel.includes(wahId) });
+
+    // OFFA
+    const offaId = MII_HAZARDS.find(h => h.name === 'Objects falling from above')?.id;
+    checks.push({ name: 'Objects Falling from Above hazard included', pass: sel.includes(offaId) });
+
+    // Method steps
+    const hasEmptySteps = (d.method_steps||[]).some(s => !s.description?.trim());
+    checks.push({ name: 'All method steps have descriptions', pass: !hasEmptySteps });
+
+    // Risk scores filled
+    const ras = d.risk_assessments || [];
+    const allScored = ras.length > 0 && ras.every(ra => ra.initial_l && ra.initial_s && ra.final_l && ra.final_s);
+    checks.push({ name: 'All risk scores completed', pass: allScored });
+
+    // Controls filled
+    const allControls = ras.every(ra => ra.controls?.trim());
+    checks.push({ name: 'All hazards have control measures', pass: allControls });
+
+    // Critical risks
+    const hasCritical = ras.some(ra => (ra.initial_l||1)*(ra.initial_s||1) > 15);
+    checks.push({ name: 'No critical initial risk scores (>15)', pass: !hasCritical });
+
+    // Residual lower than initial
+    const allReduced = ras.every(ra => (ra.final_l||1)*(ra.final_s||1) <= (ra.initial_l||1)*(ra.initial_s||1));
+    checks.push({ name: 'All residual scores equal or lower than initial', pass: allReduced });
+
+    // Job details filled
+    const jd = d.job_details || {};
+    const hasJobDetails = jd.job_number && jd.job_name && jd.scope_of_works;
+    checks.push({ name: 'Essential job details filled', pass: !!hasJobDetails });
+
+    const el = document.getElementById('ai-review-results');
+    const passCount = checks.filter(c => c.pass).length;
+    el.style.display = 'block';
+    el.innerHTML = `
+        <h4 style="margin-bottom:12px;color:var(--primary);">AI Review Results (${passCount}/${checks.length} passed)</h4>
+        <ul class="check-list">${checks.map(c => `
+            <li><span class="${c.pass?'check-pass':'check-fail'}">${c.pass?'\u2713':'\u2717'}</span> ${c.name}</li>
+        `).join('')}</ul>
+    `;
+}
+
+// ─── Save / Export ────────────────────────────────────────
+
+async function saveDraft() {
+    collectStepData(currentStep);
+    // Also collect risk assessment controls
+    (currentDoc.risk_assessments || []).forEach((ra, i) => {
+        const ctrl = document.getElementById('ra-ctrl-'+i);
+        if (ctrl) ra.controls = ctrl.value;
+    });
+    currentDoc.updated_at = new Date().toISOString();
+    await MiiDB.save('rams_documents', currentDoc);
+    alert('Draft saved successfully.');
+}
+
+function exportPDF() {
+    collectStepData(currentStep);
+    renderReview(); // Ensure review is up to date
+    // Expand all sections for print
+    document.querySelectorAll('.review-section-body').forEach(el => el.classList.remove('collapsed'));
+    window.print();
+}
+
+// ─── Utilities ────────────────────────────────────────────
+
+function escHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ─── Init ─────────────────────────────────────────────────
+
+(async function() {
+    await MiiDB.ready();
+    renderDocList();
+})();
+</script>
+</body>
+</html>
