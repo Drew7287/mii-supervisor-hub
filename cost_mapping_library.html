@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapping Library — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #003087;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        .content { max-width: 1200px; margin: 0 auto; padding: 16px 24px 48px; }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+            background: var(--white);
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--text-light);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .action-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-primary { background: var(--accent); color: var(--white); }
+        .btn-secondary { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+        .btn-danger { background: var(--danger); color: var(--white); }
+        .btn:hover { opacity: 0.9; }
+
+        .table-wrap {
+            overflow-x: auto;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        thead th {
+            background: #f8f9fa;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+        thead th.c { text-align: center; }
+        tbody td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        tbody td.c { text-align: center; }
+        tbody td.mono { font-family: 'SF Mono', Consolas, monospace; font-size: 0.78rem; }
+        tbody tr:hover { background: #fafbfc; }
+
+        .scope-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .scope-badge.global { background: #dce5f0; color: #2F5496; }
+        .scope-badge.job { background: #e8f0fe; color: #003087; }
+
+        .cat-dot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            color: var(--white);
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        .empty-msg { text-align: center; padding: 32px; color: var(--text-light); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 60px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--white);
+            border-radius: 10px;
+            width: 94%;
+            max-width: 520px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { font-size: 1rem; font-weight: 700; color: var(--primary); }
+        .modal-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-light); padding: 4px 8px; }
+        .modal-body { padding: 16px 20px; }
+        .modal-footer { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #f0f0f0; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,48,135,0.12);
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .stat-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+        .stat-label { font-size: 0.72rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 16px; right: 16px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+        .toast { background: var(--white); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 12px 20px; font-size: 0.85rem; max-width: 380px; animation: slideIn 0.25s ease-out; }
+        .toast.success { border-left: 4px solid #006600; }
+        .toast.error { border-left: 4px solid #CC0000; }
+        .toast.info { border-left: 4px solid var(--accent); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { opacity: 1; } to { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Mapping Library</h1>
+    <a href="cost_dashboard.html">&larr; Cost Dashboard</a>
+</div>
+
+<div class="content">
+    <div class="stat-bar" id="stats"></div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(0)">Supplier Mappings</button>
+        <button class="tab-btn" onclick="switchTab(1)">Labour Mappings</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-0">
+        <div class="action-bar">
+            <button class="btn btn-primary" onclick="openModal('supplier')">Add Supplier Mapping</button>
+            <button class="btn btn-secondary" onclick="applyAll()">Re-apply All Rules</button>
+        </div>
+        <div class="table-wrap" id="supplier-table"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-1">
+        <div class="action-bar">
+            <button class="btn btn-primary" onclick="openModal('labour')">Add Labour Mapping</button>
+            <button class="btn btn-secondary" onclick="applyAll()">Re-apply All Rules</button>
+        </div>
+        <div class="table-wrap" id="labour-table"></div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="mapping-modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 id="modal-title">Add Mapping</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Supplier fields -->
+            <div id="supplier-fields">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Supplier Prefix *</label>
+                        <input type="text" id="m-supplier-prefix" placeholder="e.g. KELTBRAY">
+                    </div>
+                    <div class="form-group">
+                        <label>Cost Code Prefix</label>
+                        <input type="text" id="m-cost-code-prefix" placeholder="e.g. HIRE">
+                    </div>
+                </div>
+            </div>
+            <!-- Labour fields -->
+            <div id="labour-fields" style="display:none">
+                <div class="form-group">
+                    <label>Cost Code *</label>
+                    <input type="text" id="m-cost-code" placeholder="e.g. FITTER01">
+                </div>
+            </div>
+            <!-- Common fields -->
+            <div class="form-group">
+                <label>Category *</label>
+                <select id="m-category"></select>
+            </div>
+            <div class="form-group">
+                <label>Scope</label>
+                <select id="m-scope">
+                    <option value="global">Global (all jobs)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Note</label>
+                <input type="text" id="m-note" placeholder="Optional note">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" id="modal-save-btn" onclick="saveMapping()">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="mii-db.js"></script>
+<script src="cost_db.js"></script>
+<script>
+// ===== ADMIN-ONLY ACCESS CHECK =====
+(function checkAccess() {
+    const userJson = localStorage.getItem('mii_user');
+    const token = localStorage.getItem('mii_token');
+    if (!token || !userJson) { location.href = 'hub.html'; return; }
+    const user = JSON.parse(userJson);
+    if (user.role !== 'ADMIN') { location.href = 'hub.html'; return; }
+})();
+
+const CAT_COLORS = {
+    1:'#2F5496', 2:'#C8102E', 3:'#E68A00', 4:'#7B2D8E',
+    5:'#1a8a6a', 6:'#34495e', 7:'#2E7D32', 8:'#D35400'
+};
+
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function catDot(n) {
+    return '<span class="cat-dot" style="background:' + (CAT_COLORS[n] || '#999') + '">' + n + '</span>';
+}
+
+function showToast(msg, type) {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast ' + (type || 'info');
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { t.style.animation = 'slideOut 0.25s forwards'; setTimeout(() => t.remove(), 250); }, 3000);
+}
+
+let _supplierMappings = [];
+let _labourMappings = [];
+let _modalType = 'supplier';
+let _jobs = [];
+
+async function loadData() {
+    _supplierMappings = await CostDB.getAllSupplierMappings();
+    _labourMappings = await CostDB.getAllLabourMappings();
+    _jobs = await MiiDB.getAll('cost_jobs');
+
+    renderStats();
+    renderSupplierTable();
+    renderLabourTable();
+    populateScopeDropdown();
+}
+
+function renderStats() {
+    const globalS = _supplierMappings.filter(m => !m.job_id).length;
+    const globalL = _labourMappings.filter(m => !m.job_id).length;
+    const total = _supplierMappings.length + _labourMappings.length;
+
+    document.getElementById('stats').innerHTML =
+        '<div class="stat-card"><div class="stat-value">' + _supplierMappings.length + '</div><div class="stat-label">Supplier Rules</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + _labourMappings.length + '</div><div class="stat-label">Labour Rules</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + (globalS + globalL) + '</div><div class="stat-label">Global Rules</div></div>';
+}
+
+function renderSupplierTable() {
+    if (_supplierMappings.length === 0) {
+        document.getElementById('supplier-table').innerHTML = '<div class="empty-msg">No supplier mappings. Click "Add Supplier Mapping" to create one.</div>';
+        return;
+    }
+
+    let html = '<table><thead><tr><th>Supplier Prefix</th><th>Cost Code Prefix</th><th class="c">Category</th><th>Scope</th><th>Note</th><th class="c">Actions</th></tr></thead><tbody>';
+    _supplierMappings.forEach(m => {
+        const isGlobal = !m.job_id;
+        html += '<tr>';
+        html += '<td class="mono">' + esc(m.supplier_prefix) + '</td>';
+        html += '<td class="mono">' + esc(m.cost_code_prefix || '') + '</td>';
+        html += '<td class="c">' + catDot(m.category_number) + ' ' + esc(CostDB.DEFAULT_CATEGORIES.find(c => c.number === m.category_number)?.name || '') + '</td>';
+        html += '<td><span class="scope-badge ' + (isGlobal ? 'global' : 'job') + '">' + (isGlobal ? 'Global' : esc(m.job_number || 'Job')) + '</span></td>';
+        html += '<td>' + esc(m.note || '') + '</td>';
+        html += '<td class="c">';
+        if (!isGlobal) html += '<button class="btn btn-secondary" style="padding:4px 10px;font-size:0.72rem;margin-right:4px" onclick="promoteSupplier(\'' + m.id + '\')">Promote</button>';
+        html += '<button class="btn btn-danger" style="padding:4px 10px;font-size:0.72rem" onclick="deleteSupplier(\'' + m.id + '\')">Delete</button>';
+        html += '</td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('supplier-table').innerHTML = html;
+}
+
+function renderLabourTable() {
+    if (_labourMappings.length === 0) {
+        document.getElementById('labour-table').innerHTML = '<div class="empty-msg">No labour mappings. Click "Add Labour Mapping" to create one.</div>';
+        return;
+    }
+
+    let html = '<table><thead><tr><th>Cost Code</th><th class="c">Category</th><th>Scope</th><th>Note</th><th class="c">Actions</th></tr></thead><tbody>';
+    _labourMappings.forEach(m => {
+        const isGlobal = !m.job_id;
+        html += '<tr>';
+        html += '<td class="mono">' + esc(m.cost_code) + '</td>';
+        html += '<td class="c">' + catDot(m.category_number) + ' ' + esc(CostDB.DEFAULT_CATEGORIES.find(c => c.number === m.category_number)?.name || '') + '</td>';
+        html += '<td><span class="scope-badge ' + (isGlobal ? 'global' : 'job') + '">' + (isGlobal ? 'Global' : esc(m.job_number || 'Job')) + '</span></td>';
+        html += '<td>' + esc(m.note || '') + '</td>';
+        html += '<td class="c">';
+        if (!isGlobal) html += '<button class="btn btn-secondary" style="padding:4px 10px;font-size:0.72rem;margin-right:4px" onclick="promoteLabour(\'' + m.id + '\')">Promote</button>';
+        html += '<button class="btn btn-danger" style="padding:4px 10px;font-size:0.72rem" onclick="deleteLabour(\'' + m.id + '\')">Delete</button>';
+        html += '</td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('labour-table').innerHTML = html;
+}
+
+function populateScopeDropdown() {
+    const sel = document.getElementById('m-scope');
+    sel.innerHTML = '<option value="global">Global (all jobs)</option>';
+    _jobs.filter(j => !j.is_group).forEach(j => {
+        sel.innerHTML += '<option value="' + esc(j.id) + '">' + esc(j.job_number) + ' - ' + esc(j.job_name) + '</option>';
+    });
+}
+
+function populateCategoryDropdown() {
+    const sel = document.getElementById('m-category');
+    sel.innerHTML = '';
+    CostDB.DEFAULT_CATEGORIES.forEach(c => {
+        sel.innerHTML += '<option value="' + c.number + '">' + c.number + ' - ' + esc(c.name) + '</option>';
+    });
+}
+
+// Tab switching
+function switchTab(idx) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+// Modal
+function openModal(type) {
+    _modalType = type;
+    document.getElementById('modal-title').textContent = 'Add ' + (type === 'supplier' ? 'Supplier' : 'Labour') + ' Mapping';
+    document.getElementById('supplier-fields').style.display = type === 'supplier' ? '' : 'none';
+    document.getElementById('labour-fields').style.display = type === 'labour' ? '' : 'none';
+
+    // Reset fields
+    if (type === 'supplier') {
+        document.getElementById('m-supplier-prefix').value = '';
+        document.getElementById('m-cost-code-prefix').value = '';
+    } else {
+        document.getElementById('m-cost-code').value = '';
+    }
+    document.getElementById('m-note').value = '';
+    document.getElementById('m-scope').value = 'global';
+    populateCategoryDropdown();
+    document.getElementById('mapping-modal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('mapping-modal').classList.remove('active');
+}
+
+document.getElementById('mapping-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+async function saveMapping() {
+    const category = parseInt(document.getElementById('m-category').value);
+    const scopeVal = document.getElementById('m-scope').value;
+    const jobId = scopeVal === 'global' ? null : scopeVal;
+    const note = document.getElementById('m-note').value.trim();
+
+    try {
+        if (_modalType === 'supplier') {
+            const sp = document.getElementById('m-supplier-prefix').value.trim();
+            if (!sp) { alert('Supplier prefix is required.'); return; }
+            await CostDB.upsertSupplierMapping({
+                supplier_prefix: sp,
+                cost_code_prefix: document.getElementById('m-cost-code-prefix').value.trim(),
+                category_number: category,
+                note: note,
+                job_id: jobId,
+            });
+        } else {
+            const cc = document.getElementById('m-cost-code').value.trim();
+            if (!cc) { alert('Cost code is required.'); return; }
+            await CostDB.upsertLabourMapping({
+                cost_code: cc,
+                category_number: category,
+                note: note,
+                job_id: jobId,
+            });
+        }
+
+        closeModal();
+        showToast('Mapping saved', 'success');
+        await loadData();
+    } catch (e) {
+        showToast('Failed: ' + e.message, 'error');
+    }
+}
+
+async function deleteSupplier(id) {
+    if (!confirm('Delete this supplier mapping?')) return;
+    await CostDB.deleteSupplierMapping(id);
+    showToast('Deleted', 'success');
+    await loadData();
+}
+
+async function deleteLabour(id) {
+    if (!confirm('Delete this labour mapping?')) return;
+    await CostDB.deleteLabourMapping(id);
+    showToast('Deleted', 'success');
+    await loadData();
+}
+
+async function promoteSupplier(id) {
+    try {
+        await CostDB.promoteSupplierToGlobal(id);
+        showToast('Promoted to global', 'success');
+        await loadData();
+    } catch (e) {
+        showToast('Failed: ' + e.message, 'error');
+    }
+}
+
+async function promoteLabour(id) {
+    try {
+        await CostDB.promoteLabourToGlobal(id);
+        showToast('Promoted to global', 'success');
+        await loadData();
+    } catch (e) {
+        showToast('Failed: ' + e.message, 'error');
+    }
+}
+
+async function applyAll() {
+    showToast('Applying rules to all jobs...', 'info');
+    try {
+        const result = await CostDB.applyGlobalToAllJobs();
+        showToast('Applied to ' + result.jobs_processed + ' jobs. Mapped: ' + result.total_mapped + ', Unmapped: ' + result.total_unmapped, 'success');
+    } catch (e) {
+        showToast('Failed: ' + e.message, 'error');
+    }
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>

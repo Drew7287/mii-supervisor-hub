@@ -426,6 +426,7 @@
     <button class="tab-btn" data-tab="2">Spend Analysis</button>
     <button class="tab-btn" data-tab="3">All Transactions</button>
     <button class="tab-btn" data-tab="4">Weekly Summary</button>
+    <button class="tab-btn" data-tab="5">Estimate</button>
 </div>
 
 <!-- CONTENT -->
@@ -446,25 +447,37 @@
     <!-- TAB 4: WEEKLY SUMMARY -->
     <div class="tab-panel" id="tab-4"></div>
 
+    <!-- TAB 5: ESTIMATE -->
+    <div class="tab-panel" id="tab-5"></div>
+
 </div>
 
 <script src="mii-db.js"></script>
 <script src="cost_db.js"></script>
 <script>
+// ===== ADMIN-ONLY ACCESS CHECK =====
+(function checkAccess() {
+    const userJson = localStorage.getItem('mii_user');
+    const token = localStorage.getItem('mii_token');
+    if (!token || !userJson) { location.href = 'hub.html'; return; }
+    const user = JSON.parse(userJson);
+    if (user.role !== 'ADMIN') { location.href = 'hub.html'; return; }
+})();
+
 // ===== GLOBALS =====
 const CAT_COLORS = {
     1:'#2F5496', 2:'#C8102E', 3:'#E68A00', 4:'#7B2D8E',
     5:'#1a8a6a', 6:'#34495e', 7:'#2E7D32', 8:'#D35400'
 };
 const CAT_NAMES = {
-    1:'Labour', 2:'Materials', 3:'Plant & Equipment', 4:'Subcontractors',
-    5:'Preliminaries', 6:'Overheads', 7:'Consumables', 8:'Other'
+    1:'Design', 2:'Labour', 3:'Plant & Equipment', 4:'Equipment Hired',
+    5:'Materials', 6:'Off Site', 7:'Consumables', 8:'Travel & Accommodation'
 };
 
 let _jobId = null;
 let _data = null;          // cached analysis data
-let _tabLoaded = [false, false, false, false, false];
-let _tabDirty  = [true, true, true, true, true];
+let _tabLoaded = [false, false, false, false, false, false];
+let _tabDirty  = [true, true, true, true, true, true];
 
 // ===== HELPERS =====
 function esc(s) {
@@ -597,14 +610,15 @@ async function init() {
 }
 
 function populateHeader(job) {
-    document.getElementById('hdr-title').textContent = job.job_name || job.name || '--';
+    document.getElementById('hdr-title').textContent = job.job_name || '--';
     document.getElementById('hdr-subtitle').textContent =
-        (job.job_number || '') + (job.client ? ' \u2014 ' + job.client : '');
+        (job.job_number || '') + (job.client ? ' \u2014 ' + job.client : '') +
+        (job.is_group ? ' (Group)' : '');
     const badge = document.getElementById('hdr-status');
     const status = (job.status || 'active').toLowerCase().replace(/\s+/g, '_');
     badge.textContent = (job.status || 'Active').toUpperCase();
     badge.className = 'status-badge ' + status;
-    document.title = (job.job_name || 'Cost Tracker') + ' — MII Engineering';
+    document.title = (job.job_name || 'Cost Tracker') + ' \u2014 MII Engineering';
 }
 
 // ===== RENDER DISPATCHER =====
@@ -615,8 +629,14 @@ function renderTab(idx) {
         case 2: renderSpendAnalysis(); break;
         case 3: renderTransactions(); break;
         case 4: renderWeeklySummary(); break;
+        case 5: renderEstimate(); break;
     }
 }
+
+// ===== CATEGORY HELPERS =====
+function getCatBudget(c) { return parseFloat(c.at_cost) || 0; }
+function getCatContract(c) { return parseFloat(c.contract_value) || 0; }
+function getCatName(c) { return c.category_name || catName(c.category_number); }
 
 // ===== TAB 0: PROJECT DASHBOARD =====
 function renderDashboard() {
@@ -625,15 +645,15 @@ function renderDashboard() {
     const cats = d.categories || [];
     const totals = d.totals || {};
 
-    const budget = totals.budget_at_cost || 0;
-    const contract = totals.contract_value || 0;
-    const spent = totals.actual_spend || 0;
-    const committed = totals.committed || 0;
-    const exposure = totals.total_exposure || (spent + committed);
+    const budget = totals.budget_at_cost || job.total_at_cost || 0;
+    const contract = totals.contract_value || job.total_contract || 0;
+    const spent = totals.actual_spend || job.total_actual || 0;
+    const committed = totals.committed || job.total_committed || 0;
+    const exposure = totals.total_exposure || job.total_exposure || (spent + committed);
     const budgetRemaining = budget - exposure;
     const marginRemaining = contract - exposure;
     const pctSpent = budget > 0 ? (spent / budget) * 100 : 0;
-    const revenue = totals.total_revenue || 0;
+    const revenue = totals.total_revenue || job.total_revenue || 0;
 
     let html = '';
 
@@ -665,9 +685,9 @@ function renderDashboard() {
     html += '</tr></thead><tbody>';
 
     cats.forEach(c => {
-        const catNum = c.category_number || c.cat;
-        const catBudget = c.budget_at_cost || 0;
-        const catContract = c.contract_value || 0;
+        const catNum = c.category_number;
+        const catBudget = getCatBudget(c);
+        const catContract = getCatContract(c);
         const catSpent = (c.actual || 0) + (c.committed || 0);
         const catUsed = catBudget > 0 ? (catSpent / catBudget) * 100 : (catSpent > 0 ? 100 : 0);
         const catRemaining = catBudget - catSpent;
@@ -687,7 +707,7 @@ function renderDashboard() {
 
         html += '<tr>';
         html += '<td class="c">' + catDot(catNum) + '</td>';
-        html += '<td>' + esc(c.name || catName(catNum)) + '</td>';
+        html += '<td>' + esc(getCatName(c)) + '</td>';
         html += '<td class="r mono">' + fmt(catBudget) + '</td>';
         html += '<td class="r mono">' + fmt(catContract) + '</td>';
         html += '<td class="r mono">' + fmt(catSpent) + '</td>';
@@ -743,11 +763,11 @@ function renderCostSummary() {
     html += '<h3 class="section-title">Full Financials</h3>';
 
     // Check for unbudgeted spend
-    const unbudgetedCats = cats.filter(c => (!c.budget_at_cost || c.budget_at_cost === 0) && ((c.actual || 0) + (c.committed || 0)) > 0);
+    const unbudgetedCats = cats.filter(c => (!getCatBudget(c)) && ((c.actual || 0) + (c.committed || 0)) > 0);
     if (unbudgetedCats.length > 0) {
         html += '<div class="alert-box purple">';
         html += '<strong>Unbudgeted Spend Alert:</strong> ';
-        html += unbudgetedCats.map(c => esc(c.name || catName(c.category_number || c.cat))).join(', ');
+        html += unbudgetedCats.map(c => esc(getCatName(c))).join(', ');
         html += ' have spend with no budget allocated.';
         html += '</div>';
     }
@@ -763,9 +783,9 @@ function renderCostSummary() {
     let sumBudget = 0, sumContract = 0, sumActual = 0, sumCommitted = 0, sumExposure = 0;
 
     cats.forEach(c => {
-        const catNum = c.category_number || c.cat;
-        const bgt = c.budget_at_cost || 0;
-        const ctr = c.contract_value || 0;
+        const catNum = c.category_number;
+        const bgt = getCatBudget(c);
+        const ctr = getCatContract(c);
         const act = c.actual || 0;
         const com = c.committed || 0;
         const exp = act + com;
@@ -784,7 +804,7 @@ function renderCostSummary() {
 
         html += '<tr>';
         html += '<td class="c">' + catDot(catNum) + '</td>';
-        html += '<td>' + esc(c.name || catName(catNum)) + '</td>';
+        html += '<td>' + esc(getCatName(c)) + '</td>';
         html += '<td class="r mono">' + fmt(bgt) + '</td>';
         html += '<td class="r mono">' + fmt(ctr) + '</td>';
         html += '<td class="r mono">' + fmt(act) + '</td>';
@@ -818,7 +838,7 @@ function renderCostSummary() {
     html += '</tbody></table></div>';
 
     // Revenue summary
-    const revTxns = transactions.filter(t => t.is_revenue || t.trans_type === 'revenue' || t.category === 'revenue');
+    const revTxns = transactions.filter(t => t.is_revenue);
     if (revTxns.length > 0) {
         html += '<h3 class="section-title">Revenue Summary</h3>';
         html += '<div class="table-wrap"><table>';
@@ -828,13 +848,13 @@ function renderCostSummary() {
 
         let runningTotal = 0;
         revTxns.forEach(t => {
-            runningTotal += (t.value || t.total_cost || 0);
+            runningTotal += (parseFloat(t.total_cost) || 0);
             html += '<tr>';
             html += '<td>' + fmtDate(t.date) + '</td>';
             html += '<td>' + esc(t.description) + '</td>';
             html += '<td class="mono">' + esc(t.cost_code) + '</td>';
             html += '<td>' + esc(t.po_number || '') + '</td>';
-            html += '<td class="r mono text-green">' + fmt(t.value || t.total_cost) + '</td>';
+            html += '<td class="r mono text-green">' + fmt(t.total_cost) + '</td>';
             html += '<td class="r mono text-green">' + fmt(runningTotal) + '</td>';
             html += '</tr>';
         });
@@ -847,7 +867,7 @@ function renderCostSummary() {
     }
 
     // Margin summary
-    const totalRevenue = totals.total_revenue || 0;
+    const totalRevenue = totals.total_revenue || _data.job.total_revenue || 0;
     const budgetPerf = sumBudget - sumExposure;
     const projMargin = sumContract - sumExposure;
     const revVsCost = totalRevenue - sumActual;
@@ -872,16 +892,16 @@ function renderSpendAnalysis() {
     const totals = d.totals || {};
     const transactions = d.transactions || [];
 
-    const totalSpend = totals.actual_spend || 0;
-    const budget = totals.budget_at_cost || 0;
+    const totalSpend = totals.actual_spend || _data.job.total_actual || 0;
+    const budget = totals.budget_at_cost || _data.job.total_at_cost || 0;
     const budgetVar = budget - totalSpend;
     const overBudgetCount = cats.filter(c => {
-        const b = c.budget_at_cost || 0;
+        const b = getCatBudget(c);
         return b > 0 && (c.actual || 0) > b;
     }).length;
 
     // Calculate avg monthly spend
-    const dates = transactions.filter(t => !t.is_revenue && t.trans_type !== 'revenue').map(t => new Date(t.date)).filter(d => !isNaN(d));
+    const dates = transactions.filter(t => !t.is_revenue).map(t => new Date(t.date)).filter(d => !isNaN(d));
     let avgMonthly = 0;
     if (dates.length > 1) {
         const minDate = new Date(Math.min(...dates));
@@ -904,8 +924,8 @@ function renderSpendAnalysis() {
     // Category variance table (sorted worst first)
     html += '<h3 class="section-title">Category Variance (Worst First)</h3>';
     const sortedCats = [...cats].sort((a, b) => {
-        const varA = (a.budget_at_cost || 0) - ((a.actual || 0) + (a.committed || 0));
-        const varB = (b.budget_at_cost || 0) - ((b.actual || 0) + (b.committed || 0));
+        const varA = getCatBudget(a) - ((a.actual || 0) + (a.committed || 0));
+        const varB = getCatBudget(b) - ((b.actual || 0) + (b.committed || 0));
         return varA - varB;
     });
 
@@ -917,8 +937,8 @@ function renderSpendAnalysis() {
     html += '</tr></thead><tbody>';
 
     sortedCats.forEach(c => {
-        const catNum = c.category_number || c.cat;
-        const bgt = c.budget_at_cost || 0;
+        const catNum = c.category_number;
+        const bgt = getCatBudget(c);
         const act = c.actual || 0;
         const com = c.committed || 0;
         const exp = act + com;
@@ -934,7 +954,7 @@ function renderSpendAnalysis() {
 
         html += '<tr>';
         html += '<td class="c">' + catDot(catNum) + '</td>';
-        html += '<td>' + esc(c.name || catName(catNum)) + '</td>';
+        html += '<td>' + esc(getCatName(c)) + '</td>';
         html += '<td class="r mono">' + fmt(bgt) + '</td>';
         html += '<td class="r mono">' + fmt(act) + '</td>';
         html += '<td class="r mono">' + fmt(com) + '</td>';
@@ -984,9 +1004,10 @@ function renderSpendAnalysis() {
         html += '<th class="c">% Budget</th><th class="c">% Contract</th><th class="c">Threshold</th>';
         html += '</tr></thead><tbody>';
 
+        const contractTotal = totals.contract_value || _data.job.total_contract || 0;
         monthly.forEach(m => {
-            const pctBud = m.pct_budget || (budget > 0 ? (m.cumulative / budget) * 100 : 0);
-            const pctCon = m.pct_contract || (totals.contract_value > 0 ? (m.cumulative / totals.contract_value) * 100 : 0);
+            const pctBud = budget > 0 ? (m.cumulative / budget) * 100 : 0;
+            const pctCon = contractTotal > 0 ? (m.cumulative / contractTotal) * 100 : 0;
             let threshold;
             if (pctBud > 90) threshold = statusPill('CRITICAL', 'critical');
             else if (pctBud >= 70) threshold = statusPill('WARNING', 'warning');
@@ -1015,11 +1036,12 @@ function renderSpendAnalysis() {
         html += '</tr></thead><tbody>';
 
         suppliers.slice(0, 15).forEach((s, i) => {
-            const pctProj = totalSpend > 0 ? ((s.total_spend || 0) / totalSpend) * 100 : 0;
+            const spend = s.total_spend || s.total || 0;
+            const pctProj = totalSpend > 0 ? (Math.abs(spend) / Math.abs(totalSpend)) * 100 : 0;
             html += '<tr>';
             html += '<td class="c">' + (i + 1) + '</td>';
-            html += '<td>' + esc(s.supplier || s.name) + '</td>';
-            html += '<td class="r mono">' + fmt(s.total_spend) + '</td>';
+            html += '<td>' + esc(s.supplier || s.supplier_name || s.name || '') + '</td>';
+            html += '<td class="r mono">' + fmt(spend) + '</td>';
             html += '<td class="c">' + pct(pctProj) + '</td>';
             html += '<td>' + esc(s.primary_category || '') + '</td>';
             html += '</tr>';
@@ -1029,8 +1051,8 @@ function renderSpendAnalysis() {
 
     // Top 25 transactions
     const sortedTxns = [...transactions]
-        .filter(t => !t.is_revenue && t.trans_type !== 'revenue')
-        .sort((a, b) => Math.abs(b.total_cost || 0) - Math.abs(a.total_cost || 0))
+        .filter(t => !t.is_revenue)
+        .sort((a, b) => Math.abs(parseFloat(b.total_cost) || 0) - Math.abs(parseFloat(a.total_cost) || 0))
         .slice(0, 25);
 
     if (sortedTxns.length > 0) {
@@ -1045,7 +1067,7 @@ function renderSpendAnalysis() {
             html += '<tr>';
             html += '<td class="c">' + (i + 1) + '</td>';
             html += '<td>' + fmtDate(t.date) + '</td>';
-            html += '<td>' + esc(t.category_name || '') + '</td>';
+            html += '<td>' + esc(t.category_name || catName(t.category_number)) + '</td>';
             html += '<td>' + esc(t.supplier || t.employee || '') + '</td>';
             html += '<td class="mono">' + esc(t.cost_code || '') + '</td>';
             html += '<td>' + esc(t.description || '') + '</td>';
@@ -1086,6 +1108,13 @@ function renderTransactions() {
     html += '</select>';
 
     html += '<span class="filter-count" id="txn-count">' + transactions.length + ' transactions</span>';
+
+    // AI suggest button — count unmapped
+    const unmappedCount = transactions.filter(t => !t.mapped_category && !t.is_revenue && !t.is_commitment).length;
+    if (unmappedCount > 0) {
+        html += '<button onclick="askAiSuggest()" id="btn-ai-suggest" style="margin-left:auto;padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:4px" title="Ask AI to categorise unmapped transactions">';
+        html += '&#9733; AI Suggest (' + unmappedCount + ' unmapped)</button>';
+    }
     html += '</div>';
 
     // Table
@@ -1106,10 +1135,10 @@ function renderTransactions() {
 function renderTxnRows(txns) {
     let html = '';
     txns.forEach(t => {
-        const isRevenue = t.is_revenue || t.trans_type === 'revenue' || t.category === 'revenue';
-        const isNeg = (t.total_cost || 0) < 0;
+        const isRevenue = t.is_revenue;
+        const isNeg = (parseFloat(t.total_cost) || 0) < 0;
         const valClass = isRevenue ? 'text-green' : (isNeg ? 'text-neg' : '');
-        const catNum = t.category_number || t.cat;
+        const catNum = t.category_number || t.mapped_category || 0;
 
         // Category display - clickable for reassignment
         let catDisplay;
@@ -1122,15 +1151,16 @@ function renderTxnRows(txns) {
             catDisplay = '<span class="cat-assign text-purple" onclick="startCatEdit(this, \'' + esc(t.id) + '\')">Unallocated</span>';
         }
 
-        html += '<tr data-cat="' + (isRevenue ? 'revenue' : (catNum || 'unallocated')) + '" data-type="' + esc(t.trans_type || '') + '">';
+        const typeLower = (t.trans_type || '').toLowerCase().replace(/\s+/g, '_');
+        html += '<tr data-cat="' + (isRevenue ? 'revenue' : (catNum || 'unallocated')) + '" data-type="' + esc(typeLower) + '">';
         html += '<td>' + fmtDate(t.date) + '</td>';
-        html += '<td>' + esc(t.mapping_source || t.source || '') + '</td>';
+        html += '<td>' + esc(t.source || t.mapping_source || '') + '</td>';
         html += '<td>' + esc(t.trans_type || '') + '</td>';
         html += '<td class="mono">' + esc(t.cost_code || '') + '</td>';
         html += '<td>' + esc(t.description || '') + '</td>';
         html += '<td>' + esc(t.supplier || t.employee || '') + '</td>';
         html += '<td>' + esc(t.po_number || '') + '</td>';
-        html += '<td class="r mono">' + (t.qty != null ? t.qty : (t.hours != null ? t.hours : '')) + '</td>';
+        html += '<td class="r mono">' + (t.qty || '') + '</td>';
         html += '<td class="r mono ' + valClass + '">' + fmt(t.value) + '</td>';
         html += '<td class="r mono ' + valClass + '">' + fmt(t.overhead) + '</td>';
         html += '<td class="r mono ' + valClass + '">' + fmt(t.total_cost) + '</td>';
@@ -1195,7 +1225,7 @@ async function startCatEdit(el, txnId) {
             await CostDB.applyMappings(_jobId);
             // Reload data and refresh
             _data = await CostDB.getFullAnalysis(_jobId);
-            _tabDirty = [true, true, true, true, true];
+            _tabDirty = [true, true, true, true, true, true];
             renderTransactions();
         } catch(e) {
             console.error('Category reassignment failed:', e);
@@ -1212,52 +1242,111 @@ async function startCatEdit(el, txnId) {
     select.focus();
 }
 
+async function askAiSuggest() {
+    const btn = document.getElementById('btn-ai-suggest');
+    if (btn) { btn.disabled = true; btn.textContent = 'Thinking...'; }
+    try {
+        const result = await CostDB.aiSuggestCategories(_jobId);
+        const suggestions = result.suggestions || [];
+        const unmapped = result.unmapped_txns || [];
+
+        if (!suggestions.length) {
+            alert('AI returned no suggestions.');
+            return;
+        }
+
+        // Build review modal
+        let html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center" id="ai-modal">';
+        html += '<div style="background:#fff;border-radius:12px;max-width:700px;width:95%;max-height:80vh;overflow:auto;padding:20px">';
+        html += '<h3 style="margin:0 0 12px">AI Category Suggestions</h3>';
+        html += '<p style="font-size:0.85rem;color:var(--text-light);margin:0 0 12px">' + suggestions.length + ' suggestions. Check the ones you want to accept.</p>';
+        html += '<table style="width:100%;font-size:0.82rem;border-collapse:collapse">';
+        html += '<thead><tr><th style="text-align:left;padding:4px">Accept</th><th>Supplier/Code</th><th>Suggested</th><th>Confidence</th><th>Reason</th></tr></thead><tbody>';
+
+        suggestions.forEach((s, idx) => {
+            const t = unmapped[s.txn_index] || {};
+            const catLabel = catName(s.category_number);
+            const confColor = s.confidence === 'high' ? '#16a34a' : (s.confidence === 'medium' ? '#ca8a04' : '#dc2626');
+            html += '<tr>';
+            html += '<td style="padding:4px"><input type="checkbox" checked data-idx="' + idx + '" class="ai-accept"></td>';
+            html += '<td style="padding:4px">' + (t.supplier_name || t.cost_code || '—') + '</td>';
+            html += '<td style="padding:4px">' + s.category_number + ' - ' + catLabel + '</td>';
+            html += '<td style="padding:4px;color:' + confColor + '">' + (s.confidence || 'low') + '</td>';
+            html += '<td style="padding:4px;font-size:0.78rem">' + (s.reason || '') + '</td>';
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        html += '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">';
+        html += '<button onclick="document.getElementById(\'ai-modal\').remove()" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer">Cancel</button>';
+        html += '<button onclick="applyAiSuggestions()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">Apply Selected</button>';
+        html += '</div></div></div>';
+
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        // Store references for apply
+        window._aiSuggestions = suggestions;
+        window._aiUnmapped = unmapped;
+
+    } catch(e) {
+        console.error('AI suggest error:', e);
+        alert('AI suggestion failed: ' + e.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#9733; AI Suggest'; }
+    }
+}
+
+async function applyAiSuggestions() {
+    const checks = document.querySelectorAll('.ai-accept:checked');
+    const suggestions = window._aiSuggestions || [];
+    const unmapped = window._aiUnmapped || [];
+
+    let applied = 0;
+    for (const cb of checks) {
+        const idx = parseInt(cb.dataset.idx);
+        const s = suggestions[idx];
+        const t = unmapped[s.txn_index];
+        if (!s || !t) continue;
+
+        try {
+            await CostDB.manuallyMapTransaction(t.id, s.category_number);
+            applied++;
+        } catch(e) {
+            console.warn('Failed to apply AI suggestion:', e);
+        }
+    }
+
+    // Remove modal
+    const modal = document.getElementById('ai-modal');
+    if (modal) modal.remove();
+
+    // Reload data
+    _data = await CostDB.getFullAnalysis(_jobId);
+    _tabDirty = [true, true, true, true, true, true];
+    renderTransactions();
+    alert(applied + ' AI suggestions applied.');
+}
+
 
 // ===== TAB 4: WEEKLY SUMMARY =====
 function renderWeeklySummary() {
-    const transactions = _data.transactions || [];
-    const cats = _data.categories || [];
+    // Use pre-computed weekly data from CostDB
+    const weeklyData = _data.weekly_spend || [];
 
-    // Determine active categories (those with any spend)
+    // Determine active categories across all weeks
     const activeCats = [];
-    const catSpend = {};
-    transactions.forEach(t => {
-        if (t.is_revenue || t.trans_type === 'revenue') return;
-        const cn = t.category_number || t.cat;
-        if (cn && cn >= 1 && cn <= 8) {
-            if (!catSpend[cn]) catSpend[cn] = 0;
-            catSpend[cn] += Math.abs(t.total_cost || 0);
+    const catSeen = {};
+    weeklyData.forEach(w => {
+        for (const [cat, val] of Object.entries(w.categories || {})) {
+            const cn = parseInt(cat);
+            if (cn >= 1 && cn <= 8 && Math.abs(val) > 0) catSeen[cn] = true;
         }
     });
     for (let i = 1; i <= 8; i++) {
-        if (catSpend[i] && catSpend[i] > 0) activeCats.push(i);
+        if (catSeen[i]) activeCats.push(i);
     }
 
-    // Group transactions by week commencing (Monday)
-    const weekMap = {};
-    transactions.forEach(t => {
-        if (t.is_revenue || t.trans_type === 'revenue') return;
-        const d = new Date(t.date);
-        if (isNaN(d)) return;
-        // Get Monday of this week
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        const monday = new Date(d);
-        monday.setDate(diff);
-        const key = monday.toISOString().split('T')[0];
-
-        if (!weekMap[key]) {
-            weekMap[key] = { wc: key, txns: 0, cats: {} };
-            activeCats.forEach(c => weekMap[key].cats[c] = 0);
-        }
-        weekMap[key].txns++;
-        const cn = t.category_number || t.cat;
-        if (cn && weekMap[key].cats[cn] !== undefined) {
-            weekMap[key].cats[cn] += (t.total_cost || 0);
-        }
-    });
-
-    const weeks = Object.values(weekMap).sort((a, b) => a.wc.localeCompare(b.wc));
+    const weeks = weeklyData;
 
     let html = '';
     html += '<h3 class="section-title">Weekly Spend Summary</h3>';
@@ -1279,15 +1368,14 @@ function renderWeeklySummary() {
 
     let cumulative = 0;
     weeks.forEach(w => {
-        let weekTotal = 0;
-        activeCats.forEach(c => weekTotal += (w.cats[c] || 0));
+        const weekTotal = w.total || 0;
         cumulative += weekTotal;
 
         html += '<tr>';
-        html += '<td>' + fmtDate(w.wc) + '</td>';
-        html += '<td class="c">' + w.txns + '</td>';
+        html += '<td>' + fmtDate(w.week_commencing) + '</td>';
+        html += '<td class="c">' + (w.count || 0) + '</td>';
         activeCats.forEach(c => {
-            const val = w.cats[c] || 0;
+            const val = (w.categories || {})[c] || 0;
             html += '<td class="r mono">' + (val !== 0 ? fmt(val) : '--') + '</td>';
         });
         html += '<td class="r mono text-bold">' + fmt(weekTotal) + '</td>';
@@ -1300,6 +1388,147 @@ function renderWeeklySummary() {
     document.getElementById('tab-4').innerHTML = html;
 }
 
+
+// ===== TAB 5: ESTIMATE =====
+function renderEstimate() {
+    const job = _data.job;
+    let html = '';
+
+    html += '<h3 class="section-title">Estimate Reference</h3>';
+    html += '<div style="background:var(--white);border-radius:8px;box-shadow:var(--shadow);padding:20px;margin-bottom:16px">';
+
+    if (job.estimate_ref) {
+        html += '<p style="margin-bottom:8px"><strong>Reference:</strong> ' + esc(job.estimate_ref) + '</p>';
+    } else {
+        html += '<p style="color:var(--text-light);margin-bottom:8px">No estimate reference set.</p>';
+    }
+
+    html += '<div style="margin-top:12px">';
+    html += '<label style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-light);display:block;margin-bottom:4px">Estimate Ref</label>';
+    html += '<div style="display:flex;gap:8px;align-items:center">';
+    html += '<input type="text" id="estimate-ref-input" value="' + esc(job.estimate_ref || '') + '" placeholder="e.g. MII-24-E25104" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:inherit">';
+    html += '<button onclick="saveEstimateRef()" style="padding:8px 16px;border:none;border-radius:6px;background:var(--accent);color:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Save</button>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+
+    // AI Notes section
+    html += '<h3 class="section-title">AI Notes</h3>';
+    html += '<div style="background:var(--white);border-radius:8px;box-shadow:var(--shadow);padding:20px;margin-bottom:16px">';
+    html += '<p style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px">Context notes for AI-assisted mapping and analysis.</p>';
+    html += '<textarea id="ai-notes-input" rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:inherit;resize:vertical" placeholder="e.g. This is the electrical scope for BF5 project...">' + esc(job.ai_notes || '') + '</textarea>';
+    html += '<div style="margin-top:8px;text-align:right">';
+    html += '<button onclick="saveAiNotes()" style="padding:8px 16px;border:none;border-radius:6px;background:var(--accent);color:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Save Notes</button>';
+    html += '</div>';
+    html += '</div>';
+
+    // Category budget editor
+    html += '<h3 class="section-title">Category Budgets</h3>';
+    html += '<div style="background:var(--white);border-radius:8px;box-shadow:var(--shadow);padding:20px">';
+    html += '<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">';
+    html += '<label style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-light)">Markup %</label>';
+    html += '<input type="number" id="est-markup" value="' + (job.markup_pct || 14) + '" min="0" max="50" style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;text-align:center" oninput="updateEstimateTotals()">';
+    html += '</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">';
+    html += '<thead><tr><th style="text-align:center;padding:8px;background:#f8f9fa;border-bottom:2px solid var(--border);font-size:0.68rem;font-weight:700;text-transform:uppercase;color:var(--text-light)">#</th>';
+    html += '<th style="padding:8px;background:#f8f9fa;border-bottom:2px solid var(--border);font-size:0.68rem;font-weight:700;text-transform:uppercase;color:var(--text-light)">Category</th>';
+    html += '<th style="text-align:right;padding:8px;background:#f8f9fa;border-bottom:2px solid var(--border);font-size:0.68rem;font-weight:700;text-transform:uppercase;color:var(--text-light)">Contract Value</th>';
+    html += '<th style="text-align:right;padding:8px;background:#f8f9fa;border-bottom:2px solid var(--border);font-size:0.68rem;font-weight:700;text-transform:uppercase;color:var(--text-light)">At Cost</th></tr></thead><tbody>';
+
+    (job.categories || []).forEach(c => {
+        html += '<tr>';
+        html += '<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f0f0f0">' + catDot(c.category_number) + '</td>';
+        html += '<td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">' + esc(getCatName(c)) + '</td>';
+        html += '<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0f0f0"><input type="number" class="est-cv" data-cat="' + c.category_number + '" value="' + (parseFloat(c.contract_value) || 0).toFixed(2) + '" min="0" step="0.01" style="width:120px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;text-align:right;font-size:0.82rem" oninput="updateEstimateTotals()"></td>';
+        html += '<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0f0f0;color:var(--text-light)" class="est-ac" data-cat="' + c.category_number + '">' + fmt(c.at_cost || 0) + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody><tfoot><tr>';
+    html += '<td></td><td style="padding:8px;font-weight:700;border-top:2px solid var(--border)">Total</td>';
+    html += '<td style="text-align:right;padding:8px;font-weight:700;border-top:2px solid var(--border)" id="est-total-cv">' + fmt(job.total_contract || 0) + '</td>';
+    html += '<td style="text-align:right;padding:8px;font-weight:700;border-top:2px solid var(--border)" id="est-total-ac">' + fmt(job.total_at_cost || 0) + '</td>';
+    html += '</tr></tfoot></table>';
+    html += '<div style="margin-top:12px;text-align:right">';
+    html += '<button onclick="saveBudgets()" style="padding:8px 18px;border:none;border-radius:6px;background:#28a745;color:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Save Budgets</button>';
+    html += '</div>';
+    html += '</div>';
+
+    document.getElementById('tab-5').innerHTML = html;
+}
+
+function updateEstimateTotals() {
+    const markup = parseFloat(document.getElementById('est-markup').value) || 14;
+    const multiplier = 1 + markup / 100;
+    let totalCv = 0, totalAc = 0;
+
+    document.querySelectorAll('.est-cv').forEach(input => {
+        const cv = parseFloat(input.value) || 0;
+        const ac = multiplier > 0 ? cv / multiplier : 0;
+        totalCv += cv;
+        totalAc += ac;
+        const catNum = input.dataset.cat;
+        const acEl = document.querySelector('.est-ac[data-cat="' + catNum + '"]');
+        if (acEl) acEl.textContent = fmt(ac);
+    });
+
+    document.getElementById('est-total-cv').textContent = fmt(totalCv);
+    document.getElementById('est-total-ac').textContent = fmt(totalAc);
+}
+
+async function saveEstimateRef() {
+    const val = document.getElementById('estimate-ref-input').value.trim();
+    try {
+        await CostDB.updateJob(_jobId, { estimate_ref: val });
+        _data.job.estimate_ref = val;
+        alert('Estimate reference saved.');
+    } catch (e) {
+        alert('Failed to save: ' + e.message);
+    }
+}
+
+async function saveAiNotes() {
+    const val = document.getElementById('ai-notes-input').value.trim();
+    try {
+        await CostDB.updateJob(_jobId, { ai_notes: val });
+        _data.job.ai_notes = val;
+        alert('AI notes saved.');
+    } catch (e) {
+        alert('Failed to save: ' + e.message);
+    }
+}
+
+async function saveBudgets() {
+    const markup = parseFloat(document.getElementById('est-markup').value) || 14;
+    try {
+        // Update markup first (this recalculates at_cost)
+        await CostDB.updateMarkup(_jobId, markup);
+
+        // Update individual category contract values
+        const cats = await MiiDB.getAll('cost_categories');
+        const jobCats = cats.filter(c => c.job_id === _jobId);
+        const multiplier = 1 + markup / 100;
+
+        document.querySelectorAll('.est-cv').forEach(input => {
+            const catNum = parseInt(input.dataset.cat);
+            const cv = parseFloat(input.value) || 0;
+            const cat = jobCats.find(c => c.category_number === catNum);
+            if (cat) {
+                cat.contract_value = cv;
+                cat.at_cost = multiplier > 0 ? cv / multiplier : 0;
+                MiiDB.save('cost_categories', cat);
+            }
+        });
+
+        // Reload analysis data
+        _data = await CostDB.getFullAnalysis(_jobId);
+        _tabDirty = [true, true, true, true, true, true];
+        populateHeader(_data.job);
+        alert('Budgets saved successfully.');
+    } catch (e) {
+        alert('Failed to save: ' + e.message);
+    }
+}
 
 // ===== INIT =====
 if ('serviceWorker' in navigator && location.protocol === 'file:') {

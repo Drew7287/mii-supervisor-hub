@@ -493,6 +493,7 @@
 <div class="action-bar">
     <button class="btn btn-primary" onclick="triggerImport()">Import Opera 3</button>
     <button class="btn btn-secondary" onclick="openAddJobModal()">Add Job</button>
+    <button class="btn btn-secondary" onclick="window.location.href='cost_mapping_library.html'">Mapping Library</button>
     <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
     <input type="file" id="file-input" class="hidden" accept=".xlsx,.csv" onchange="handleFileSelect(event)">
 </div>
@@ -579,25 +580,17 @@
 <script src="mii-db.js"></script>
 <script src="cost_db.js"></script>
 <script>
-// ===== CONSTANTS =====
-const CATEGORY_NAMES = [
-    'Design',
-    'Labour',
-    'Plant & Equipment',
-    'Equipment Hired',
-    'Materials',
-    'Off Site',
-    'Consumables',
-    'Travel & Accommodation',
-];
+// ===== ADMIN-ONLY ACCESS CHECK =====
+(function checkAccess() {
+    const userJson = localStorage.getItem('mii_user');
+    const token = localStorage.getItem('mii_token');
+    if (!token || !userJson) { location.href = 'hub.html'; return; }
+    const user = JSON.parse(userJson);
+    if (user.role !== 'ADMIN') { location.href = 'hub.html'; return; }
+})();
 
-const STATUS_COLORS = {
-    active: '#006600',
-    complete: '#2F5496',
-    on_hold: '#E68A00',
-    dormant: '#D35400',
-    archived: '#9E9E9E',
-};
+// ===== CONSTANTS =====
+const CATEGORY_NAMES = CostDB.DEFAULT_CATEGORIES.map(function(c) { return c.name; });
 
 // ===== HELPERS =====
 function esc(s) {
@@ -608,15 +601,13 @@ function esc(s) {
 }
 
 function formatGBP(val) {
-    if (typeof CostDB !== 'undefined' && CostDB.formatGBP) return CostDB.formatGBP(val);
-    const n = parseFloat(val) || 0;
-    return '\u00A3' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return CostDB.formatGBP(val, 2);
 }
 
 function formatGBPShort(val) {
     const n = parseFloat(val) || 0;
-    if (n >= 1000000) return '\u00A3' + (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return '\u00A3' + (n / 1000).toFixed(0) + 'K';
+    if (Math.abs(n) >= 1000000) return '\u00A3' + (n / 1000000).toFixed(1) + 'M';
+    if (Math.abs(n) >= 1000) return '\u00A3' + (n / 1000).toFixed(0) + 'K';
     return '\u00A3' + n.toFixed(0);
 }
 
@@ -629,10 +620,6 @@ function formatDate(d) {
     } catch (_) {
         return '\u2014';
     }
-}
-
-function generateId() {
-    return 'cj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 }
 
 // ===== TOAST =====
@@ -650,39 +637,12 @@ function showToast(message, type) {
     }, 4000);
 }
 
-// ===== DATA LOADING =====
-let _jobs = [];
-let _categories = {};  // jobId -> [categories]
-let _txnCounts = {};    // jobId -> count
-let _imports = [];
+// ===== DATA =====
+let _jobs = [];  // enriched jobs from CostDB.getAllJobs()
 
 async function loadAllData() {
     try {
-        await MiiDB.ready();
-
-        _jobs = await MiiDB.getAll('cost_jobs');
-        const allCats = await MiiDB.getAll('cost_categories');
-        const allTxns = await MiiDB.getAll('cost_transactions');
-        _imports = await MiiDB.getAll('cost_imports');
-
-        // Group categories by job
-        _categories = {};
-        allCats.forEach(function(c) {
-            if (!_categories[c.job_id]) _categories[c.job_id] = [];
-            _categories[c.job_id].push(c);
-        });
-
-        // Count transactions per job
-        _txnCounts = {};
-        allTxns.forEach(function(t) {
-            _txnCounts[t.job_id] = (_txnCounts[t.job_id] || 0) + 1;
-        });
-
-        // Sort jobs by job_number
-        _jobs.sort(function(a, b) {
-            return (a.job_number || '').localeCompare(b.job_number || '');
-        });
-
+        _jobs = await CostDB.getAllJobs();
         renderStats();
         renderTable();
     } catch (err) {
@@ -690,28 +650,6 @@ async function loadAllData() {
         document.getElementById('table-container').innerHTML =
             '<div class="empty-state"><div class="info-box">Failed to load data. Check console for details.</div></div>';
     }
-}
-
-function getJobBudget(job) {
-    const cats = _categories[job.id] || [];
-    let total = 0;
-    cats.forEach(function(c) { total += parseFloat(c.budget_at_cost) || 0; });
-    return total;
-}
-
-function getJobContractValue(job) {
-    const cats = _categories[job.id] || [];
-    let total = 0;
-    cats.forEach(function(c) { total += parseFloat(c.contract_value) || 0; });
-    return total;
-}
-
-function getJobTxnCount(job) {
-    return _txnCounts[job.id] || 0;
-}
-
-function getJobLastImport(job) {
-    return job.last_import_at || null;
 }
 
 // ===== RENDER STATS =====
@@ -722,9 +660,9 @@ function renderStats() {
     let latestImport = null;
 
     _jobs.forEach(function(j) {
-        totalBudget += getJobBudget(j);
-        totalTxns += getJobTxnCount(j);
-        const imp = getJobLastImport(j);
+        totalBudget += j.total_at_cost || 0;
+        totalTxns += j.transaction_count || 0;
+        const imp = j.last_import_at;
         if (imp && (!latestImport || imp > latestImport)) latestImport = imp;
     });
 
@@ -740,7 +678,7 @@ function renderTable() {
     const container = document.getElementById('table-container');
 
     if (_jobs.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="info-box">No jobs configured yet. Click \'Add Job\' to set up a new cost tracking job.</div></div>';
+        container.innerHTML = '<div class="empty-state"><div class="info-box">No jobs configured yet. Click \'Add Job\' to set up a new cost tracking job, or \'Import Opera 3\' to import transaction data.</div></div>';
         return;
     }
 
@@ -760,22 +698,18 @@ function renderTable() {
         const isGroup = job.is_group;
         const statusClass = (job.status || 'active').replace(/\s+/g, '_').toLowerCase();
         const statusLabel = (job.status || 'active').replace(/_/g, ' ');
-        const contractVal = getJobContractValue(job);
-        const budgetVal = getJobBudget(job);
-        const txnCount = getJobTxnCount(job);
-        const lastImport = getJobLastImport(job);
         const markup = job.markup_pct != null ? job.markup_pct : 14;
 
         html += '<tr data-job-id="' + esc(job.id) + '" ondblclick="openJobDetail(\'' + esc(job.id) + '\')" oncontextmenu="showContextMenu(event, \'' + esc(job.id) + '\')">' +
             '<td class="job-no' + (isGroup ? ' group' : '') + '">' + esc(job.job_number) + '</td>' +
-            '<td class="project-name">' + esc(job.project_name) + '</td>' +
+            '<td class="project-name">' + esc(job.job_name) + '</td>' +
             '<td>' + esc(job.client || '') + '</td>' +
             '<td><span class="status-badge ' + statusClass + '">' + esc(statusLabel) + '</span></td>' +
             '<td class="center"><input type="number" class="markup-input" value="' + markup + '" min="0" max="50" data-job-id="' + esc(job.id) + '" onchange="handleMarkupChange(this)" onclick="event.stopPropagation()"></td>' +
-            '<td class="right">' + formatGBP(contractVal) + '</td>' +
-            '<td class="right">' + formatGBP(budgetVal) + '</td>' +
-            '<td class="right">' + txnCount.toLocaleString() + '</td>' +
-            '<td class="center">' + formatDate(lastImport) + '</td>' +
+            '<td class="right">' + formatGBP(job.total_contract || 0) + '</td>' +
+            '<td class="right">' + formatGBP(job.total_at_cost || 0) + '</td>' +
+            '<td class="right">' + (job.transaction_count || 0).toLocaleString() + '</td>' +
+            '<td class="center">' + formatDate(job.last_import_at) + '</td>' +
             '</tr>';
     });
 
@@ -787,34 +721,16 @@ function renderTable() {
 async function handleMarkupChange(input) {
     const jobId = input.getAttribute('data-job-id');
     const newMarkup = parseFloat(input.value) || 14;
-
-    // Clamp
     if (newMarkup < 0) input.value = 0;
     if (newMarkup > 50) input.value = 50;
 
-    const job = _jobs.find(function(j) { return j.id === jobId; });
-    if (!job) return;
-
-    job.markup_pct = parseFloat(input.value);
-
-    // Recalculate budget_at_cost for each category
-    const cats = _categories[jobId] || [];
-    for (let i = 0; i < cats.length; i++) {
-        const c = cats[i];
-        c.budget_at_cost = parseFloat(c.contract_value || 0) / (1 + job.markup_pct / 100);
-        await MiiDB.save('cost_categories', c);
+    try {
+        await CostDB.updateMarkup(jobId, parseFloat(input.value));
+        await loadAllData();
+    } catch (err) {
+        console.error('Markup update error:', err);
+        showToast('Failed to update markup: ' + err.message, 'error');
     }
-
-    // Update via CostDB if available, otherwise direct MiiDB
-    if (typeof CostDB !== 'undefined' && CostDB.updateMarkup) {
-        await CostDB.updateMarkup(jobId, job.markup_pct);
-    } else {
-        await MiiDB.save('cost_jobs', job);
-    }
-
-    // Refresh display
-    renderStats();
-    renderTable();
 }
 
 // ===== NAVIGATION =====
@@ -832,13 +748,8 @@ function showContextMenu(e, jobId) {
     const job = _jobs.find(function(j) { return j.id === jobId; });
     if (!job) return;
 
-    // Update toggle status label
     const toggleBtn = document.getElementById('ctx-toggle-status');
-    if (job.status === 'complete') {
-        toggleBtn.textContent = 'Reactivate';
-    } else {
-        toggleBtn.textContent = 'Mark Complete';
-    }
+    toggleBtn.textContent = job.status === 'complete' ? 'Reactivate' : 'Mark Complete';
 
     const menu = document.getElementById('context-menu');
     menu.style.left = e.clientX + 'px';
@@ -866,39 +777,34 @@ async function ctxToggleStatus() {
     const job = _jobs.find(function(j) { return j.id === _ctxJobId; });
     if (!job) return;
 
-    job.status = job.status === 'complete' ? 'active' : 'complete';
-    await MiiDB.save('cost_jobs', job);
-    showToast('Job ' + job.job_number + ' marked as ' + job.status, 'success');
+    const newStatus = job.status === 'complete' ? 'active' : 'complete';
+    await CostDB.updateJobStatus(_ctxJobId, newStatus);
+    showToast('Job ' + job.job_number + ' marked as ' + newStatus, 'success');
     hideContextMenu();
-    renderStats();
-    renderTable();
+    await loadAllData();
 }
 
 async function ctxDelete() {
     if (!_ctxJobId) return;
     const job = _jobs.find(function(j) { return j.id === _ctxJobId; });
     if (!job) return;
-
     hideContextMenu();
 
-    if (!confirm('Delete job ' + job.job_number + ' (' + job.project_name + ')?\n\nThis will remove the job and all its categories. Transaction data will be kept.')) {
+    if (!confirm('Delete job ' + job.job_number + ' (' + (job.job_name || '') + ')?\n\nThis will permanently remove the job, categories, transactions, and mappings.')) {
+        return;
+    }
+    if (!confirm('Are you sure? This cannot be undone.')) {
         return;
     }
 
-    // Remove categories
-    const cats = _categories[job.id] || [];
-    for (let i = 0; i < cats.length; i++) {
-        await MiiDB.remove('cost_categories', cats[i].id);
+    try {
+        await CostDB.deleteJob(_ctxJobId);
+        showToast('Job ' + job.job_number + ' deleted', 'success');
+        await loadAllData();
+    } catch (err) {
+        console.error('Delete job error:', err);
+        showToast('Failed to delete: ' + err.message, 'error');
     }
-    delete _categories[job.id];
-
-    // Remove job
-    await MiiDB.remove('cost_jobs', job.id);
-    _jobs = _jobs.filter(function(j) { return j.id !== job.id; });
-
-    showToast('Job ' + job.job_number + ' deleted', 'success');
-    renderStats();
-    renderTable();
 }
 
 // ===== IMPORT =====
@@ -916,17 +822,8 @@ async function handleFileSelect(e) {
     try {
         const data = await file.arrayBuffer();
         const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-
-        if (typeof CostDB !== 'undefined' && CostDB.processImport) {
-            const result = await CostDB.processImport(workbook, file.name);
-            showToast(result.message || ('Imported ' + (result.count || 0) + ' transactions'), 'success');
-        } else {
-            // Basic fallback: just show what was parsed
-            const firstSheet = workbook.SheetNames[0];
-            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
-            showToast('Parsed ' + rows.length + ' rows from ' + firstSheet + '. CostDB not loaded for full processing.', 'info');
-        }
-
+        const result = await CostDB.processImport(workbook, file.name);
+        showToast(result.message || ('Imported ' + (result.count || 0) + ' transactions'), 'success');
         await loadAllData();
     } catch (err) {
         console.error('Import error:', err);
@@ -942,7 +839,6 @@ function openAddJobModal() {
     document.getElementById('modal-markup').value = '14';
     document.getElementById('btn-create-job').disabled = false;
 
-    // Build category rows
     const tbody = document.getElementById('cat-table-body');
     tbody.innerHTML = '';
     CATEGORY_NAMES.forEach(function(name, i) {
@@ -963,13 +859,13 @@ function closeAddJobModal() {
     document.getElementById('add-job-modal').classList.remove('active');
 }
 
-// Close modal on overlay click
 document.getElementById('add-job-modal').addEventListener('click', function(e) {
     if (e.target === this) closeAddJobModal();
 });
 
 function updateCatTotals() {
     const markup = parseFloat(document.getElementById('modal-markup').value) || 14;
+    const multiplier = 1 + markup / 100;
     const inputs = document.querySelectorAll('.cat-contract');
     let totalContract = 0;
     let totalCost = 0;
@@ -977,7 +873,7 @@ function updateCatTotals() {
     inputs.forEach(function(input) {
         const idx = input.getAttribute('data-idx');
         const cv = parseFloat(input.value) || 0;
-        const ac = cv / (1 + markup / 100);
+        const ac = cv / multiplier;
         totalContract += cv;
         totalCost += ac;
         document.getElementById('cat-cost-' + idx).textContent = formatGBP(ac);
@@ -987,7 +883,6 @@ function updateCatTotals() {
     document.getElementById('cat-total-cost').textContent = formatGBP(totalCost);
 }
 
-// Re-calc when markup changes in modal
 document.getElementById('modal-markup').addEventListener('input', updateCatTotals);
 
 async function createJob() {
@@ -999,65 +894,31 @@ async function createJob() {
     if (!jobNumber) { alert('Job number is required.'); return; }
     if (!projectName) { alert('Project name is required.'); return; }
 
-    // Check for duplicate job number
+    // Check for duplicate
     const existing = _jobs.find(function(j) { return j.job_number === jobNumber; });
-    if (existing) {
-        alert('Job number ' + jobNumber + ' already exists.');
-        return;
-    }
+    if (existing) { alert('Job number ' + jobNumber + ' already exists.'); return; }
 
     const btn = document.getElementById('btn-create-job');
     btn.disabled = true;
 
     try {
-        const jobId = generateId();
-        const now = new Date().toISOString();
-
-        // Calculate totals
+        // Gather category contract values
         const inputs = document.querySelectorAll('.cat-contract');
-        let totalContract = 0;
-        let totalBudget = 0;
-
-        // Save categories
-        const catRecords = [];
+        const categories = [];
         inputs.forEach(function(input, i) {
-            const cv = parseFloat(input.value) || 0;
-            const ac = cv / (1 + markup / 100);
-            totalContract += cv;
-            totalBudget += ac;
-
-            catRecords.push({
-                id: jobId + '_cat_' + i,
-                job_id: jobId,
-                category_index: i,
-                category_name: CATEGORY_NAMES[i],
-                contract_value: cv,
-                budget_at_cost: ac,
-                created_at: now,
+            categories.push({
+                number: i + 1,
+                contract_value: parseFloat(input.value) || 0,
             });
         });
 
-        // Save job
-        const job = {
-            id: jobId,
+        await CostDB.createJob({
             job_number: jobNumber,
-            project_name: projectName,
+            job_name: projectName,
             client: client,
-            status: 'active',
-            markup_pct: markup,
-            contract_value_total: totalContract,
-            budget_at_cost: totalBudget,
-            is_group: false,
-            last_import_at: null,
-            created_at: now,
-            updated_at: now,
-        };
-
-        await MiiDB.save('cost_jobs', job);
-
-        for (let i = 0; i < catRecords.length; i++) {
-            await MiiDB.save('cost_categories', catRecords[i]);
-        }
+            markup: markup,
+            categories: categories,
+        });
 
         closeAddJobModal();
         showToast('Job ' + jobNumber + ' created', 'success');
@@ -1073,6 +934,7 @@ async function createJob() {
 async function refreshAll() {
     showToast('Refreshing...', 'info');
     await loadAllData();
+    showToast('Done', 'success');
 }
 
 // ===== INIT =====
