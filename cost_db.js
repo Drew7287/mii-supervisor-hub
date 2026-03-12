@@ -2293,7 +2293,9 @@
      * @returns {Promise<string>} estimate id
      */
     async createEstimate({ name = '', estimate_ref = '', client = '', rate_card_id = null,
-                            markup_pct = 14, materials_markup_pct = 2.5, job_id = null, notes = '' }) {
+                            markup_pct = 14, materials_markup_pct = 2.5, job_id = null, notes = '',
+                            start_date = null, pre_stop_weeks = 3, total_weeks = 24,
+                            shift_pattern = '7x12h_day', contingency = null }) {
       await MiiDB.ready();
       const id = generateId();
       const now = new Date().toISOString();
@@ -2308,7 +2310,11 @@
         markup_pct: parseFloat(markup_pct) || 14,
         materials_markup_pct: parseFloat(materials_markup_pct) || 2.5,
         status: 'draft',
-        shift_pattern: null,
+        start_date: start_date || null,
+        pre_stop_weeks: parseInt(pre_stop_weeks) || 3,
+        total_weeks: parseInt(total_weeks) || 24,
+        shift_pattern: shift_pattern || '7x12h_day',
+        contingency: contingency || {},
         notes,
         version: 1,
         created_at: now,
@@ -2376,8 +2382,8 @@
     /**
      * Add a line item to an estimate section.
      * @param {string} estimateId
-     * @param {number} sectionNumber - 1-8
-     * @param {string} lineType - 'labour' or 'material'
+     * @param {number} sectionNumber - 1-9
+     * @param {string} lineType - 'labour', 'material', 'task', or 'auto'
      * @param {Object} data - line item fields
      * @returns {Promise<string>} item id
      */
@@ -2396,31 +2402,44 @@
         sort_order: maxOrder + 1,
         line_type: lineType,
         description: data.description || '',
-        // Labour fields
+        // CBS schedule fields
+        rate: data.rate || 0,
+        qty_per_week: data.qty_per_week || 0,
+        schedule: data.schedule || [],
+        num_weeks: 0,
+        cost_per_week: 0,
+        task_id: data.task_id || null,
+        auto_source: data.auto_source || null,
+        // Labour/rate card fields
         grade_id: data.grade_id || null,
         grade_name: data.grade_name || '',
         headcount: data.headcount || 0,
         duration_weeks: data.duration_weeks || 1,
-        hours_a: data.hours_a || 0,
-        hours_b: data.hours_b || 0,
-        hours_c: data.hours_c || 0,
-        hours_d: data.hours_d || 0,
-        hours_e: data.hours_e || 0,
-        rate_a: data.rate_a || 0,
-        rate_b: data.rate_b || 0,
-        rate_c: data.rate_c || 0,
-        rate_d: data.rate_d || 0,
-        rate_e: data.rate_e || 0,
+        hours_a: data.hours_a || 0, hours_b: data.hours_b || 0,
+        hours_c: data.hours_c || 0, hours_d: data.hours_d || 0, hours_e: data.hours_e || 0,
+        rate_a: data.rate_a || 0, rate_b: data.rate_b || 0,
+        rate_c: data.rate_c || 0, rate_d: data.rate_d || 0, rate_e: data.rate_e || 0,
         // Material fields
         quantity: data.quantity || 0,
         unit: data.unit || 'each',
         unit_rate: data.unit_rate || 0,
-        markup_pct: data.markup_pct || (sectionNumber === 5 ? 2.5 : 0),
+        markup_pct: data.markup_pct || 0,
+        // Task fields (for line_type='task')
+        grade_1_count: data.grade_1_count || 0,
+        grade_2_count: data.grade_2_count || 0,
+        grade_3_count: data.grade_3_count || 0,
+        grade_4_count: data.grade_4_count || 0,
+        grade_5_count: data.grade_5_count || 0,
+        grade_6_count: data.grade_6_count || 0,
+        grade_7_count: data.grade_7_count || 0,
         // Computed
         line_total: 0,
         notes: data.notes || '',
       };
-      item.line_total = this.calculateItemTotal(item);
+      // CBS total: rate × qty_per_week × active_weeks
+      item.num_weeks = (item.schedule || []).reduce((s, v) => s + (v ? 1 : 0), 0);
+      item.cost_per_week = (item.rate || 0) * (item.qty_per_week || 0);
+      item.line_total = item.cost_per_week * item.num_weeks;
       await MiiDB.save('cost_estimate_items', item);
 
       // Touch estimate updated_at

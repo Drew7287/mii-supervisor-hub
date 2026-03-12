@@ -647,6 +647,21 @@
             </table>
         </div>
 
+        <!-- Export File (cached — like desktop's hardcoded SharePoint path) -->
+        <div class="modal-section" style="background:var(--bg-light);border-radius:8px;padding:12px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <strong style="font-size:0.85rem">Export File</strong>
+                    <div id="export-file-status" style="font-size:0.8rem;color:var(--text-light);margin-top:2px">No export file loaded</div>
+                </div>
+                <button class="btn btn-secondary" onclick="selectExportFile()" style="font-size:0.78rem;padding:5px 12px">Select MII_Daily_Export.xlsx</button>
+            </div>
+            <p style="font-size:0.75rem;color:var(--text-light);margin:6px 0 0">
+                Transactions for this job will be automatically imported and mapped on creation.
+                File is remembered across sessions.
+            </p>
+        </div>
+
         <!-- Buttons -->
         <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border)">
             <button class="btn btn-secondary" onclick="closeAddJobModal()">Cancel</button>
@@ -905,6 +920,17 @@ async function handleFileSelect(e) {
     try {
         const data = await file.arrayBuffer();
         const workbook = XLSX.read(data, { type: 'array' });
+
+        // Also cache this as the export file for Create Job
+        _cachedExportWorkbook = workbook;
+        _cachedExportFilename = file.name;
+        MiiDB.save('cost_settings', {
+            id: 'cached_export',
+            data: new Uint8Array(data),
+            filename: file.name,
+            cached_at: new Date().toISOString(),
+        }).catch(function(err) { console.warn('Failed to cache export:', err); });
+
         const result = await CostDB.processImport(workbook, file.name);
         showToast(result.message || ('Imported ' + (result.count || 0) + ' transactions'), 'success');
         await loadAllData();
@@ -914,11 +940,72 @@ async function handleFileSelect(e) {
     }
 }
 
+// ===== CACHED EXPORT FILE =====
+// Desktop reads from hardcoded SharePoint path automatically. Browser can't do
+// that, so we cache the export workbook in memory. User picks it once per
+// session; every subsequent Create Job reuses it — just like the desktop.
+let _cachedExportWorkbook = null;
+let _cachedExportFilename = null;
+
+// Try to restore from IndexedDB on load (persists across page refreshes)
+async function _restoreCachedExport() {
+    try {
+        const cached = await MiiDB.get('cost_settings', 'cached_export');
+        if (cached && cached.data) {
+            _cachedExportWorkbook = XLSX.read(cached.data, { type: 'array' });
+            _cachedExportFilename = cached.filename || 'MII_Daily_Export.xlsx';
+            console.log('[Export] Restored cached export:', _cachedExportFilename);
+            _updateExportStatus();
+        }
+    } catch (e) { console.warn('Failed to restore cached export:', e); }
+}
+
+function _updateExportStatus() {
+    const el = document.getElementById('export-file-status');
+    if (!el) return;
+    if (_cachedExportWorkbook) {
+        el.innerHTML = '<span style="color:var(--success)">' + esc(_cachedExportFilename) + ' loaded</span>';
+    } else {
+        el.textContent = 'No export file loaded';
+    }
+}
+
+async function selectExportFile() {
+    return new Promise(function(resolve) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.csv';
+        input.onchange = async function(e) {
+            const file = e.target.files[0];
+            if (!file) { resolve(false); return; }
+            try {
+                const arrayBuf = await file.arrayBuffer();
+                _cachedExportWorkbook = XLSX.read(arrayBuf, { type: 'array' });
+                _cachedExportFilename = file.name;
+                // Persist in IndexedDB so it survives page refresh
+                await MiiDB.save('cost_settings', {
+                    id: 'cached_export',
+                    data: new Uint8Array(arrayBuf),
+                    filename: file.name,
+                    cached_at: new Date().toISOString(),
+                });
+                _updateExportStatus();
+                resolve(true);
+            } catch (err) {
+                alert('Failed to read file: ' + err.message);
+                resolve(false);
+            }
+        };
+        input.click();
+    });
+}
+
 // ===== ADD JOB MODAL (desktop parity — single dialog) =====
 let _wizEstimate = null;
 
 function openAddJobModal() {
     _wizEstimate = null;
+    _updateExportStatus();
 
     // Reset fields
     document.getElementById('wiz-job-number').value = '';
@@ -1054,11 +1141,10 @@ function getCategoryValues() {
 }
 
 // --- Create Job ---
-// Desktop parity: create (or upgrade stub) → copy mappings → apply rules to
-// any existing transactions → offer AI for unmapped → show summary.
-// Transactions come from the standalone "Import Opera 3" button, NOT from a
-// file picker inside this dialog (the desktop reads from fixed SharePoint
-// paths automatically; the webapp equivalent is a separate bulk import step).
+// Desktop parity: create job → auto-import from cached export file →
+// copy mappings → apply rules → AI suggest for unmapped → show summary.
+// Desktop reads from hardcoded SharePoint path; we use a cached export file
+// that the user picks once and is remembered across sessions.
 async function createJob() {
     const btn = document.getElementById('btn-create-job');
 
@@ -1068,11 +1154,16 @@ async function createJob() {
     if (!jobNumber) { alert('Job number is required.'); document.getElementById('wiz-job-number').focus(); return; }
     if (!projectName) { alert('Project name is required.'); document.getElementById('wiz-project-name').focus(); return; }
 
+    // If no export file cached, prompt to select one (required for transaction import)
+    if (!_cachedExportWorkbook) {
+        const picked = await selectExportFile();
+        if (!picked) return; // user cancelled
+    }
+
     // Check for existing job — if it's a stub from bulk import, upgrade it
     const existing = _jobs.find(function(j) { return j.job_number === jobNumber; });
     let isUpgrade = false;
     if (existing) {
-        // A stub has name like "Job SW1234" and no contract values
         const isStub = existing.job_name === ('Job ' + jobNumber) && (!existing.contract_value_total || existing.contract_value_total === 0);
         if (isStub) {
             isUpgrade = true;
@@ -1099,8 +1190,8 @@ async function createJob() {
 
         let jobId;
 
+        // Step 1: Create job (or upgrade stub)
         if (isUpgrade) {
-            // Upgrade the stub job with real details
             btn.textContent = 'Upgrading job...';
             jobId = existing.id;
             await CostDB.updateJob(jobId, {
@@ -1111,7 +1202,6 @@ async function createJob() {
                 ai_notes: aiNotes,
                 group_id: groupId,
             });
-            // Update categories with contract values
             const markupMultiplier = 1 + markup / 100;
             const existingCats = (await MiiDB.getAll('cost_categories')).filter(function(c) { return c.job_id === jobId; });
             for (const ec of existingCats) {
@@ -1122,7 +1212,6 @@ async function createJob() {
                     await MiiDB.save('cost_categories', ec);
                 }
             }
-            // Update job totals
             const totalContract = categories.reduce(function(s, c) { return s + (parseFloat(c.contract_value) || 0); }, 0);
             existing.contract_value_total = totalContract;
             existing.budget_at_cost = markupMultiplier > 0 ? totalContract / markupMultiplier : 0;
@@ -1136,7 +1225,6 @@ async function createJob() {
             await MiiDB.save('cost_jobs', existing);
             CostDB.syncJobToServer(jobId).catch(function() {});
         } else {
-            // Create new job
             btn.textContent = 'Creating job...';
             jobId = await CostDB.createJob({
                 job_number: jobNumber,
@@ -1150,7 +1238,7 @@ async function createJob() {
             });
         }
 
-        // Copy mapping rules from another job if selected
+        // Step 2: Copy mapping rules from another job if selected
         if (copyFromId) {
             try {
                 const sms = (await MiiDB.getAll('cost_supplier_mappings')).filter(function(m) { return m.job_id === copyFromId; });
@@ -1180,16 +1268,37 @@ async function createJob() {
             }
         }
 
-        // === Desktop-parity post-create pipeline ===
-        // Check for existing transactions (from prior bulk Import Opera 3)
-        btn.textContent = 'Checking transactions...';
-        const allTxns = await MiiDB.getAll('cost_transactions');
-        const jobTxns = allTxns.filter(function(t) { return t.job_id === jobId; });
-        const txnCount = jobTxns.length;
+        // Step 3: Auto-import transactions from cached export file (desktop parity)
+        // Desktop: _process_staging_for_job reads All_Batches.csv + MII_Daily_Export.xlsx
+        // filtered to the new job number. We do the same from the cached workbook.
+        let txnCount = 0;
         let mappedCount = 0;
         let unmappedCount = 0;
 
-        // Apply all mapping rules (global + job-specific + copied)
+        if (_cachedExportWorkbook) {
+            btn.textContent = 'Importing transactions for ' + jobNumber + '...';
+            try {
+                const importResult = await CostDB.processImport(
+                    _cachedExportWorkbook,
+                    _cachedExportFilename,
+                    { jobFilter: [jobNumber] }
+                );
+                txnCount = importResult.total_inserted || importResult.count || 0;
+                console.log('[CreateJob] Imported', txnCount, 'transactions for', jobNumber);
+            } catch (importErr) {
+                console.error('Import error:', importErr);
+                showToast('Import failed: ' + importErr.message, 'error');
+            }
+        }
+
+        // If no transactions from import, check if any already exist (from prior import)
+        if (txnCount === 0) {
+            const allTxns = await MiiDB.getAll('cost_transactions');
+            const jobTxns = allTxns.filter(function(t) { return t.job_id === jobId; });
+            txnCount = jobTxns.length;
+        }
+
+        // Step 4: Apply all mapping rules (global + job-specific + copied)
         if (txnCount > 0) {
             btn.textContent = 'Applying mapping rules...';
             try {
@@ -1197,16 +1306,16 @@ async function createJob() {
                 mappedCount = mapResult.mapped || 0;
                 unmappedCount = mapResult.unmapped || 0;
             } catch (mapErr) {
-                console.warn('Mapping after create error:', mapErr);
+                console.warn('Mapping error:', mapErr);
             }
         }
 
-        // If unmapped transactions remain, offer AI mapping (desktop parity)
+        // Step 5: If unmapped remain, offer AI mapping (desktop parity)
         if (unmappedCount > 0) {
             btn.textContent = 'Create Job';
             btn.disabled = false;
             const askAi = confirm(
-                txnCount + ' transactions found.\n' +
+                txnCount + ' transactions imported.\n' +
                 mappedCount + ' mapped by rules, ' + unmappedCount + ' unmapped.\n\n' +
                 'Ask AI to create mapping rules for the unmapped transactions?\n' +
                 '(Choose Cancel to map manually later)'
@@ -1235,26 +1344,22 @@ async function createJob() {
                     }
                 } catch (aiErr) {
                     console.error('AI mapping error:', aiErr);
-                    showToast('AI mapping failed: ' + aiErr.message + ' — you can try again from the job detail page', 'error');
+                    showToast('AI mapping failed: ' + aiErr.message + ' — try again from job detail page', 'error');
                 }
             }
         }
 
-        // Show creation summary
+        // Step 6: Show creation summary (desktop parity: _show_creation_summary)
         if (txnCount > 0) {
             alert(
                 'Job ' + jobNumber + (isUpgrade ? ' upgraded' : ' created') + ' successfully!\n\n' +
                 'Transactions: ' + txnCount + '\n' +
                 'Mapped: ' + mappedCount + '\n' +
                 'Unmapped: ' + unmappedCount +
-                (unmappedCount > 0 ? '\n\nUse AI Suggest Rules on the job detail page to map remaining transactions.' : '')
+                (unmappedCount > 0 ? '\n\nUse AI Suggest Rules on the job detail page to map remaining.' : '')
             );
         } else {
-            showToast(
-                'Job ' + jobNumber + (isUpgrade ? ' upgraded' : ' created') +
-                ' — no transactions yet. Use "Import Opera 3" on the dashboard to import spend data.',
-                'info'
-            );
+            alert('Job ' + jobNumber + (isUpgrade ? ' upgraded' : ' created') + '.\n\nNo transactions found for this job number in the export file.');
         }
 
         closeAddJobModal();
@@ -1468,6 +1573,7 @@ async function refreshAll() {
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
     setupEstimateInput();
+    _restoreCachedExport();
     loadAllData();
 });
 </script>

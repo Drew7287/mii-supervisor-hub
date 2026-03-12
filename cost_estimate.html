@@ -47,7 +47,7 @@
         .topbar a:hover { color: #fff; }
 
         /* Layout */
-        .container { max-width: 1100px; margin: 0 auto; padding: 16px 24px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 16px 24px; }
 
         /* Header card */
         .header-card {
@@ -59,7 +59,7 @@
         }
         .header-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
             gap: 12px;
             margin-bottom: 12px;
         }
@@ -87,175 +87,8 @@
             box-shadow: 0 0 0 2px rgba(0,120,212,0.12);
         }
 
-        /* Status badge */
-        .status-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 10px;
-            font-size: 0.68rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .status-badge.draft { background: #e8f0fe; color: var(--accent); }
-        .status-badge.submitted { background: #fff3cd; color: #856404; }
-        .status-badge.approved { background: #C6EFCE; color: #006600; }
-
-        /* Section accordion */
-        .section-card {
-            background: var(--white);
-            border-radius: 10px;
-            box-shadow: var(--shadow);
-            margin-bottom: 8px;
-            overflow: hidden;
-        }
-        .section-header {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.1s;
-        }
-        .section-header:hover { background: #f8f9fb; }
-        .section-chevron {
-            font-size: 0.7rem;
-            color: var(--text-light);
-            margin-right: 10px;
-            transition: transform 0.2s;
-            width: 12px;
-        }
-        .section-card.open .section-chevron { transform: rotate(90deg); }
-        .section-num {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--white);
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        .section-title {
-            flex: 1;
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-        .section-meta {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            font-size: 0.78rem;
-            color: var(--text-light);
-        }
-        .section-total {
-            font-weight: 700;
-            color: var(--text);
-            font-variant-numeric: tabular-nums;
-        }
-        .section-body {
-            display: none;
-            padding: 0 20px 16px;
-            border-top: 1px solid #f0f0f0;
-        }
-        .section-card.open .section-body { display: block; }
-
-        /* Line item tables */
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.78rem;
-            margin-top: 12px;
-        }
-        .items-table th {
-            padding: 6px 8px;
-            text-align: left;
-            font-size: 0.62rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            color: var(--text-light);
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap;
-        }
-        .items-table th.r { text-align: right; }
-        .items-table td { padding: 4px 4px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
-        .items-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
-        .items-table input, .items-table select {
-            width: 100%;
-            padding: 4px 6px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.78rem;
-            font-family: inherit;
-        }
-        .items-table input[type="number"] { text-align: right; font-variant-numeric: tabular-nums; }
-        .items-table input:focus, .items-table select:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(0,120,212,0.12);
-        }
-        .item-desc { min-width: 150px; }
-        .item-num { width: 65px; }
-        .item-rate { width: 72px; }
-        .item-hrs { width: 55px; }
-        .item-total { font-weight: 700; white-space: nowrap; min-width: 80px; }
-
-        .btn-add-line {
-            margin-top: 8px;
-            padding: 5px 14px;
-            border: 1px dashed var(--border);
-            border-radius: 6px;
-            background: none;
-            font-size: 0.78rem;
-            font-family: inherit;
-            color: var(--accent);
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .btn-add-line:hover { background: #f0f6ff; border-color: var(--accent); }
-
-        .btn-remove {
-            background: none;
-            border: none;
-            color: var(--text-light);
-            cursor: pointer;
-            font-size: 1rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        .btn-remove:hover { color: var(--danger); background: #fde8ea; }
-
-        /* Grand total footer */
-        .grand-total-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--white);
-            border-top: 2px solid var(--primary);
-            padding: 12px 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 32px;
-            z-index: 40;
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
-        }
-        .gt-item { text-align: center; }
-        .gt-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-light); }
-        .gt-value { font-size: 1.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-
-        /* Action buttons */
-        .action-bar {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-        }
+        /* Buttons */
+        .action-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
         .btn {
             padding: 7px 16px;
             border: none;
@@ -270,55 +103,460 @@
         .btn-secondary { background: var(--white); color: var(--text); border: 1px solid var(--border); }
         .btn-success { background: var(--success); color: var(--white); }
         .btn-danger { background: var(--danger); color: var(--white); }
+        .btn-sm { padding: 4px 10px; font-size: 0.72rem; }
+        .btn-add-line {
+            margin-top: 8px;
+            padding: 5px 14px;
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            background: none;
+            font-size: 0.78rem;
+            font-family: inherit;
+            color: var(--accent);
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-add-line:hover { background: #f0f6ff; border-color: var(--accent); }
+        .btn-remove {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .btn-remove:hover { color: var(--danger); background: #fde8ea; }
 
-        /* Shift calculator modal */
-        .modal-overlay {
+        /* Tab bar */
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            background: var(--white);
+            border-radius: 10px 10px 0 0;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: var(--white);
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--text-light);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.15s;
+        }
+        .tab-btn:hover { background: #f8f9fb; color: var(--text); }
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background: #f0f6ff;
+        }
+        .tab-panel {
+            background: var(--white);
+            border-radius: 0 0 10px 10px;
+            box-shadow: var(--shadow);
+            padding: 16px 20px;
+            min-height: 300px;
+        }
+
+        /* Section accordion */
+        .section-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s;
+        }
+        .section-header:hover { background: #f8f9fb; }
+        .section-chevron {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            margin-right: 8px;
+            transition: transform 0.2s;
+            width: 12px;
+        }
+        .section-card.open .section-chevron { transform: rotate(90deg); }
+        .section-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        .section-title { flex: 1; font-size: 0.82rem; font-weight: 700; }
+        .section-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        .section-total { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+        .section-body {
             display: none;
+            padding: 0 16px 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .section-card.open .section-body { display: block; }
+
+        /* Item tables */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.76rem;
+            margin-top: 10px;
+        }
+        .items-table th {
+            padding: 5px 6px;
+            text-align: left;
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .items-table th.r { text-align: right; }
+        .items-table td { padding: 3px 4px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+        .items-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
+        .items-table input, .items-table select {
+            width: 100%;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.76rem;
+            font-family: inherit;
+        }
+        .items-table input[type="number"] { text-align: right; font-variant-numeric: tabular-nums; }
+        .items-table input:focus, .items-table select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.12);
+        }
+        .item-desc { min-width: 180px; }
+        .item-num { width: 70px; }
+        .item-total { font-weight: 700; white-space: nowrap; min-width: 85px; }
+        .auto-tag {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            background: #e8f0fe;
+            color: var(--accent);
+        }
+
+        /* Mini gantt bar in breakdown */
+        .mini-gantt {
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            position: relative;
+            min-width: 80px;
+            cursor: pointer;
+        }
+        .mini-gantt-bar {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        /* Schedule grid */
+        .schedule-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .schedule-table {
+            border-collapse: collapse;
+            font-size: 0.68rem;
+            white-space: nowrap;
+        }
+        .schedule-table th, .schedule-table td {
+            padding: 0;
+            text-align: center;
+        }
+        .sched-label {
+            position: sticky;
+            left: 0;
+            z-index: 3;
+            background: var(--white);
+            padding: 4px 10px;
+            text-align: left;
+            font-weight: 600;
+            min-width: 200px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-right: 2px solid var(--border);
+        }
+        .sched-actions {
+            position: sticky;
+            left: 200px;
+            z-index: 3;
+            background: var(--white);
+            padding: 2px 4px;
+            border-right: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .sched-actions button {
+            padding: 1px 5px;
+            font-size: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--white);
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .sched-actions button:hover { background: #f0f6ff; }
+        .sched-wk-hdr {
+            padding: 4px 0;
+            font-weight: 700;
+            font-size: 0.6rem;
+            min-width: 28px;
+            width: 28px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sched-wk-hdr.prestop { background: #fff3cd; color: #856404; }
+        .sched-date-hdr {
+            padding: 2px 0;
+            font-size: 0.55rem;
+            color: var(--text-light);
+            min-width: 28px;
+            border-bottom: 2px solid var(--border);
+        }
+        .sched-cell {
+            width: 28px;
+            height: 22px;
+            cursor: pointer;
+            border: 1px solid #eee;
+            transition: background 0.08s;
+        }
+        .sched-cell:hover { background: #d0d5dd; }
+        .sched-cell.active { background: var(--accent); }
+        .sched-cell.prestop.active { background: #fdcb6e; }
+        .sched-cell.auto-active { background: #b8daff; cursor: default; }
+        .sched-cat-hdr td {
+            padding: 6px 10px;
+            font-weight: 700;
+            font-size: 0.72rem;
+            color: var(--primary);
+            background: #f8f9fb;
+            border-top: 2px solid var(--border);
+            text-align: left;
+        }
+        .sched-total-col {
+            position: sticky;
+            right: 80px;
+            z-index: 2;
+            background: var(--white);
+            padding: 4px 6px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            border-left: 2px solid var(--border);
+            min-width: 40px;
+        }
+        .sched-cost-col {
+            position: sticky;
+            right: 0;
+            z-index: 2;
+            background: var(--white);
+            padding: 4px 6px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        /* Tasks table */
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.76rem;
+        }
+        .tasks-table th {
+            padding: 6px 6px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+        .tasks-table th:first-child, .tasks-table th:nth-child(2) { text-align: left; }
+        .tasks-table td { padding: 3px 4px; border-bottom: 1px solid #f5f5f5; text-align: center; }
+        .tasks-table td:first-child, .tasks-table td:nth-child(2) { text-align: left; }
+        .tasks-table input {
+            width: 100%;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.76rem;
+            font-family: inherit;
+        }
+        .tasks-table input[type="number"] { text-align: center; width: 50px; }
+        .tasks-summary { background: #f8f9fb; font-weight: 700; }
+
+        /* Summary table */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .summary-table th {
+            padding: 8px 12px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            border-bottom: 2px solid var(--border);
+            text-align: right;
+        }
+        .summary-table th:first-child, .summary-table th:nth-child(2) { text-align: left; }
+        .summary-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .summary-table td:first-child, .summary-table td:nth-child(2) { text-align: left; }
+        .summary-table .grand-row { font-weight: 800; font-size: 0.92rem; border-top: 3px solid var(--primary); }
+        .risk-select {
+            padding: 3px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.76rem;
+            font-family: inherit;
+        }
+        .risk-none { background: #e6f7ec; }
+        .risk-low { background: #e6f7ec; }
+        .risk-medium { background: #fff3cd; }
+        .risk-high { background: #fde8ea; }
+
+        /* Forecast chart */
+        .forecast-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 260px;
+            padding: 0 4px 24px;
+            border-bottom: 2px solid var(--border);
+            border-left: 2px solid var(--border);
+            margin: 16px 0;
+            position: relative;
+        }
+        .forecast-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column-reverse;
+            min-width: 16px;
+            position: relative;
+        }
+        .forecast-seg {
+            width: 100%;
+            min-height: 0;
+            transition: height 0.3s;
+        }
+        .forecast-col-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.55rem;
+            color: var(--text-light);
+        }
+        .forecast-y-label {
+            position: absolute;
+            left: -50px;
+            font-size: 0.6rem;
+            color: var(--text-light);
+            font-variant-numeric: tabular-nums;
+        }
+        .forecast-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 28px;
+            font-size: 0.72rem;
+        }
+        .forecast-legend-item { display: flex; align-items: center; gap: 4px; }
+        .forecast-legend-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        .forecast-cumulative {
+            margin-top: 16px;
+            font-size: 0.76rem;
+        }
+        .forecast-cumulative table { border-collapse: collapse; width: 100%; }
+        .forecast-cumulative th, .forecast-cumulative td {
+            padding: 4px 8px;
+            border: 1px solid #eee;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.68rem;
+        }
+        .forecast-cumulative th { background: #f8f9fb; font-weight: 700; text-align: center; }
+
+        /* Grand total footer */
+        .grand-total-bar {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 100;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 2px solid var(--primary);
+            padding: 10px 24px;
+            display: flex;
             justify-content: center;
             align-items: center;
+            gap: 32px;
+            z-index: 40;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
         }
-        .modal-overlay.active { display: flex; }
-        .modal-box {
-            background: var(--white);
-            border-radius: 10px;
-            width: 94%;
-            max-width: 520px;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
-            padding: 24px;
-        }
-        .modal-box h3 { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; }
+        .gt-item { text-align: center; }
+        .gt-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-light); }
+        .gt-value { font-size: 1.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 
         /* Toast */
-        .toast-container {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 300;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+        .toast-container { position: fixed; top: 16px; right: 16px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
         .toast {
-            background: var(--white);
+            padding: 10px 18px;
             border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            padding: 12px 20px;
-            font-size: 0.85rem;
-            max-width: 380px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: slideIn 0.25s ease-out;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
         }
-        .toast.success { border-left: 4px solid var(--success); }
-        .toast.error { border-left: 4px solid var(--danger); }
-        .toast.info { border-left: 4px solid var(--accent); }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.info { background: var(--accent); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
 
         /* Estimates list */
         .est-list-item {
@@ -331,15 +569,17 @@
         }
         .est-list-item:hover { background: #f8f9fb; }
         .est-list-item:last-child { border-bottom: none; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-row { grid-template-columns: 1fr 1fr; }
-            .grand-total-bar { gap: 16px; flex-wrap: wrap; }
+        .est-list-name { flex: 1; font-weight: 600; }
+        .est-list-meta { font-size: 0.75rem; color: var(--text-light); margin-left: 16px; }
+        .est-list-delete {
+            margin-left: 12px;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 4px;
         }
-        @media (max-width: 480px) {
-            .header-row { grid-template-columns: 1fr; }
-        }
+        .est-list-delete:hover { color: var(--danger); background: #fde8ea; }
     </style>
 </head>
 <body>
@@ -349,7 +589,7 @@
     <a href="index.html">&larr; Hub</a>
 </div>
 
-<!-- Estimates List View -->
+<!-- ===== LIST VIEW ===== -->
 <div class="container" id="list-view">
     <div class="action-bar">
         <button class="btn btn-primary" onclick="createNewEstimate()">+ New Estimate</button>
@@ -360,120 +600,81 @@
     </div>
 </div>
 
-<!-- Estimate Editor View -->
+<!-- ===== EDITOR VIEW ===== -->
 <div class="container" id="editor-view" style="display:none">
-    <!-- Header -->
-    <div class="action-bar">
-        <button class="btn btn-secondary" onclick="backToList()">&larr; All Estimates</button>
-        <button class="btn btn-primary" onclick="openShiftCalc()">Shift Calculator</button>
-        <button class="btn btn-success" onclick="exportToJob()">Export to Job</button>
-        <button class="btn btn-secondary" onclick="saveEstimate()">Save</button>
-    </div>
-
-    <div class="header-card">
-        <div class="header-row">
-            <div class="field">
-                <label>Estimate Name</label>
-                <input type="text" id="est-name" placeholder="e.g. BF5 Copper Coolers Decommissioning">
+    <!-- Header Card -->
+    <div class="header-card" id="est-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn btn-secondary btn-sm" onclick="backToList()">&larr; Back</button>
+                <span id="est-status" style="padding:2px 8px;border-radius:4px;font-size:0.68rem;font-weight:700;text-transform:uppercase;background:#e8f0fe;color:var(--accent)">DRAFT</span>
             </div>
-            <div class="field">
-                <label>Estimate Ref</label>
-                <input type="text" id="est-ref" placeholder="e.g. MII-E-26-27387">
-            </div>
-            <div class="field">
-                <label>Client</label>
-                <input type="text" id="est-client" value="Tata Steel">
+            <div style="display:flex;gap:6px">
+                <button class="btn btn-primary btn-sm" onclick="saveEstimate()">Save</button>
+                <button class="btn btn-success btn-sm" onclick="exportToJob()">Export to Job</button>
             </div>
         </div>
         <div class="header-row">
-            <div class="field">
-                <label>Rate Card</label>
-                <select id="est-rate-card" onchange="onEstRateCardChange()">
-                    <option value="">No rate card</option>
+            <div class="field"><label>Estimate Name</label><input id="est-name" onchange="onHeaderChange()"></div>
+            <div class="field"><label>Client</label><input id="est-client" value="Tata Steel" onchange="onHeaderChange()"></div>
+            <div class="field"><label>Reference</label><input id="est-ref" onchange="onHeaderChange()"></div>
+            <div class="field"><label>Markup %</label><input type="number" id="est-markup" value="14" onchange="onHeaderChange()"></div>
+        </div>
+        <div class="header-row">
+            <div class="field"><label>Start Date</label><input type="date" id="est-start" onchange="onHeaderChange()"></div>
+            <div class="field"><label>Pre-Stop Weeks</label><input type="number" id="est-prestop" value="3" min="0" max="12" onchange="onHeaderChange()"></div>
+            <div class="field"><label>Total Weeks</label><input type="number" id="est-weeks" value="24" min="4" max="52" onchange="onHeaderChange()"></div>
+            <div class="field"><label>Shift Pattern</label>
+                <select id="est-shift" onchange="onShiftChange()">
+                    <option value="38h">38H (Standard)</option>
+                    <option value="5x10h">5&times;10H</option>
+                    <option value="6x10h">6&times;10H</option>
+                    <option value="7x10h">7&times;10H</option>
+                    <option value="5x12h">5&times;12H</option>
+                    <option value="6x12h">6&times;12H</option>
+                    <option value="7x12h_day" selected>7&times;12H (Days)</option>
+                    <option value="7x12h_night">7&times;12H (Nights)</option>
                 </select>
             </div>
-            <div class="field">
-                <label>MII Markup %</label>
-                <input type="number" id="est-markup" value="14" min="0" max="50" step="0.5" oninput="recalcAll()">
+        </div>
+        <div class="header-row">
+            <div class="field"><label>Rate Card</label>
+                <select id="est-rate-card" onchange="onRateCardChange()">
+                    <option value="">-- None --</option>
+                </select>
             </div>
-            <div class="field">
-                <label>Materials Markup %</label>
-                <input type="number" id="est-mat-markup" value="2.5" min="0" max="20" step="0.1">
+            <div class="field"><label style="visibility:hidden">x</label>
+                <button class="btn btn-secondary btn-sm" onclick="applyRateCardRates()" style="width:100%">Apply Rate Card</button>
             </div>
+            <div class="field"></div>
+            <div class="field"></div>
         </div>
     </div>
 
-    <!-- 8 Sections -->
-    <div id="sections-container"></div>
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="breakdown" onclick="switchTab('breakdown')">Breakdown</button>
+        <button class="tab-btn" data-tab="schedule" onclick="switchTab('schedule')">Schedule</button>
+        <button class="tab-btn" data-tab="tasks" onclick="switchTab('tasks')">Tasks</button>
+        <button class="tab-btn" data-tab="summary" onclick="switchTab('summary')">Summary</button>
+        <button class="tab-btn" data-tab="forecast" onclick="switchTab('forecast')">Forecast</button>
+    </div>
+
+    <!-- Tab Panels -->
+    <div class="tab-panel" id="tab-breakdown"></div>
+    <div class="tab-panel" id="tab-schedule" style="display:none"></div>
+    <div class="tab-panel" id="tab-tasks" style="display:none"></div>
+    <div class="tab-panel" id="tab-summary" style="display:none"></div>
+    <div class="tab-panel" id="tab-forecast" style="display:none"></div>
 </div>
 
-<!-- Grand Total Footer (visible in editor) -->
-<div class="grand-total-bar" id="grand-total-bar" style="display:none">
-    <div class="gt-item">
-        <div class="gt-label">Man-Hours</div>
-        <div class="gt-value" id="gt-manhours" style="color:var(--accent)">0</div>
-    </div>
-    <div class="gt-item">
-        <div class="gt-label">At Cost</div>
-        <div class="gt-value" id="gt-atcost" style="color:var(--text)">&#163;0</div>
-    </div>
-    <div class="gt-item">
-        <div class="gt-label">Contract Value</div>
-        <div class="gt-value" id="gt-contract" style="color:var(--success)">&#163;0</div>
-    </div>
-    <div class="gt-item">
-        <div class="gt-label">Margin</div>
-        <div class="gt-value" id="gt-margin" style="color:var(--mii-blue)">&#163;0</div>
-    </div>
-</div>
-
-<!-- Shift Calculator Modal -->
-<div class="modal-overlay" id="shift-modal">
-    <div class="modal-box">
-        <h3>Shift Calculator</h3>
-        <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:16px">Calculate weekly hours distribution across Rate A-E based on shift pattern</p>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-            <div class="field">
-                <label>Shift Start</label>
-                <input type="time" id="shift-start" value="07:00">
-            </div>
-            <div class="field">
-                <label>Shift End</label>
-                <input type="time" id="shift-end" value="17:30">
-            </div>
-        </div>
-
-        <div style="margin-bottom:16px">
-            <label style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-light);display:block;margin-bottom:6px">Working Days</label>
-            <div style="display:flex;gap:6px;flex-wrap:wrap" id="shift-days">
-                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="mon"> Mon</label>
-                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="tue"> Tue</label>
-                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="wed"> Wed</label>
-                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="thu"> Thu</label>
-                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="fri"> Fri</label>
-                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" data-day="sat"> Sat</label>
-                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" data-day="sun"> Sun</label>
-            </div>
-        </div>
-
-        <div style="background:#f8f9fb;border-radius:8px;padding:14px;margin-bottom:16px">
-            <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:8px">Weekly Hours per Rate Type</div>
-            <div id="shift-results" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center">
-                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate A</div><div style="font-size:1.1rem;font-weight:800" id="sr-a">0</div></div>
-                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate B</div><div style="font-size:1.1rem;font-weight:800" id="sr-b">0</div></div>
-                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate C</div><div style="font-size:1.1rem;font-weight:800" id="sr-c">0</div></div>
-                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate D</div><div style="font-size:1.1rem;font-weight:800" id="sr-d">0</div></div>
-                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate E</div><div style="font-size:1.1rem;font-weight:800" id="sr-e">0</div></div>
-            </div>
-        </div>
-
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn btn-secondary" onclick="closeShiftCalc()">Cancel</button>
-            <button class="btn btn-primary" onclick="calcShift()">Calculate</button>
-            <button class="btn btn-success" onclick="applyShiftHours()">Apply to All Labour</button>
-        </div>
-    </div>
+<!-- Grand Total Footer -->
+<div class="grand-total-bar" id="footer-bar" style="display:none">
+    <div class="gt-item"><div class="gt-label">Man-Hours</div><div class="gt-value" id="gt-manhours">0</div></div>
+    <div class="gt-item"><div class="gt-label">At Cost</div><div class="gt-value" id="gt-atcost">&pound;0</div></div>
+    <div class="gt-item"><div class="gt-label">Contract Value</div><div class="gt-value" style="color:var(--success)" id="gt-contract">&pound;0</div></div>
+    <div class="gt-item"><div class="gt-label">Contingency</div><div class="gt-value" style="color:var(--warning)" id="gt-contingency">&pound;0</div></div>
+    <div class="gt-item"><div class="gt-label">Grand Total</div><div class="gt-value" style="color:var(--primary)" id="gt-total">&pound;0</div></div>
 </div>
 
 <!-- Toast -->
@@ -482,561 +683,1178 @@
 <script src="mii-db.js"></script>
 <script src="cost_db.js"></script>
 <script>
-// ===== ADMIN-ONLY ACCESS CHECK =====
-(function() {
-    const userJson = localStorage.getItem('mii_user');
-    const token = localStorage.getItem('mii_token');
-    if (!token || !userJson) { location.href = 'hub.html'; return; }
-    const user = JSON.parse(userJson);
-    if (user.role !== 'ADMIN') { location.href = 'hub.html'; return; }
-})();
+'use strict';
 
-// ===== CONSTANTS =====
-const CATS = CostDB.DEFAULT_CATEGORIES;
-const SECTION_COLORS = ['#003087','#0078d4','#28a745','#e6a000','#8e44ad','#dc3545','#17a2b8','#6c757d'];
+// ── Access Control ─────────────────────────────────────────────
+const _user = JSON.parse(localStorage.getItem('mii_user') || 'null');
+if (!_user || !_user.username) { location.href = 'hub.html'; }
+if (_user && _user.role !== 'ADMIN') { document.body.innerHTML = '<div style="padding:40px;text-align:center"><h2>Admin access required</h2><a href="index.html">Back to Hub</a></div>'; }
+const MII_API = localStorage.getItem('mii_api') || '';
 
-let _estId = null;        // current estimate id
-let _estData = null;      // full estimate data
-let _rateCardGrades = []; // current rate card grades
+// ── Constants ──────────────────────────────────────────────────
+const EST_CATEGORIES = [
+    { number: 1, name: 'Site Establishment',           type: 'weekly',  unit: 'Per Week',  qtyLabel: 'No./Wk',  color: '#0078d4' },
+    { number: 2, name: 'Indirect Labour',              type: 'hourly',  unit: 'Per Hour',  qtyLabel: 'H/Week',  color: '#28a745' },
+    { number: 3, name: 'Direct Labour - Tasks',        type: 'hourly',  unit: 'Per Hour',  qtyLabel: 'H/Week',  color: '#e6a000' },
+    { number: 4, name: 'Sub-Contractors',              type: 'hourly',  unit: 'Per Hour',  qtyLabel: 'H/Week',  color: '#6f42c1' },
+    { number: 5, name: 'Materials',                    type: 'fixed',   unit: 'Cost',      qtyLabel: 'Qty',     color: '#dc3545' },
+    { number: 6, name: 'Mobile Cranes',                type: 'weekly',  unit: 'Per Week',  qtyLabel: 'No./Wk',  color: '#fd7e14' },
+    { number: 7, name: 'Construction Plant & Equipment',type: 'weekly', unit: 'Per Week',  qtyLabel: 'No./Wk',  color: '#20c997' },
+    { number: 8, name: 'Consumables',                  type: 'auto_mh', unit: 'Per MH',    qtyLabel: 'Man Hrs', color: '#6c757d' },
+    { number: 9, name: 'Travel & Accommodation',       type: 'auto_ta', unit: 'Per Day',   qtyLabel: 'Days',    color: '#e83e8c' },
+];
 
-// ===== HELPERS =====
-function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function fmt(v) { return CostDB.formatGBP(v, 2); }
-function fmtShort(v) {
-    const n = parseFloat(v) || 0;
-    if (Math.abs(n) >= 1000000) return '\u00A3' + (n / 1000000).toFixed(1) + 'M';
-    if (Math.abs(n) >= 1000) return '\u00A3' + (n / 1000).toFixed(0) + 'K';
-    return '\u00A3' + n.toFixed(0);
+const SHIFT_PATTERNS = {
+    '38h':         { label: '38H',            total: 38, a: 38, b: 0,  c: 0,  d: 0, e: 0 },
+    '5x10h':       { label: '5×10H',          total: 50, a: 38, b: 12, c: 0,  d: 0, e: 0 },
+    '6x10h':       { label: '6×10H',          total: 60, a: 38, b: 12, c: 0,  d: 4, e: 6 },
+    '7x10h':       { label: '7×10H',          total: 70, a: 38, b: 12, c: 0,  d: 4, e: 16 },
+    '5x12h':       { label: '5×12H',          total: 60, a: 38, b: 22, c: 0,  d: 0, e: 0 },
+    '6x12h':       { label: '6×12H',          total: 72, a: 38, b: 22, c: 0,  d: 4, e: 8 },
+    '7x12h_day':   { label: '7×12H (Days)',   total: 84, a: 38, b: 22, c: 0,  d: 4, e: 20 },
+    '7x12h_night': { label: '7×12H (Nights)', total: 84, a: 38, b: 0,  c: 22, d: 4, e: 20 },
+};
+
+const CONTINGENCY = { none: 1.0, low: 1.1, medium: 1.2, high: 1.3 };
+
+const TRADE_GRADES = [
+    { num: 1, name: 'Eng. Co-ordinator' },
+    { num: 2, name: 'Supervisor' },
+    { num: 3, name: 'PICWP/Chargehand' },
+    { num: 4, name: 'Coded Welder' },
+    { num: 5, name: 'Fitters/Riggers/Welders' },
+    { num: 6, name: 'Craftsman' },
+    { num: 7, name: 'Semi Skilled' },
+];
+
+// Default line items per category for new estimates
+const DEFAULT_ITEMS = {
+    1: [
+        { description: 'Site Offices', rate: 80, qty_per_week: 1 },
+        { description: 'Mess / Prep', rate: 200, qty_per_week: 1 },
+        { description: 'Mess / Shutdown', rate: 300, qty_per_week: 1 },
+        { description: 'Drying Room', rate: 100, qty_per_week: 1 },
+        { description: 'Toilet', rate: 100, qty_per_week: 1 },
+        { description: 'Shower', rate: 120, qty_per_week: 1 },
+        { description: 'Stores', rate: 80, qty_per_week: 1 },
+        { description: 'Delivery', rate: 100, qty_per_week: 1 },
+    ],
+    2: [
+        { description: 'Project Manager', rate: 75, qty_per_week: 38 },
+        { description: 'Site Engineer', rate: 65, qty_per_week: 60 },
+        { description: 'QS', rate: 60, qty_per_week: 60 },
+        { description: 'TWC', rate: 50, qty_per_week: 10 },
+        { description: 'AP', rate: 50, qty_per_week: 10 },
+        { description: 'CDM-SHEQ Officer', rate: 45, qty_per_week: 10 },
+        { description: 'CDM Nights', rate: 45, qty_per_week: 60 },
+        { description: 'Planner', rate: 50, qty_per_week: 10 },
+        { description: 'Welding Engineer', rate: 50, qty_per_week: 40 },
+        { description: 'Pre-Shutdown Supervisor', rate: 40, qty_per_week: 50 },
+        { description: 'Shutdown Supervisor', rate: 45, qty_per_week: 91 },
+        { description: 'Commissioning Supervisor', rate: 40, qty_per_week: 50 },
+        { description: 'Admin', rate: 40, qty_per_week: 10 },
+        { description: 'Surveyor', rate: 100, qty_per_week: 60 },
+    ],
+    4: [
+        { description: 'Scaffolding Pre-Shutdown', rate: 60, qty_per_week: 50 },
+        { description: 'Scaffolding Shutdown Support', rate: 60, qty_per_week: 50 },
+    ],
+    6: [
+        { description: '250T Crane Day Rate', rate: 2500, qty_per_week: 5 },
+        { description: '250T Crane Weekend', rate: 2650, qty_per_week: 1 },
+        { description: '100T Crane Day Rate', rate: 1000, qty_per_week: 5 },
+        { description: '100T Crane Weekend', rate: 1250, qty_per_week: 1 },
+    ],
+    7: [
+        { description: 'Fencing', rate: 10, qty_per_week: 1 },
+        { description: 'Welding Sets', rate: 75, qty_per_week: 1 },
+        { description: 'Welding Consumables', rate: 300, qty_per_week: 1 },
+        { description: 'Gasses', rate: 2500, qty_per_week: 1 },
+        { description: 'Lancing Equipment', rate: 900, qty_per_week: 1 },
+        { description: 'Lances', rate: 11, qty_per_week: 1 },
+        { description: 'Telehandler', rate: 750, qty_per_week: 1 },
+        { description: 'MEWP', rate: 550, qty_per_week: 1 },
+        { description: 'Compressor', rate: 150, qty_per_week: 1 },
+        { description: 'Distribution Boards', rate: 250, qty_per_week: 1 },
+        { description: 'Generators', rate: 250, qty_per_week: 1 },
+        { description: 'Bowser', rate: 75, qty_per_week: 1 },
+        { description: 'Diesel', rate: 2000, qty_per_week: 1 },
+        { description: 'Site Van', rate: 200, qty_per_week: 1 },
+        { description: 'Fuel', rate: 100, qty_per_week: 1 },
+        { description: 'Lifting Equipment', rate: 300, qty_per_week: 1 },
+        { description: 'Bolt Tensioning', rate: 1000, qty_per_week: 1 },
+        { description: 'Tooling Containers', rate: 100, qty_per_week: 1 },
+        { description: 'Mobile Scaffold', rate: 150, qty_per_week: 1 },
+    ],
+    8: [
+        { description: 'General Consumables', rate: 1.25, qty_per_week: 0, auto_source: 'cat3_mh' },
+        { description: 'General Tooling', rate: 1.00, qty_per_week: 0, auto_source: 'cat3_mh' },
+        { description: 'Specialist PPE', rate: 1.00, qty_per_week: 0, auto_source: 'cat3_mh' },
+    ],
+    9: [
+        { description: 'Accommodation', rate: 150, qty_per_week: 0, auto_source: 'cat2_ta' },
+        { description: 'Travel', rate: 50, qty_per_week: 0, auto_source: 'cat2_ta' },
+        { description: 'Sustenance', rate: 20, qty_per_week: 0, auto_source: 'cat2_ta' },
+    ],
+};
+
+// ── State ──────────────────────────────────────────────────────
+let _estId = null;
+let _est = null;
+let _items = [];
+let _activeTab = 'breakdown';
+let _rateCardGrades = [];
+let _dragState = null;
+
+// ── Helpers ────────────────────────────────────────────────────
+function fmt(n) {
+    const v = parseFloat(n) || 0;
+    const abs = Math.abs(v);
+    const s = abs.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return v < 0 ? '-\u00A3' + s : '\u00A3' + s;
+}
+function fmt2(n) {
+    const v = parseFloat(n) || 0;
+    const abs = Math.abs(v);
+    const s = abs.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return v < 0 ? '-\u00A3' + s : '\u00A3' + s;
+}
+function fmtNum(n) { return (parseFloat(n) || 0).toLocaleString('en-GB'); }
+
+function showToast(msg, type = 'info') {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
 }
 
-function showToast(message, type) {
-    type = type || 'info';
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.innerHTML = '<span>' + esc(message) + '</span>';
-    container.appendChild(toast);
-    setTimeout(function() {
-        toast.style.animation = 'slideOut 0.25s ease-in forwards';
-        setTimeout(function() { toast.remove(); }, 250);
-    }, 3000);
+function getWeekLabel(idx, preStop) {
+    // idx 0-based. First preStop weeks are negative, then skip 0, go positive.
+    if (idx < preStop) return -(preStop - idx);
+    return idx - preStop + 1;
 }
 
-// ===== LIST VIEW =====
+function getWeekDate(startDate, idx) {
+    if (!startDate) return '';
+    const d = new Date(startDate + 'T00:00:00');
+    d.setDate(d.getDate() + (idx * 7));
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+
+function getCatItems(catNum) {
+    return _items.filter(i => i.section_number === catNum).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+}
+
+function getShiftHours() {
+    const p = _est ? _est.shift_pattern : '7x12h_day';
+    return SHIFT_PATTERNS[p] || SHIFT_PATTERNS['7x12h_day'];
+}
+
+function calcBlendedRate(rateA, rateB, rateC, rateD, rateE) {
+    const p = getShiftHours();
+    const total = (p.a * (rateA || 0)) + (p.b * (rateB || 0)) + (p.c * (rateC || 0)) + (p.d * (rateD || 0)) + (p.e * (rateE || 0));
+    return p.total > 0 ? total / p.total : 0;
+}
+
+function ensureSchedule(item) {
+    const tw = _est ? _est.total_weeks : 24;
+    if (!item.schedule || item.schedule.length !== tw) {
+        item.schedule = new Array(tw).fill(0);
+    }
+    return item.schedule;
+}
+
+// ── Item Calculations ──────────────────────────────────────────
+function calcItemTotal(item) {
+    const sched = ensureSchedule(item);
+    item.num_weeks = sched.reduce((s, v) => s + (v ? 1 : 0), 0);
+    item.cost_per_week = (item.rate || 0) * (item.qty_per_week || 0);
+    item.line_total = item.cost_per_week * item.num_weeks;
+    return item.line_total;
+}
+
+function calcCat3ManHours() {
+    let total = 0;
+    for (const item of getCatItems(3)) {
+        const sched = ensureSchedule(item);
+        const weeks = sched.reduce((s, v) => s + (v ? 1 : 0), 0);
+        total += (item.qty_per_week || 0) * weeks;
+    }
+    return total;
+}
+
+function calcCat2TADaysPerWeek() {
+    // For each week, sum of indirect labour items: hours/week ÷ 10
+    const tw = _est ? _est.total_weeks : 24;
+    const perWeek = new Array(tw).fill(0);
+    for (const item of getCatItems(2)) {
+        const sched = ensureSchedule(item);
+        const daysFromHours = (item.qty_per_week || 0) / 10;
+        for (let w = 0; w < tw; w++) {
+            if (sched[w]) perWeek[w] += daysFromHours;
+        }
+    }
+    return perWeek;
+}
+
+function recalcAutoItems() {
+    const cat3MH = calcCat3ManHours();
+    const cat2TAPerWeek = calcCat2TADaysPerWeek();
+    const tw = _est ? _est.total_weeks : 24;
+    const totalTADays = cat2TAPerWeek.reduce((s, v) => s + v, 0);
+
+    for (const item of getCatItems(8)) {
+        if (item.auto_source === 'cat3_mh') {
+            item.qty_per_week = cat3MH;
+            item.num_weeks = 1;
+            item.cost_per_week = (item.rate || 0) * cat3MH;
+            item.line_total = item.cost_per_week;
+        }
+    }
+
+    for (const item of getCatItems(9)) {
+        if (item.auto_source === 'cat2_ta') {
+            item.qty_per_week = totalTADays;
+            item.num_weeks = 1;
+            item.cost_per_week = (item.rate || 0) * totalTADays;
+            item.line_total = item.cost_per_week;
+        }
+    }
+}
+
+function recalcAll() {
+    for (const item of _items) {
+        if (!item.auto_source) calcItemTotal(item);
+    }
+    recalcAutoItems();
+    updateFooter();
+}
+
+function updateFooter() {
+    const markup = 1 + ((_est ? _est.markup_pct : 14) || 14) / 100;
+    let atCost = 0;
+    let manHours = 0;
+
+    for (const item of _items) {
+        atCost += item.line_total || 0;
+        if (item.section_number === 2 || item.section_number === 3) {
+            const sched = ensureSchedule(item);
+            const weeks = sched.reduce((s, v) => s + (v ? 1 : 0), 0);
+            manHours += (item.qty_per_week || 0) * weeks;
+        }
+    }
+
+    const contractValue = atCost * markup;
+    let contingencyTotal = 0;
+    const cont = (_est ? _est.contingency : null) || {};
+    for (const cat of EST_CATEGORIES) {
+        const catCost = getCatItems(cat.number).reduce((s, i) => s + (i.line_total || 0), 0);
+        const factor = CONTINGENCY[cont[cat.number] || 'none'] || 1;
+        contingencyTotal += catCost * (factor - 1);
+    }
+
+    document.getElementById('gt-manhours').textContent = fmtNum(Math.round(manHours));
+    document.getElementById('gt-atcost').textContent = fmt(atCost);
+    document.getElementById('gt-contract').textContent = fmt(contractValue);
+    document.getElementById('gt-contingency').textContent = fmt(contingencyTotal);
+    document.getElementById('gt-total').textContent = fmt(contractValue + contingencyTotal);
+}
+
+// ── List View ──────────────────────────────────────────────────
 async function loadEstimatesList() {
     const ests = await CostDB.getEstimates();
-    const container = document.getElementById('estimates-list');
-
-    if (ests.length === 0) {
-        container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light)">' +
-            '<p style="font-size:0.95rem;margin-bottom:12px">No estimates yet</p>' +
-            '<p style="font-size:0.82rem">Click "New Estimate" to create your first estimate</p></div>';
+    const el = document.getElementById('estimates-list');
+    if (!ests.length) {
+        el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-light)">No estimates yet. Click "+ New Estimate" to start.</div>';
         return;
     }
-
     let html = '';
-    for (const est of ests) {
-        const summary = await CostDB.getEstimateSummary(est.id);
-        const total = summary ? summary.grand_contract_value : 0;
-        const items = summary ? summary.sections.reduce(function(s, sec) { return s + sec.item_count; }, 0) : 0;
-        const date = est.updated_at ? new Date(est.updated_at).toLocaleDateString('en-GB') : '';
-
-        html += '<div class="est-list-item" onclick="openEstimate(\'' + est.id + '\')">' +
-            '<div style="flex:1">' +
-            '<div style="font-weight:700;font-size:0.88rem">' + esc(est.name || 'Untitled') + '</div>' +
-            '<div style="font-size:0.75rem;color:var(--text-light)">' + esc(est.estimate_ref || '') +
-            (est.client ? ' \u2014 ' + esc(est.client) : '') + '</div></div>' +
-            '<div style="text-align:right;margin-right:16px">' +
-            '<div style="font-weight:700;font-variant-numeric:tabular-nums">' + fmt(total) + '</div>' +
-            '<div style="font-size:0.7rem;color:var(--text-light)">' + items + ' items</div></div>' +
-            '<div><span class="status-badge ' + (est.status || 'draft') + '">' + (est.status || 'draft') + '</span></div>' +
-            '<div style="font-size:0.75rem;color:var(--text-light);margin-left:16px;min-width:70px">' + date + '</div>' +
+    for (const e of ests) {
+        const d = e.updated_at ? new Date(e.updated_at).toLocaleDateString('en-GB') : '';
+        html += '<div class="est-list-item" onclick="openEstimate(\'' + e.id + '\')">' +
+            '<span class="est-list-name">' + (e.name || 'Untitled') + '</span>' +
+            '<span class="est-list-meta">' + (e.client || '') + '</span>' +
+            '<span class="est-list-meta">' + (e.status || 'draft') + '</span>' +
+            '<span class="est-list-meta">' + d + '</span>' +
+            '<span class="est-list-delete" onclick="event.stopPropagation();deleteEstimate(\'' + e.id + '\')">&times;</span>' +
             '</div>';
     }
-    container.innerHTML = html;
+    el.innerHTML = html;
 }
 
 async function createNewEstimate() {
+    const name = prompt('Estimate name:', '');
+    if (name === null) return;
     const id = await CostDB.createEstimate({
-        name: 'New Estimate',
+        name: name || 'Untitled Estimate',
         client: 'Tata Steel',
         markup_pct: 14,
-        materials_markup_pct: 2.5,
+        shift_pattern: '7x12h_day',
+        pre_stop_weeks: 3,
+        total_weeks: 24,
     });
-    await openEstimate(id);
+    // Pre-populate default items
+    for (const [catStr, items] of Object.entries(DEFAULT_ITEMS)) {
+        const catNum = parseInt(catStr);
+        for (const def of items) {
+            await CostDB.addEstimateItem(id, catNum, def.auto_source ? 'auto' : 'labour', {
+                description: def.description,
+                rate: def.rate,
+                qty_per_week: def.qty_per_week,
+                schedule: new Array(24).fill(0),
+                auto_source: def.auto_source || null,
+            });
+        }
+    }
+    openEstimate(id);
 }
 
 async function openEstimate(id) {
     _estId = id;
-    _estData = await CostDB.getEstimate(id);
-    if (!_estData) { showToast('Estimate not found', 'error'); return; }
-
-    // Switch views
+    const full = await CostDB.getEstimate(id);
+    if (!full) { showToast('Estimate not found', 'error'); return; }
+    _est = full;
+    _items = full.items || [];
+    // Ensure all items have schedule arrays
+    const tw = _est.total_weeks || 24;
+    for (const item of _items) {
+        if (!item.schedule || !Array.isArray(item.schedule)) {
+            item.schedule = new Array(tw).fill(0);
+        } else if (item.schedule.length < tw) {
+            while (item.schedule.length < tw) item.schedule.push(0);
+        } else if (item.schedule.length > tw) {
+            item.schedule = item.schedule.slice(0, tw);
+        }
+    }
+    renderHeader();
+    recalcAll();
     document.getElementById('list-view').style.display = 'none';
     document.getElementById('editor-view').style.display = '';
-    document.getElementById('grand-total-bar').style.display = '';
+    document.getElementById('footer-bar').style.display = '';
+    await loadRateCardOptions();
+    switchTab(_activeTab);
+}
 
-    // Fill header
-    document.getElementById('est-name').value = _estData.name || '';
-    document.getElementById('est-ref').value = _estData.estimate_ref || '';
-    document.getElementById('est-client').value = _estData.client || 'Tata Steel';
-    document.getElementById('est-markup').value = _estData.markup_pct || 14;
-    document.getElementById('est-mat-markup').value = _estData.materials_markup_pct || 2.5;
-
-    // Load rate cards dropdown
-    await loadRateCardDropdown();
-    if (_estData.rate_card_id) {
-        document.getElementById('est-rate-card').value = _estData.rate_card_id;
-        await loadRateCardGrades(_estData.rate_card_id);
-    }
-
-    renderSections();
-    recalcAll();
+async function deleteEstimate(id) {
+    if (!confirm('Delete this estimate?')) return;
+    await CostDB.deleteEstimate(id);
+    loadEstimatesList();
 }
 
 function backToList() {
     saveEstimate();
+    _estId = null;
+    _est = null;
+    _items = [];
     document.getElementById('list-view').style.display = '';
     document.getElementById('editor-view').style.display = 'none';
-    document.getElementById('grand-total-bar').style.display = 'none';
-    _estId = null;
-    _estData = null;
+    document.getElementById('footer-bar').style.display = 'none';
     loadEstimatesList();
 }
 
-// ===== RATE CARD =====
-async function loadRateCardDropdown() {
-    const cards = await CostDB.getRateCards();
-    const sel = document.getElementById('est-rate-card');
-    while (sel.options.length > 1) sel.remove(1);
-    cards.forEach(function(c) {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = c.name + ' (' + c.year + ')';
-        sel.appendChild(opt);
-    });
+// ── Header ─────────────────────────────────────────────────────
+function renderHeader() {
+    if (!_est) return;
+    document.getElementById('est-name').value = _est.name || '';
+    document.getElementById('est-client').value = _est.client || 'Tata Steel';
+    document.getElementById('est-ref').value = _est.estimate_ref || '';
+    document.getElementById('est-markup').value = _est.markup_pct || 14;
+    document.getElementById('est-start').value = _est.start_date || '';
+    document.getElementById('est-prestop').value = _est.pre_stop_weeks || 3;
+    document.getElementById('est-weeks').value = _est.total_weeks || 24;
+    document.getElementById('est-shift').value = _est.shift_pattern || '7x12h_day';
+    const st = document.getElementById('est-status');
+    st.textContent = (_est.status || 'draft').toUpperCase();
 }
 
-async function loadRateCardGrades(cardId) {
-    if (!cardId) { _rateCardGrades = []; return; }
-    const card = await CostDB.getRateCard(cardId);
-    _rateCardGrades = card ? card.grades || [] : [];
-}
-
-async function onEstRateCardChange() {
-    const cardId = document.getElementById('est-rate-card').value;
-    await loadRateCardGrades(cardId);
-
-    if (cardId && _estId) {
-        const updated = await CostDB.applyRateCardToEstimate(_estId, cardId);
-        if (updated > 0) {
-            _estData = await CostDB.getEstimate(_estId);
-            renderSections();
-            recalcAll();
-            showToast('Applied rates to ' + updated + ' labour lines', 'success');
+function onHeaderChange() {
+    if (!_est) return;
+    _est.name = document.getElementById('est-name').value.trim();
+    _est.client = document.getElementById('est-client').value.trim();
+    _est.estimate_ref = document.getElementById('est-ref').value.trim();
+    _est.markup_pct = parseFloat(document.getElementById('est-markup').value) || 14;
+    _est.start_date = document.getElementById('est-start').value || null;
+    _est.pre_stop_weeks = parseInt(document.getElementById('est-prestop').value) || 3;
+    const newTW = parseInt(document.getElementById('est-weeks').value) || 24;
+    if (newTW !== _est.total_weeks) {
+        _est.total_weeks = newTW;
+        for (const item of _items) {
+            const s = item.schedule || [];
+            if (s.length < newTW) { while (s.length < newTW) s.push(0); }
+            else if (s.length > newTW) { item.schedule = s.slice(0, newTW); }
+            else { item.schedule = s; }
         }
     }
+    _est.total_weeks = newTW;
+    recalcAll();
+    if (_activeTab === 'breakdown') renderBreakdown();
 }
 
-function buildGradeOptions(selectedId) {
-    let html = '<option value="">Select grade...</option>';
-    _rateCardGrades.forEach(function(g) {
-        const sel = g.id === selectedId ? ' selected' : '';
-        html += '<option value="' + g.id + '"' + sel + '>' + esc(g.grade_name) + '</option>';
+function onShiftChange() {
+    if (!_est) return;
+    _est.shift_pattern = document.getElementById('est-shift').value;
+    recalcAll();
+    if (_activeTab === 'breakdown') renderBreakdown();
+}
+
+// ── Tabs ───────────────────────────────────────────────────────
+function switchTab(tab) {
+    _activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    ['breakdown', 'schedule', 'tasks', 'summary', 'forecast'].forEach(t => {
+        document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
     });
-    return html;
+    recalcAll();
+    if (tab === 'breakdown') renderBreakdown();
+    else if (tab === 'schedule') renderSchedule();
+    else if (tab === 'tasks') renderTasks();
+    else if (tab === 'summary') renderSummary();
+    else if (tab === 'forecast') renderForecast();
 }
 
-// ===== RENDER SECTIONS =====
-function renderSections() {
-    const container = document.getElementById('sections-container');
+// ── Breakdown Tab ──────────────────────────────────────────────
+function renderBreakdown() {
+    const panel = document.getElementById('tab-breakdown');
     let html = '';
+    for (const cat of EST_CATEGORIES) {
+        const items = getCatItems(cat.number);
+        const catTotal = items.reduce((s, i) => s + (i.line_total || 0), 0);
+        const isAuto = cat.type === 'auto_mh' || cat.type === 'auto_ta';
 
-    CATS.forEach(function(cat, ci) {
-        const sn = cat.number;
-        const items = (_estData.sections && _estData.sections[sn]) || [];
-        const isLabour = sn <= 2;
-        const sectionTotal = items.reduce(function(s, i) { return s + (i.line_total || 0); }, 0);
+        html += '<div class="section-card open">' +
+            '<div class="section-header" onclick="this.parentElement.classList.toggle(\'open\')">' +
+            '<span class="section-chevron">&#9654;</span>' +
+            '<span class="section-num" style="background:' + cat.color + '">' + cat.number + '</span>' +
+            '<span class="section-title">' + cat.name + '</span>' +
+            '<div class="section-meta">' +
+            '<span>' + items.length + ' items</span>' +
+            '<span class="section-total">' + fmt(catTotal) + '</span>' +
+            '</div></div>' +
+            '<div class="section-body">';
 
-        html += '<div class="section-card' + (items.length > 0 ? ' open' : '') + '" id="sec-' + sn + '">';
-        html += '<div class="section-header" onclick="toggleSection(' + sn + ')">';
-        html += '<span class="section-chevron">&#9654;</span>';
-        html += '<span class="section-num" style="background:' + SECTION_COLORS[ci] + '">' + sn + '</span>';
-        html += '<span class="section-title">' + esc(cat.name) + '</span>';
-        html += '<div class="section-meta">';
-        html += '<span>' + items.length + ' items</span>';
-        html += '<span class="section-total" id="sec-total-' + sn + '">' + fmt(sectionTotal) + '</span>';
-        html += '</div></div>';
-
-        html += '<div class="section-body">';
-
-        if (isLabour) {
-            html += renderLabourTable(sn, items);
-        } else {
-            html += renderMaterialTable(sn, items);
+        if (isAuto) {
+            html += '<div style="margin:8px 0;font-size:0.72rem;color:var(--accent)">' +
+                (cat.type === 'auto_mh' ? 'Auto-calculated from Cat 3 Direct Labour man-hours' : 'Auto-calculated from Cat 2 Indirect Labour schedules') +
+                '</div>';
         }
 
-        html += '<button class="btn-add-line" onclick="addLine(' + sn + ',\'' + (isLabour ? 'labour' : 'material') + '\')">+ Add Line</button>';
-        html += '</div></div>';
-    });
+        // Table
+        html += '<table class="items-table"><thead><tr>' +
+            '<th style="width:30px">#</th>' +
+            '<th class="item-desc">Description</th>' +
+            '<th class="r" style="width:80px">' + cat.unit + '</th>' +
+            '<th class="r" style="width:70px">' + cat.qtyLabel + '</th>' +
+            '<th style="width:100px">Schedule</th>' +
+            '<th class="r" style="width:50px">Wks</th>' +
+            '<th class="r" style="width:85px">Cost/Wk</th>' +
+            '<th class="r item-total" style="width:90px">Total</th>' +
+            '<th style="width:30px"></th>' +
+            '</tr></thead><tbody>';
 
-    container.innerHTML = html;
-}
+        items.forEach((item, idx) => {
+            const sched = ensureSchedule(item);
+            const numWeeks = sched.reduce((s, v) => s + (v ? 1 : 0), 0);
+            const tw = _est.total_weeks || 24;
+            const ps = _est.pre_stop_weeks || 3;
+            // Mini gantt bar
+            let firstActive = -1, lastActive = -1;
+            for (let w = 0; w < tw; w++) {
+                if (sched[w]) { if (firstActive < 0) firstActive = w; lastActive = w; }
+            }
+            const barLeft = firstActive >= 0 ? (firstActive / tw * 100) : 0;
+            const barWidth = firstActive >= 0 ? ((lastActive - firstActive + 1) / tw * 100) : 0;
 
-function renderLabourTable(sn, items) {
-    let html = '<table class="items-table"><thead><tr>';
-    html += '<th>Description / Grade</th>';
-    html += '<th class="r" title="Number of people">Heads</th>';
-    html += '<th class="r" title="Duration in weeks">Weeks</th>';
-    html += '<th class="r" title="Rate A normal hours">Hrs A</th>';
-    html += '<th class="r" title="Rate A \u00A3/hr">Rate A</th>';
-    html += '<th class="r" title="Rate B midweek OT hours">Hrs B</th>';
-    html += '<th class="r" title="Rate B \u00A3/hr">Rate B</th>';
-    html += '<th class="r" title="Rate C night hours">Hrs C</th>';
-    html += '<th class="r" title="Rate C \u00A3/hr">Rate C</th>';
-    html += '<th class="r">Total</th>';
-    html += '<th></th>';
-    html += '</tr></thead><tbody>';
+            html += '<tr>' +
+                '<td style="color:var(--text-light);font-size:0.68rem">' + (idx + 1) + '</td>' +
+                '<td><input class="item-desc" value="' + (item.description || '').replace(/"/g, '&quot;') + '" ' +
+                    'onchange="onItemChange(\'' + item.id + '\',\'description\',this.value)"' +
+                    (item.task_id ? ' disabled title="From Tasks tab"' : '') + '></td>' +
+                '<td><input type="number" step="0.01" class="item-num" value="' + (item.rate || 0) + '" ' +
+                    'onchange="onItemChange(\'' + item.id + '\',\'rate\',this.value)"></td>' +
+                '<td><input type="number" step="0.1" class="item-num" value="' + (item.qty_per_week || 0) + '" ' +
+                    (isAuto ? 'disabled' : '') + ' onchange="onItemChange(\'' + item.id + '\',\'qty_per_week\',this.value)"></td>' +
+                '<td><div class="mini-gantt" onclick="switchTab(\'schedule\')" title="Click to edit schedule">' +
+                    '<div class="mini-gantt-bar" style="left:' + barLeft + '%;width:' + barWidth + '%;background:' + cat.color + '"></div>' +
+                '</div></td>' +
+                '<td class="r">' + numWeeks + '</td>' +
+                '<td class="r">' + fmt(item.cost_per_week || 0) + '</td>' +
+                '<td class="r item-total">' + fmt(item.line_total || 0) + '</td>' +
+                '<td><button class="btn-remove" onclick="removeItem(\'' + item.id + '\')">&times;</button></td>' +
+                '</tr>';
+        });
 
-    items.forEach(function(item) {
-        html += '<tr data-id="' + item.id + '">';
-        html += '<td><input class="item-desc" value="' + esc(item.description) + '" data-field="description" onchange="updateField(this)">';
-        if (_rateCardGrades.length > 0) {
-            html += '<select style="margin-top:2px;font-size:0.72rem" data-field="grade" onchange="onGradeChange(this,\'' + item.id + '\')">' + buildGradeOptions(item.grade_id) + '</select>';
+        html += '</tbody></table>';
+        if (!isAuto) {
+            html += '<button class="btn-add-line" onclick="addItem(' + cat.number + ')">+ Add Line</button>';
         }
-        html += '</td>';
-        html += '<td><input type="number" class="item-hrs" value="' + (item.headcount || 0) + '" data-field="headcount" min="0" oninput="updateField(this)"></td>';
-        html += '<td><input type="number" class="item-hrs" value="' + (item.duration_weeks || 1) + '" data-field="duration_weeks" min="0.1" step="0.5" oninput="updateField(this)"></td>';
-        html += '<td><input type="number" class="item-hrs" value="' + (parseFloat(item.hours_a) || 0) + '" data-field="hours_a" min="0" step="0.5" oninput="updateField(this)"></td>';
-        html += '<td><input type="number" class="item-rate" value="' + (parseFloat(item.rate_a) || 0).toFixed(2) + '" data-field="rate_a" min="0" step="0.01" oninput="updateField(this)"></td>';
-        html += '<td><input type="number" class="item-hrs" value="' + (parseFloat(item.hours_b) || 0) + '" data-field="hours_b" min="0" step="0.5" oninput="updateField(this)"></td>';
-        html += '<td><input type="number" class="item-rate" value="' + (parseFloat(item.rate_b) || 0).toFixed(2) + '" data-field="rate_b" min="0" step="0.01" oninput="updateField(this)"></td>';
-        html += '<td><input type="number" class="item-hrs" value="' + (parseFloat(item.hours_c) || 0) + '" data-field="hours_c" min="0" step="0.5" oninput="updateField(this)"></td>';
-        html += '<td><input type="number" class="item-rate" value="' + (parseFloat(item.rate_c) || 0).toFixed(2) + '" data-field="rate_c" min="0" step="0.01" oninput="updateField(this)"></td>';
-        html += '<td class="r item-total" id="item-total-' + item.id + '">' + fmt(item.line_total || 0) + '</td>';
-        html += '<td><button class="btn-remove" onclick="removeLine(\'' + item.id + '\')">&times;</button></td>';
-        html += '</tr>';
-    });
-
-    html += '</tbody></table>';
-    return html;
-}
-
-function renderMaterialTable(sn, items) {
-    const showMarkup = sn === 5; // Materials section
-
-    let html = '<table class="items-table"><thead><tr>';
-    html += '<th>Description</th>';
-    html += '<th class="r">Qty</th>';
-    html += '<th>Unit</th>';
-    html += '<th class="r">Rate (\u00A3)</th>';
-    if (showMarkup) html += '<th class="r">Markup %</th>';
-    html += '<th class="r">Total</th>';
-    html += '<th></th>';
-    html += '</tr></thead><tbody>';
-
-    items.forEach(function(item) {
-        html += '<tr data-id="' + item.id + '">';
-        html += '<td><input class="item-desc" value="' + esc(item.description) + '" data-field="description" onchange="updateField(this)"></td>';
-        html += '<td><input type="number" class="item-num" value="' + (item.quantity || 0) + '" data-field="quantity" min="0" step="0.01" oninput="updateField(this)"></td>';
-        html += '<td><select data-field="unit" onchange="updateField(this)" style="width:70px">' +
-            '<option' + (item.unit === 'each' ? ' selected' : '') + '>each</option>' +
-            '<option' + (item.unit === 'days' ? ' selected' : '') + '>days</option>' +
-            '<option' + (item.unit === 'weeks' ? ' selected' : '') + '>weeks</option>' +
-            '<option' + (item.unit === 'hrs' ? ' selected' : '') + '>hrs</option>' +
-            '<option' + (item.unit === 'lot' ? ' selected' : '') + '>lot</option>' +
-            '<option' + (item.unit === 'm' ? ' selected' : '') + '>m</option>' +
-            '<option' + (item.unit === 'tonne' ? ' selected' : '') + '>tonne</option>' +
-            '</select></td>';
-        html += '<td><input type="number" class="item-rate" value="' + (parseFloat(item.unit_rate) || 0).toFixed(2) + '" data-field="unit_rate" min="0" step="0.01" oninput="updateField(this)"></td>';
-        if (showMarkup) html += '<td><input type="number" class="item-hrs" value="' + (item.markup_pct || 0) + '" data-field="markup_pct" min="0" step="0.1" oninput="updateField(this)"></td>';
-        html += '<td class="r item-total" id="item-total-' + item.id + '">' + fmt(item.line_total || 0) + '</td>';
-        html += '<td><button class="btn-remove" onclick="removeLine(\'' + item.id + '\')">&times;</button></td>';
-        html += '</tr>';
-    });
-
-    html += '</tbody></table>';
-    return html;
-}
-
-function toggleSection(sn) {
-    document.getElementById('sec-' + sn).classList.toggle('open');
-}
-
-// ===== FIELD UPDATES =====
-function getItemRow(el) {
-    return el.closest('tr');
-}
-
-async function updateField(el) {
-    const row = getItemRow(el);
-    if (!row) return;
-    const itemId = row.getAttribute('data-id');
-    const field = el.getAttribute('data-field');
-    let value = el.value;
-
-    // Parse numbers
-    if (el.type === 'number') value = parseFloat(value) || 0;
-
-    const updates = {};
-    updates[field] = value;
-
-    await CostDB.updateEstimateItem(itemId, updates);
-
-    // Update totals
-    const item = await MiiDB.get('cost_estimate_items', itemId);
-    if (item) {
-        document.getElementById('item-total-' + itemId).textContent = fmt(item.line_total);
+        html += '</div></div>';
     }
-
-    // Update the in-memory data and section totals
-    _estData = await CostDB.getEstimate(_estId);
-    recalcAll();
+    panel.innerHTML = html;
 }
 
-async function onGradeChange(sel, itemId) {
-    const gradeId = sel.value;
-    if (!gradeId) return;
-
-    const grade = _rateCardGrades.find(function(g) { return g.id === gradeId; });
-    if (!grade) return;
-
-    await CostDB.updateEstimateItem(itemId, {
-        grade_id: gradeId,
-        grade_name: grade.grade_name,
-        rate_a: parseFloat(grade.rate_a) || 0,
-        rate_b: parseFloat(grade.rate_b) || 0,
-        rate_c: parseFloat(grade.rate_c) || 0,
-        rate_d: parseFloat(grade.rate_d) || 0,
-        rate_e: parseFloat(grade.rate_e) || 0,
+async function addItem(catNum) {
+    const id = await CostDB.addEstimateItem(_estId, catNum, 'labour', {
+        description: '',
+        rate: 0,
+        qty_per_week: 0,
+        schedule: new Array(_est.total_weeks || 24).fill(0),
     });
-
-    // Refresh this section
-    _estData = await CostDB.getEstimate(_estId);
-    renderSections();
+    // Reload items
+    const full = await CostDB.getEstimate(_estId);
+    _items = full.items || [];
     recalcAll();
+    renderBreakdown();
 }
 
-// ===== ADD/REMOVE LINES =====
-async function addLine(sn, lineType) {
-    await CostDB.addEstimateItem(_estId, sn, lineType, {
-        markup_pct: sn === 5 ? (parseFloat(document.getElementById('est-mat-markup').value) || 2.5) : 0,
-    });
-    _estData = await CostDB.getEstimate(_estId);
-    renderSections();
-
-    // Open the section
-    document.getElementById('sec-' + sn).classList.add('open');
-}
-
-async function removeLine(itemId) {
+async function removeItem(itemId) {
     await CostDB.removeEstimateItem(itemId);
-    _estData = await CostDB.getEstimate(_estId);
-    renderSections();
+    _items = _items.filter(i => i.id !== itemId);
     recalcAll();
+    renderBreakdown();
 }
 
-// ===== RECALCULATE =====
-function recalcAll() {
-    if (!_estData) return;
+async function onItemChange(itemId, field, value) {
+    const item = _items.find(i => i.id === itemId);
+    if (!item) return;
+    if (field === 'rate' || field === 'qty_per_week') {
+        item[field] = parseFloat(value) || 0;
+    } else {
+        item[field] = value;
+    }
+    calcItemTotal(item);
+    recalcAutoItems();
+    updateFooter();
+    await CostDB.updateEstimateItem(itemId, { [field]: item[field], line_total: item.line_total, cost_per_week: item.cost_per_week, num_weeks: item.num_weeks });
+    // Update totals in section headers
+    for (const cat of EST_CATEGORIES) {
+        const total = getCatItems(cat.number).reduce((s, i) => s + (i.line_total || 0), 0);
+        const headers = document.querySelectorAll('.section-total');
+        // Simple re-render for now
+    }
+    renderBreakdown();
+}
 
-    const markup = parseFloat(document.getElementById('est-markup').value) || 14;
-    const multiplier = 1 + markup / 100;
-    let grandAtCost = 0;
-    let totalManHours = 0;
+// ── Schedule Tab ───────────────────────────────────────────────
+function renderSchedule() {
+    const panel = document.getElementById('tab-schedule');
+    const tw = _est ? _est.total_weeks : 24;
+    const ps = _est ? _est.pre_stop_weeks : 3;
+    const startDate = _est ? _est.start_date : null;
 
-    for (let sn = 1; sn <= 8; sn++) {
-        const items = (_estData.sections && _estData.sections[sn]) || [];
-        const sectionTotal = items.reduce(function(s, i) { return s + (i.line_total || 0); }, 0);
-        const sectionMH = items.reduce(function(s, i) { return s + CostDB.calculateManHours(i); }, 0);
-        grandAtCost += sectionTotal;
-        totalManHours += sectionMH;
+    let html = '<div class="schedule-wrap"><table class="schedule-table">';
 
-        const el = document.getElementById('sec-total-' + sn);
-        if (el) el.textContent = fmt(sectionTotal);
+    // Header row: week numbers
+    html += '<thead><tr><th class="sched-label">Item</th><th class="sched-actions"></th>';
+    for (let w = 0; w < tw; w++) {
+        const lbl = getWeekLabel(w, ps);
+        const cls = w < ps ? ' prestop' : '';
+        html += '<th class="sched-wk-hdr' + cls + '">' + lbl + '</th>';
+    }
+    html += '<th class="sched-total-col">Wks</th><th class="sched-cost-col">Total</th></tr>';
+
+    // Date row
+    html += '<tr><th class="sched-label" style="font-weight:400;font-size:0.6rem;color:var(--text-light)">Week commencing</th><th class="sched-actions"></th>';
+    for (let w = 0; w < tw; w++) {
+        html += '<th class="sched-date-hdr">' + getWeekDate(startDate, w) + '</th>';
+    }
+    html += '<th class="sched-total-col"></th><th class="sched-cost-col"></th></tr></thead>';
+
+    html += '<tbody>';
+    for (const cat of EST_CATEGORIES) {
+        const items = getCatItems(cat.number);
+        const isAuto = cat.type === 'auto_mh' || cat.type === 'auto_ta';
+
+        // Category header
+        html += '<tr class="sched-cat-hdr"><td class="sched-label" style="background:#f8f9fb;border-top:2px solid var(--border)">' +
+            '<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:' + cat.color + ';color:#fff;text-align:center;font-size:0.6rem;line-height:18px;margin-right:6px">' + cat.number + '</span>' +
+            cat.name + '</td>' +
+            '<td class="sched-actions" style="background:#f8f9fb;border-top:2px solid var(--border)">' +
+            (isAuto ? '<span style="font-size:0.55rem;color:var(--accent)">AUTO</span>' :
+                '<button onclick="fillCategory(' + cat.number + ')">Fill</button> <button onclick="clearCategory(' + cat.number + ')">Clear</button>') +
+            '</td>';
+        for (let w = 0; w < tw; w++) html += '<td style="background:#f8f9fb;border-top:2px solid var(--border)"></td>';
+        html += '<td class="sched-total-col" style="background:#f8f9fb;border-top:2px solid var(--border)"></td>' +
+            '<td class="sched-cost-col" style="background:#f8f9fb;border-top:2px solid var(--border)">' + fmt(items.reduce((s, i) => s + (i.line_total || 0), 0)) + '</td></tr>';
+
+        for (const item of items) {
+            const sched = ensureSchedule(item);
+            const numWeeks = sched.reduce((s, v) => s + (v ? 1 : 0), 0);
+            html += '<tr><td class="sched-label" title="' + (item.description || '').replace(/"/g, '&quot;') + '">' + (item.description || '(empty)') + '</td>';
+            html += '<td class="sched-actions">';
+            if (!isAuto) {
+                html += '<button onclick="fillRow(\'' + item.id + '\')">F</button> <button onclick="clearRow(\'' + item.id + '\')">C</button>';
+            }
+            html += '</td>';
+            for (let w = 0; w < tw; w++) {
+                const active = sched[w] ? 1 : 0;
+                const prestop = w < ps ? ' prestop' : '';
+                if (isAuto) {
+                    // Show auto-derived schedule
+                    const autoActive = active ? ' auto-active' : '';
+                    html += '<td class="sched-cell' + prestop + autoActive + '"></td>';
+                } else {
+                    html += '<td class="sched-cell' + prestop + (active ? ' active' : '') + '" ' +
+                        'onmousedown="schedMouseDown(\'' + item.id + '\',' + w + ',event)" ' +
+                        'onmouseenter="schedMouseEnter(\'' + item.id + '\',' + w + ',event)"></td>';
+                }
+            }
+            html += '<td class="sched-total-col">' + numWeeks + '</td>';
+            html += '<td class="sched-cost-col">' + fmt(item.line_total || 0) + '</td>';
+            html += '</tr>';
+        }
+    }
+    html += '</tbody></table></div>';
+    panel.innerHTML = html;
+
+    // Global mouseup handler
+    document.onmouseup = schedMouseUp;
+}
+
+function schedMouseDown(itemId, weekIdx, e) {
+    e.preventDefault();
+    const item = _items.find(i => i.id === itemId);
+    if (!item) return;
+    const sched = ensureSchedule(item);
+    const newVal = sched[weekIdx] ? 0 : 1;
+    _dragState = { itemId, startWeek: weekIdx, value: newVal };
+    sched[weekIdx] = newVal;
+    calcItemTotal(item);
+    renderSchedule();
+}
+
+function schedMouseEnter(itemId, weekIdx, e) {
+    if (!_dragState || _dragState.itemId !== itemId) return;
+    const item = _items.find(i => i.id === itemId);
+    if (!item) return;
+    const sched = ensureSchedule(item);
+    const start = Math.min(_dragState.startWeek, weekIdx);
+    const end = Math.max(_dragState.startWeek, weekIdx);
+    for (let w = start; w <= end; w++) sched[w] = _dragState.value;
+    calcItemTotal(item);
+    renderSchedule();
+}
+
+function schedMouseUp() {
+    if (_dragState) {
+        const item = _items.find(i => i.id === _dragState.itemId);
+        if (item) {
+            CostDB.updateEstimateItem(item.id, { schedule: item.schedule, num_weeks: item.num_weeks, cost_per_week: item.cost_per_week, line_total: item.line_total });
+        }
+        _dragState = null;
+        recalcAutoItems();
+        updateFooter();
+        renderSchedule();
+    }
+}
+
+async function fillRow(itemId) {
+    const item = _items.find(i => i.id === itemId);
+    if (!item) return;
+    item.schedule = new Array(_est.total_weeks || 24).fill(1);
+    calcItemTotal(item);
+    recalcAutoItems();
+    updateFooter();
+    await CostDB.updateEstimateItem(itemId, { schedule: item.schedule, num_weeks: item.num_weeks, cost_per_week: item.cost_per_week, line_total: item.line_total });
+    renderSchedule();
+}
+
+async function clearRow(itemId) {
+    const item = _items.find(i => i.id === itemId);
+    if (!item) return;
+    item.schedule = new Array(_est.total_weeks || 24).fill(0);
+    calcItemTotal(item);
+    recalcAutoItems();
+    updateFooter();
+    await CostDB.updateEstimateItem(itemId, { schedule: item.schedule, num_weeks: item.num_weeks, cost_per_week: item.cost_per_week, line_total: item.line_total });
+    renderSchedule();
+}
+
+async function fillCategory(catNum) {
+    for (const item of getCatItems(catNum)) {
+        item.schedule = new Array(_est.total_weeks || 24).fill(1);
+        calcItemTotal(item);
+        await CostDB.updateEstimateItem(item.id, { schedule: item.schedule, num_weeks: item.num_weeks, cost_per_week: item.cost_per_week, line_total: item.line_total });
+    }
+    recalcAutoItems();
+    updateFooter();
+    renderSchedule();
+}
+
+async function clearCategory(catNum) {
+    for (const item of getCatItems(catNum)) {
+        item.schedule = new Array(_est.total_weeks || 24).fill(0);
+        calcItemTotal(item);
+        await CostDB.updateEstimateItem(item.id, { schedule: item.schedule, num_weeks: item.num_weeks, cost_per_week: item.cost_per_week, line_total: item.line_total });
+    }
+    recalcAutoItems();
+    updateFooter();
+    renderSchedule();
+}
+
+// ── Tasks Tab ──────────────────────────────────────────────────
+function renderTasks() {
+    const panel = document.getElementById('tab-tasks');
+    const tasks = _items.filter(i => i.line_type === 'task' && i.section_number === 3).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    const shiftHrs = getShiftHours().total;
+
+    // Summary header
+    let summaryHtml = '<div style="margin-bottom:12px"><strong>Trade Summary</strong> (Shift: ' + getShiftHours().label + ' = ' + shiftHrs + 'h/wk)</div>';
+    summaryHtml += '<table class="tasks-table"><thead><tr>' +
+        '<th style="width:30px">#</th><th style="min-width:200px">Description</th><th style="width:50px">Dur. (wks)</th>';
+    for (const g of TRADE_GRADES) {
+        summaryHtml += '<th>' + g.name.split(' ')[0].substring(0, 6) + '</th>';
+    }
+    summaryHtml += '<th>Total MH</th><th style="width:30px"></th></tr></thead>';
+
+    // Summary row
+    const totals = TRADE_GRADES.map(() => 0);
+    let totalMH = 0;
+    for (const t of tasks) {
+        const dur = t.duration_weeks || 0;
+        TRADE_GRADES.forEach((g, gi) => {
+            const count = t['grade_' + g.num + '_count'] || 0;
+            totals[gi] += count * dur * shiftHrs;
+        });
+    }
+    totalMH = totals.reduce((s, v) => s + v, 0);
+
+    summaryHtml += '<tr class="tasks-summary"><td></td><td>TOTAL MAN-HOURS</td><td></td>';
+    totals.forEach(t => { summaryHtml += '<td>' + fmtNum(t) + '</td>'; });
+    summaryHtml += '<td>' + fmtNum(totalMH) + '</td><td></td></tr>';
+
+    // Peak headcount
+    summaryHtml += '<tr class="tasks-summary"><td></td><td>PEAK HEADCOUNT</td><td></td>';
+    TRADE_GRADES.forEach(g => {
+        let peak = 0;
+        for (const t of tasks) peak = Math.max(peak, t['grade_' + g.num + '_count'] || 0);
+        summaryHtml += '<td>' + peak + '</td>';
+    });
+    summaryHtml += '<td></td><td></td></tr>';
+
+    // Task rows
+    summaryHtml += '<tbody>';
+    tasks.forEach((t, idx) => {
+        summaryHtml += '<tr><td style="color:var(--text-light);font-size:0.68rem">' + (idx + 1) + '</td>' +
+            '<td><input value="' + (t.description || '').replace(/"/g, '&quot;') + '" onchange="onTaskChange(\'' + t.id + '\',\'description\',this.value)"></td>' +
+            '<td><input type="number" value="' + (t.duration_weeks || 0) + '" onchange="onTaskChange(\'' + t.id + '\',\'duration_weeks\',this.value)"></td>';
+        for (const g of TRADE_GRADES) {
+            summaryHtml += '<td><input type="number" min="0" value="' + (t['grade_' + g.num + '_count'] || 0) + '" onchange="onTaskChange(\'' + t.id + '\',\'grade_' + g.num + '_count\',this.value)"></td>';
+        }
+        const taskMH = TRADE_GRADES.reduce((s, g) => s + ((t['grade_' + g.num + '_count'] || 0) * (t.duration_weeks || 0) * shiftHrs), 0);
+        summaryHtml += '<td style="font-weight:700">' + fmtNum(taskMH) + '</td>';
+        summaryHtml += '<td><button class="btn-remove" onclick="removeTask(\'' + t.id + '\')">&times;</button></td></tr>';
+    });
+    summaryHtml += '</tbody></table>';
+    summaryHtml += '<button class="btn-add-line" onclick="addTask()">+ Add Task</button>';
+    summaryHtml += '<div style="margin-top:16px"><button class="btn btn-primary btn-sm" onclick="syncTasksToCat3()">Sync to Category 3</button> ' +
+        '<span style="font-size:0.72rem;color:var(--text-light)">Generates Cat 3 line items from tasks with rate card rates</span></div>';
+
+    panel.innerHTML = summaryHtml;
+}
+
+async function addTask() {
+    await CostDB.addEstimateItem(_estId, 3, 'task', {
+        description: '',
+        duration_weeks: 1,
+        rate: 40,
+        qty_per_week: getShiftHours().total,
+        schedule: new Array(_est.total_weeks || 24).fill(0),
+    });
+    const full = await CostDB.getEstimate(_estId);
+    _items = full.items || [];
+    renderTasks();
+}
+
+async function removeTask(taskId) {
+    // Also remove any Cat 3 items linked to this task
+    const linked = _items.filter(i => i.task_id === taskId);
+    for (const l of linked) await CostDB.removeEstimateItem(l.id);
+    await CostDB.removeEstimateItem(taskId);
+    const full = await CostDB.getEstimate(_estId);
+    _items = full.items || [];
+    recalcAll();
+    renderTasks();
+}
+
+async function onTaskChange(taskId, field, value) {
+    const item = _items.find(i => i.id === taskId);
+    if (!item) return;
+    if (field === 'duration_weeks' || field.startsWith('grade_')) {
+        item[field] = parseInt(value) || 0;
+    } else {
+        item[field] = value;
+    }
+    await CostDB.updateEstimateItem(taskId, { [field]: item[field] });
+    renderTasks();
+}
+
+async function syncTasksToCat3() {
+    const tasks = _items.filter(i => i.line_type === 'task' && i.section_number === 3);
+    const shiftHrs = getShiftHours().total;
+
+    // Remove existing auto-generated Cat 3 items (those with task_id)
+    const autoItems = _items.filter(i => i.task_id && i.line_type !== 'task');
+    for (const a of autoItems) await CostDB.removeEstimateItem(a.id);
+
+    // Generate new items per task per trade
+    for (const task of tasks) {
+        for (const grade of TRADE_GRADES) {
+            const count = task['grade_' + grade.num + '_count'] || 0;
+            if (count <= 0) continue;
+
+            // Find rate from rate card if available
+            let rate = 40; // default
+            const rcGrade = _rateCardGrades.find(g => g.grade_number === grade.num);
+            if (rcGrade) {
+                rate = calcBlendedRate(
+                    parseFloat(rcGrade.rate_a) || 0,
+                    parseFloat(rcGrade.rate_b) || 0,
+                    parseFloat(rcGrade.rate_c) || 0,
+                    parseFloat(rcGrade.rate_d) || 0,
+                    parseFloat(rcGrade.rate_e) || 0,
+                );
+            }
+
+            await CostDB.addEstimateItem(_estId, 3, 'labour', {
+                description: (task.description || 'Task') + ' - ' + grade.name,
+                rate: Math.round(rate * 100) / 100,
+                qty_per_week: count * shiftHrs,
+                schedule: new Array(_est.total_weeks || 24).fill(0),
+                task_id: task.id,
+            });
+        }
     }
 
-    const contractValue = grandAtCost * multiplier;
-    const margin = contractValue - grandAtCost;
-
-    document.getElementById('gt-manhours').textContent = Math.round(totalManHours).toLocaleString();
-    document.getElementById('gt-atcost').textContent = fmt(grandAtCost);
-    document.getElementById('gt-contract').textContent = fmt(contractValue);
-    document.getElementById('gt-margin').textContent = fmt(margin);
+    const full = await CostDB.getEstimate(_estId);
+    _items = full.items || [];
+    recalcAll();
+    showToast('Cat 3 items generated from tasks', 'success');
+    renderTasks();
 }
 
-// ===== SAVE =====
+// ── Summary Tab ────────────────────────────────────────────────
+function renderSummary() {
+    const panel = document.getElementById('tab-summary');
+    const markup = 1 + ((_est ? _est.markup_pct : 14) || 14) / 100;
+    const cont = (_est ? _est.contingency : null) || {};
+
+    let html = '<table class="summary-table"><thead><tr>' +
+        '<th style="width:30px">#</th><th>Category</th><th>Risk</th><th style="width:100px">Sub-Total</th>' +
+        '<th style="width:100px">Contingency</th><th style="width:110px">Total (At Cost)</th><th style="width:120px">Contract Value</th>' +
+        '</tr></thead><tbody>';
+
+    let grandSubtotal = 0, grandContingency = 0, grandTotal = 0, grandContract = 0;
+
+    for (const cat of EST_CATEGORIES) {
+        const items = getCatItems(cat.number);
+        const subtotal = items.reduce((s, i) => s + (i.line_total || 0), 0);
+        const risk = cont[cat.number] || 'none';
+        const factor = CONTINGENCY[risk] || 1;
+        const withContingency = subtotal * factor;
+        const contingencyAmt = withContingency - subtotal;
+        const contractVal = withContingency * markup;
+
+        grandSubtotal += subtotal;
+        grandContingency += contingencyAmt;
+        grandTotal += withContingency;
+        grandContract += contractVal;
+
+        const riskCls = 'risk-' + risk;
+        html += '<tr>' +
+            '<td style="text-align:center"><span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:' + cat.color + ';color:#fff;font-size:0.6rem;line-height:20px;text-align:center">' + cat.number + '</span></td>' +
+            '<td>' + cat.name + '</td>' +
+            '<td><select class="risk-select ' + riskCls + '" onchange="onContingencyChange(' + cat.number + ',this.value)">' +
+            '<option value="none"' + (risk === 'none' ? ' selected' : '') + '>None (1.0x)</option>' +
+            '<option value="low"' + (risk === 'low' ? ' selected' : '') + '>Low (1.1x)</option>' +
+            '<option value="medium"' + (risk === 'medium' ? ' selected' : '') + '>Medium (1.2x)</option>' +
+            '<option value="high"' + (risk === 'high' ? ' selected' : '') + '>High (1.3x)</option>' +
+            '</select></td>' +
+            '<td>' + fmt(subtotal) + '</td>' +
+            '<td style="color:' + (contingencyAmt > 0 ? 'var(--warning)' : 'var(--text-light)') + '">' + fmt(contingencyAmt) + '</td>' +
+            '<td>' + fmt(withContingency) + '</td>' +
+            '<td style="font-weight:700">' + fmt(contractVal) + '</td>' +
+            '</tr>';
+    }
+
+    html += '<tr class="grand-row">' +
+        '<td></td><td>GRAND TOTAL</td><td></td>' +
+        '<td>' + fmt(grandSubtotal) + '</td>' +
+        '<td style="color:var(--warning)">' + fmt(grandContingency) + '</td>' +
+        '<td>' + fmt(grandTotal) + '</td>' +
+        '<td style="color:var(--success)">' + fmt(grandContract) + '</td>' +
+        '</tr>';
+
+    html += '</tbody></table>';
+
+    // Overall stats
+    const contingencyPct = grandSubtotal > 0 ? (grandContingency / grandSubtotal * 100).toFixed(1) : '0.0';
+    html += '<div style="margin-top:16px;display:flex;gap:24px;font-size:0.82rem">' +
+        '<div><strong>Markup:</strong> ' + ((_est ? _est.markup_pct : 14) || 14) + '%</div>' +
+        '<div><strong>Overall Contingency:</strong> ' + contingencyPct + '%</div>' +
+        '<div><strong>Margin:</strong> ' + fmt(grandContract - grandTotal) + '</div>' +
+        '</div>';
+
+    panel.innerHTML = html;
+}
+
+async function onContingencyChange(catNum, risk) {
+    if (!_est) return;
+    if (!_est.contingency) _est.contingency = {};
+    _est.contingency[catNum] = risk;
+    await CostDB.updateEstimate(_estId, { contingency: _est.contingency });
+    recalcAll();
+    renderSummary();
+}
+
+// ── Forecast Tab ───────────────────────────────────────────────
+function renderForecast() {
+    const panel = document.getElementById('tab-forecast');
+    const tw = _est ? _est.total_weeks : 24;
+    const ps = _est ? _est.pre_stop_weeks : 3;
+    const startDate = _est ? _est.start_date : null;
+
+    // Calculate weekly spend per category
+    const weeklyData = [];
+    let maxWeekly = 0;
+    for (let w = 0; w < tw; w++) {
+        const byCat = {};
+        let weekTotal = 0;
+        for (const cat of EST_CATEGORIES) {
+            let catSpend = 0;
+            if (cat.type === 'auto_mh' || cat.type === 'auto_ta') {
+                // Spread evenly across active weeks for visualization
+                const items = getCatItems(cat.number);
+                const totalCost = items.reduce((s, i) => s + (i.line_total || 0), 0);
+                // Count how many weeks have activity in source category
+                const sourceCat = cat.type === 'auto_mh' ? 3 : 2;
+                const sourceItems = getCatItems(sourceCat);
+                let activeWeeks = 0;
+                for (let wk = 0; wk < tw; wk++) {
+                    let anyActive = false;
+                    for (const si of sourceItems) {
+                        if (ensureSchedule(si)[wk]) { anyActive = true; break; }
+                    }
+                    if (anyActive) activeWeeks++;
+                }
+                // Is this week active in source?
+                let thisWeekActive = false;
+                for (const si of sourceItems) {
+                    if (ensureSchedule(si)[w]) { thisWeekActive = true; break; }
+                }
+                catSpend = (thisWeekActive && activeWeeks > 0) ? totalCost / activeWeeks : 0;
+            } else {
+                for (const item of getCatItems(cat.number)) {
+                    const sched = ensureSchedule(item);
+                    if (sched[w]) catSpend += item.cost_per_week || 0;
+                }
+            }
+            byCat[cat.number] = catSpend;
+            weekTotal += catSpend;
+        }
+        weeklyData.push({ week: w, total: weekTotal, byCat });
+        if (weekTotal > maxWeekly) maxWeekly = weekTotal;
+    }
+
+    // Chart
+    const chartHeight = 240;
+    let html = '<h3 style="font-size:0.92rem;font-weight:700;color:var(--primary);margin-bottom:4px">Weekly Spend Forecast</h3>';
+    html += '<div class="forecast-chart" style="height:' + (chartHeight + 24) + 'px">';
+
+    // Y-axis labels
+    for (let i = 0; i <= 4; i++) {
+        const val = maxWeekly * (i / 4);
+        const bottom = (i / 4) * chartHeight;
+        html += '<div class="forecast-y-label" style="bottom:' + (bottom + 24) + 'px">' + fmt(val) + '</div>';
+    }
+
+    for (let w = 0; w < tw; w++) {
+        const d = weeklyData[w];
+        html += '<div class="forecast-col">';
+        for (const cat of EST_CATEGORIES) {
+            const spend = d.byCat[cat.number] || 0;
+            const h = maxWeekly > 0 ? (spend / maxWeekly * chartHeight) : 0;
+            html += '<div class="forecast-seg" style="height:' + h + 'px;background:' + cat.color + '" title="' + cat.name + ': ' + fmt(spend) + '"></div>';
+        }
+        html += '<div class="forecast-col-label">' + getWeekLabel(w, ps) + '</div>';
+        html += '</div>';
+    }
+    html += '</div>';
+
+    // Legend
+    html += '<div class="forecast-legend">';
+    for (const cat of EST_CATEGORIES) {
+        html += '<div class="forecast-legend-item"><div class="forecast-legend-swatch" style="background:' + cat.color + '"></div>' + cat.name + '</div>';
+    }
+    html += '</div>';
+
+    // Cumulative table
+    html += '<div class="forecast-cumulative"><h4 style="margin:16px 0 8px;font-size:0.82rem">Cumulative Spend</h4>';
+    html += '<div style="overflow-x:auto"><table><thead><tr><th>Week</th>';
+    for (let w = 0; w < tw; w++) html += '<th>' + getWeekLabel(w, ps) + '</th>';
+    html += '</tr></thead><tbody><tr><td style="font-weight:700;text-align:left">Weekly</td>';
+    for (let w = 0; w < tw; w++) html += '<td>' + fmt(weeklyData[w].total) + '</td>';
+    html += '</tr><tr><td style="font-weight:700;text-align:left">Cumulative</td>';
+    let cumulative = 0;
+    for (let w = 0; w < tw; w++) {
+        cumulative += weeklyData[w].total;
+        html += '<td>' + fmt(cumulative) + '</td>';
+    }
+    const grandTotal = _items.reduce((s, i) => s + (i.line_total || 0), 0);
+    html += '</tr><tr><td style="font-weight:700;text-align:left">Remaining</td>';
+    cumulative = 0;
+    for (let w = 0; w < tw; w++) {
+        cumulative += weeklyData[w].total;
+        html += '<td>' + fmt(grandTotal - cumulative) + '</td>';
+    }
+    html += '</tr></tbody></table></div></div>';
+
+    panel.innerHTML = html;
+}
+
+// ── Rate Cards ─────────────────────────────────────────────────
+async function loadRateCardOptions() {
+    const select = document.getElementById('est-rate-card');
+    const cards = await CostDB.getRateCards();
+    let html = '<option value="">-- None --</option>';
+    for (const c of cards) {
+        const sel = (_est && _est.rate_card_id === c.id) ? ' selected' : '';
+        html += '<option value="' + c.id + '"' + sel + '>' + (c.name || 'Unnamed') + ' (' + (c.year || '') + ')</option>';
+    }
+    select.innerHTML = html;
+    // Load grades for selected card
+    if (_est && _est.rate_card_id) {
+        const card = await CostDB.getRateCard(_est.rate_card_id);
+        _rateCardGrades = (card && card.grades) ? card.grades : [];
+    }
+}
+
+async function onRateCardChange() {
+    const val = document.getElementById('est-rate-card').value;
+    if (_est) {
+        _est.rate_card_id = val || null;
+        await CostDB.updateEstimate(_estId, { rate_card_id: _est.rate_card_id });
+    }
+    if (val) {
+        const card = await CostDB.getRateCard(val);
+        _rateCardGrades = (card && card.grades) ? card.grades : [];
+    } else {
+        _rateCardGrades = [];
+    }
+}
+
+async function applyRateCardRates() {
+    if (!_rateCardGrades.length) { showToast('No rate card selected', 'error'); return; }
+    let updated = 0;
+    // Apply to Cat 2 (Indirect Labour) and any Cat 3 items with grade info
+    for (const item of _items) {
+        if (item.section_number !== 2 && item.section_number !== 3) continue;
+        if (item.auto_source) continue;
+        // Try to match by grade name
+        const match = _rateCardGrades.find(g => {
+            const gn = (g.grade_name || '').toLowerCase();
+            const desc = (item.description || '').toLowerCase();
+            return desc.includes(gn) || gn.includes(desc.split(' - ').pop().trim());
+        });
+        if (match) {
+            item.rate = calcBlendedRate(
+                parseFloat(match.rate_a) || 0,
+                parseFloat(match.rate_b) || 0,
+                parseFloat(match.rate_c) || 0,
+                parseFloat(match.rate_d) || 0,
+                parseFloat(match.rate_e) || 0,
+            );
+            item.rate = Math.round(item.rate * 100) / 100;
+            calcItemTotal(item);
+            await CostDB.updateEstimateItem(item.id, { rate: item.rate, line_total: item.line_total, cost_per_week: item.cost_per_week });
+            updated++;
+        }
+    }
+    recalcAutoItems();
+    updateFooter();
+    showToast(updated + ' items updated with rate card rates', 'success');
+    if (_activeTab === 'breakdown') renderBreakdown();
+}
+
+// ── Save & Export ──────────────────────────────────────────────
 async function saveEstimate() {
-    if (!_estId) return;
-
+    if (!_estId || !_est) return;
     await CostDB.updateEstimate(_estId, {
-        name: document.getElementById('est-name').value.trim(),
-        estimate_ref: document.getElementById('est-ref').value.trim(),
-        client: document.getElementById('est-client').value.trim(),
-        markup_pct: parseFloat(document.getElementById('est-markup').value) || 14,
-        materials_markup_pct: parseFloat(document.getElementById('est-mat-markup').value) || 2.5,
-        rate_card_id: document.getElementById('est-rate-card').value || null,
+        name: _est.name,
+        client: _est.client,
+        estimate_ref: _est.estimate_ref,
+        markup_pct: _est.markup_pct,
+        start_date: _est.start_date,
+        pre_stop_weeks: _est.pre_stop_weeks,
+        total_weeks: _est.total_weeks,
+        shift_pattern: _est.shift_pattern,
+        contingency: _est.contingency,
     });
-
+    // Save all items
+    for (const item of _items) {
+        await CostDB.updateEstimateItem(item.id, {
+            description: item.description,
+            rate: item.rate,
+            qty_per_week: item.qty_per_week,
+            schedule: item.schedule,
+            num_weeks: item.num_weeks,
+            cost_per_week: item.cost_per_week,
+            line_total: item.line_total,
+        });
+    }
     showToast('Estimate saved', 'success');
 }
 
-// ===== EXPORT TO JOB =====
 async function exportToJob() {
     if (!_estId) return;
-
     await saveEstimate();
-    const summary = await CostDB.getEstimateSummary(_estId);
-    if (!summary) return;
 
-    const name = document.getElementById('est-name').value.trim() || 'Untitled';
-    const client = document.getElementById('est-client').value.trim();
-    const estRef = document.getElementById('est-ref').value.trim();
+    // Map CBS 9 categories → Cost Tracking 8 categories
+    const catMapping = { 1: 3, 2: 2, 3: 2, 4: 6, 5: 5, 6: 3, 7: 3, 8: 7, 9: 8 };
+    const markup = 1 + ((_est ? _est.markup_pct : 14) || 14) / 100;
+    const cont = (_est ? _est.contingency : null) || {};
+    const ctCats = {};
+    for (let c = 1; c <= 8; c++) ctCats[c] = 0;
 
-    // Build category array for createJob
-    const categories = summary.sections.map(function(sec) {
-        return { number: sec.section_number, contract_value: sec.contract_value };
-    });
+    for (const cat of EST_CATEGORIES) {
+        const subtotal = getCatItems(cat.number).reduce((s, i) => s + (i.line_total || 0), 0);
+        const factor = CONTINGENCY[cont[cat.number] || 'none'] || 1;
+        const withContingency = subtotal * factor * markup;
+        const target = catMapping[cat.number];
+        ctCats[target] += withContingency;
+    }
 
+    const categories = Object.entries(ctCats).map(([num, val]) => ({ number: parseInt(num), contract_value: Math.round(val) }));
     const jobNumber = prompt('Enter Job Number for this estimate:', '');
     if (!jobNumber) return;
 
     try {
         await CostDB.createJob({
             job_number: jobNumber,
-            job_name: name,
-            client: client,
-            markup: summary.markup_pct,
+            job_name: _est.name || 'Untitled',
+            client: _est.client || '',
+            markup: _est.markup_pct || 14,
             categories: categories,
-            estimate_ref: estRef,
-            rate_card_id: document.getElementById('est-rate-card').value || null,
+            estimate_ref: _est.estimate_ref || '',
         });
-
         await CostDB.updateEstimate(_estId, { job_id: jobNumber, status: 'submitted' });
+        _est.status = 'submitted';
+        renderHeader();
         showToast('Job ' + jobNumber + ' created from estimate', 'success');
     } catch (err) {
         showToast('Failed: ' + err.message, 'error');
     }
 }
 
-// ===== SHIFT CALCULATOR =====
-function openShiftCalc() {
-    document.getElementById('shift-modal').classList.add('active');
-    calcShift();
-}
-
-function closeShiftCalc() {
-    document.getElementById('shift-modal').classList.remove('active');
-}
-
-document.getElementById('shift-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeShiftCalc();
-});
-
-function calcShift() {
-    const startStr = document.getElementById('shift-start').value;
-    const endStr = document.getElementById('shift-end').value;
-    if (!startStr || !endStr) return;
-
-    const start = parseTime(startStr);
-    const end = parseTime(endStr);
-    const shiftHours = end > start ? end - start : (24 - start) + end;
-
-    // NAECI rules:
-    // Rate A (Normal): Mon-Thu 8h, Fri 6h = 38h max
-    // Rate B (MW OT): Midweek after normal shift to midnight
-    // Rate C (Night): Midnight to 07:00
-    // Rate D (Weekend): First 4h Saturday morning
-    // Rate E (Weekend+): After 4h Saturday through Sunday
-
-    const days = document.querySelectorAll('#shift-days input:checked');
-    let hoursA = 0, hoursB = 0, hoursC = 0, hoursD = 0, hoursE = 0;
-
-    days.forEach(function(cb) {
-        const day = cb.getAttribute('data-day');
-
-        if (day === 'sat') {
-            // First 4h = Rate D, rest = Rate E
-            hoursD += Math.min(shiftHours, 4);
-            if (shiftHours > 4) hoursE += shiftHours - 4;
-        } else if (day === 'sun') {
-            // All Sunday = Rate E
-            hoursE += shiftHours;
-        } else {
-            // Weekday
-            const normalMax = day === 'fri' ? 6 : 8;
-            const normalHrs = Math.min(shiftHours, normalMax);
-            hoursA += normalHrs;
-
-            // Overtime after normal
-            if (shiftHours > normalMax) {
-                const otHrs = shiftHours - normalMax;
-                // If end is after midnight, split between B and C
-                if (end <= 7) {
-                    hoursC += otHrs;
-                } else if (start + shiftHours > 24) {
-                    // Crosses midnight
-                    const toMidnight = 24 - (start + normalMax);
-                    hoursB += Math.max(0, toMidnight);
-                    hoursC += otHrs - Math.max(0, toMidnight);
-                } else {
-                    hoursB += otHrs;
-                }
-            }
-        }
-    });
-
-    document.getElementById('sr-a').textContent = hoursA.toFixed(1);
-    document.getElementById('sr-b').textContent = hoursB.toFixed(1);
-    document.getElementById('sr-c').textContent = hoursC.toFixed(1);
-    document.getElementById('sr-d').textContent = hoursD.toFixed(1);
-    document.getElementById('sr-e').textContent = hoursE.toFixed(1);
-}
-
-function parseTime(str) {
-    const parts = str.split(':');
-    return parseInt(parts[0]) + parseInt(parts[1]) / 60;
-}
-
-async function applyShiftHours() {
-    if (!_estId) return;
-
-    const hA = parseFloat(document.getElementById('sr-a').textContent) || 0;
-    const hB = parseFloat(document.getElementById('sr-b').textContent) || 0;
-    const hC = parseFloat(document.getElementById('sr-c').textContent) || 0;
-    const hD = parseFloat(document.getElementById('sr-d').textContent) || 0;
-    const hE = parseFloat(document.getElementById('sr-e').textContent) || 0;
-
-    const allItems = await MiiDB.getAll('cost_estimate_items');
-    const labourItems = allItems.filter(function(i) {
-        return i.estimate_id === _estId && i.line_type === 'labour';
-    });
-
-    for (const item of labourItems) {
-        await CostDB.updateEstimateItem(item.id, {
-            hours_a: hA,
-            hours_b: hB,
-            hours_c: hC,
-            hours_d: hD,
-            hours_e: hE,
-        });
-    }
-
-    _estData = await CostDB.getEstimate(_estId);
-    renderSections();
-    recalcAll();
-    closeShiftCalc();
-    showToast('Applied shift hours to ' + labourItems.length + ' labour lines', 'success');
-}
-
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded', function() {
-    // Check URL for estimate id
+// ── Init ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async function() {
+    await MiiDB.ready();
+    // Check for ?id= parameter
     const params = new URLSearchParams(window.location.search);
-    const estId = params.get('id');
-
-    if (estId) {
-        openEstimate(estId);
+    const editId = params.get('id');
+    if (editId) {
+        await openEstimate(editId);
     } else {
         loadEstimatesList();
     }

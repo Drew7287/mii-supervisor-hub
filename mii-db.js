@@ -17,7 +17,7 @@
   'use strict';
 
   const DB_NAME = 'mii-hub';
-  const DB_VERSION = 10;
+  const DB_VERSION = 11;
 
   // IndexedDB store name → localStorage key mapping
   const STORE_LS_MAP = {
@@ -207,6 +207,11 @@
         // checklist_state: single object, use a fixed key
         if (!db.objectStoreNames.contains('checklist_state')) {
           db.createObjectStore('checklist_state', { keyPath: '_key' });
+        }
+
+        // cost_settings: key-value store for cached export file etc.
+        if (!db.objectStoreNames.contains('cost_settings')) {
+          db.createObjectStore('cost_settings', { keyPath: 'id' });
         }
 
         // sync_queue: auto-increment queue
