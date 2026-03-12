@@ -2578,10 +2578,10 @@ function scheduleAutoSave() {
 
 // Hook auto-save to all input/change events within the wizard
 document.addEventListener('input', (e) => {
-    if (currentDoc && e.target.closest('#wizard-area')) scheduleAutoSave();
+    if (currentDoc && e.target.closest('#wizard-view')) scheduleAutoSave();
 });
 document.addEventListener('change', (e) => {
-    if (currentDoc && e.target.closest('#wizard-area')) scheduleAutoSave();
+    if (currentDoc && e.target.closest('#wizard-view')) scheduleAutoSave();
 });
 
 // ─── Method Statement ─────────────────────────────────────
