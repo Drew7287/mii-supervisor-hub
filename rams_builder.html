@@ -1348,6 +1348,101 @@ const EXPORT_API = window.location.hostname === 'localhost' || window.location.p
 const AI_PROXY_URL = 'https://ramsbuilder-api-b7g8addbcabrcybd.westeurope-01.azurewebsites.net';
 const AI_PROXY_KEY = 'KrfeQw30hcRDuL0II_0jMcQgKMfJ6Xf6dYpdsDOARmk';
 let aiSuggestions = []; // Current AI suggestions for the document
+let sswLibrary = []; // Safe Systems of Work library
+
+// Load SSW library on startup
+fetch('ssw_library.json').then(r => r.ok ? r.json() : []).then(data => {
+    sswLibrary = data;
+    console.log(`Loaded ${sswLibrary.length} Safe Systems of Work`);
+}).catch(() => { console.warn('SSW library not found - SSW compliance checking disabled'); });
+
+function matchRelevantSSWs(documentData, maxSSWs = 20, minScore = 2) {
+    if (!sswLibrary.length) return [];
+    // Build searchable text from document
+    const parts = [];
+    const jd = documentData.job_details || {};
+    parts.push(jd.job_name || '', jd.scope_of_works || '');
+    for (const step of (documentData.method_steps || [])) {
+        parts.push(typeof step === 'string' ? step : (step.description || ''));
+    }
+    for (const hid of (documentData.selected_hazards || [])) {
+        const h = MII_HAZARDS.find(hz => hz.id === hid);
+        if (h) parts.push(h.name);
+    }
+    for (const ra of (documentData.risk_assessments || [])) {
+        const h = MII_HAZARDS.find(hz => hz.id === ra.hazard_id);
+        if (h) parts.push(h.name);
+        parts.push(ra.controls || '');
+    }
+    const req = documentData.requirements || {};
+    for (const item of (req.equipment || [])) parts.push(typeof item === 'string' ? item : (item.name || ''));
+    for (const item of (req.coshh || [])) parts.push(typeof item === 'string' ? item : (item.name || ''));
+    for (const item of (req.ppe || [])) parts.push(typeof item === 'string' ? item : (item.name || ''));
+    const searchText = parts.join(' ').toLowerCase();
+
+    const scored = [];
+    for (const ssw of sswLibrary) {
+        let score = 0;
+        const matchedKw = [];
+        for (const kw of (ssw.keywords || [])) {
+            const kwLower = kw.toLowerCase();
+            // Check for whole word match using regex
+            try {
+                if (new RegExp('\\b' + kwLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(searchText)) {
+                    score += 2;
+                    matchedKw.push(kw);
+                } else if (searchText.includes(kwLower)) {
+                    score += 1;
+                    matchedKw.push(kw);
+                }
+            } catch(e) {
+                if (searchText.includes(kwLower)) { score += 1; matchedKw.push(kw); }
+            }
+        }
+        const activity = (ssw.activity || '').toLowerCase();
+        if (activity && searchText.includes(activity)) { score += 3; matchedKw.push(ssw.activity); }
+        if (score >= minScore) scored.push({ score, kwCount: matchedKw.length, ssw });
+    }
+    scored.sort((a, b) => b.score - a.score || b.kwCount - a.kwCount);
+    return scored.slice(0, maxSSWs).map(s => s.ssw);
+}
+
+function buildSSWPromptSection(matchedSSWs) {
+    if (!matchedSSWs.length) return '';
+    const lines = ['\n## APPLICABLE SAFE SYSTEMS OF WORK (SSW)',
+        'The following MII SSW documents apply to this work. Check compliance:'];
+    for (const ssw of matchedSSWs) {
+        lines.push(`\n### SSW ${ssw.id || '?'}: ${ssw.activity || 'Unknown'}`);
+        if (ssw.mandatory_equipment?.length) {
+            lines.push('**Mandatory Equipment:**');
+            for (const item of ssw.mandatory_equipment) lines.push(`  - ${item}`);
+        }
+        if (ssw.mandatory_ppe?.length) {
+            lines.push('**Mandatory PPE:**');
+            for (const item of ssw.mandatory_ppe) lines.push(`  - ${item}`);
+        }
+        if (ssw.operational_requirements?.length) {
+            lines.push('**Key Operational Requirements:**');
+            for (const item of ssw.operational_requirements.slice(0, 6)) lines.push(`  - ${item}`);
+        }
+        if (ssw.prohibited_actions?.length) {
+            lines.push('**Prohibited Actions:**');
+            for (const item of ssw.prohibited_actions) lines.push(`  - ${item}`);
+        }
+        const special = ssw.special_considerations || {};
+        const specialItems = [];
+        if (special.hav_monitoring) specialItems.push('HAV monitoring required');
+        if (special.permit_required && special.permit_required !== false) specialItems.push(`Permit required: ${special.permit_required}`);
+        if (special.competency_required && special.competency_required !== false) specialItems.push(`Competency: ${special.competency_required}`);
+        if (special.voltage_requirement && special.voltage_requirement !== false) specialItems.push(`Voltage: ${special.voltage_requirement}`);
+        if (special.inspection_frequency && special.inspection_frequency !== false) specialItems.push(`Inspection: ${special.inspection_frequency}`);
+        if (specialItems.length) {
+            lines.push('**Special Considerations:**');
+            for (const item of specialItems) lines.push(`  - ${item}`);
+        }
+    }
+    return lines.join('\n');
+}
 
 async function aiCall(endpoint, prompt, opts = {}) {
     const url = `${AI_PROXY_URL}/api/${endpoint}`;
@@ -2274,31 +2369,60 @@ async function aiReviewMethod() {
 
     try {
         const methodText = steps.map((s, i) => `${i+1}. ${s.description || '(empty)'}`).join('\n');
-        const prompt = `You are a SHEQ expert reviewing an existing method statement.
+        const prompt = `You are a SHEQ (Safety, Health, Environment, Quality) expert reviewing an existing method statement.
 
 JOB TITLE: ${jd.job_name || 'Not specified'}
-SCOPE OF WORKS: ${jd.scope_of_works || 'Not specified'}
+
+SCOPE OF WORKS:
+${jd.scope_of_works || 'Not specified'}
 
 METHOD STATEMENT TO REVIEW:
 ${methodText}
 
 REVIEW CRITERIA (SHEQ Philosophy):
 1. Can a LAYMAN with NO prior experience follow this method?
-2. Does each step specify HOW something is done?
+2. Does each step specify HOW something is done (tools, techniques, sizes)?
 3. Are weights of items being handled specified?
 4. Are mechanical aids specified for heavy loads (HSE manual handling compliance)?
-5. Are there negative instructions where safety-critical?
+5. Are there negative instructions (what NOT to do) where safety-critical?
 6. Are HOLD POINTS included before critical activities?
 7. Is there a logical sequence from start to finish?
-8. Are standard opening steps present (permits, briefings)?
+8. Are standard opening steps present (permits, briefings, STOP & GO)?
 9. Are standard closing steps present (cleanup, handback)?
 
+ANALYZE AND PROVIDE:
+1. Overall assessment (Good / Needs Improvement / Poor)
+2. Brief summary of the method quality
+3. Specific issues found (list each with severity: Critical/Warning/Info)
+4. Specific improvement suggestions
+5. Missing SHEQ elements
+
 OUTPUT FORMAT - Return a JSON object:
-{"overall_rating":"Good|Needs Improvement|Poor","summary":"Brief assessment","issues":[{"severity":"Critical|Warning|Info","issue":"Description","step":1}],"suggestions":[{"suggestion":"What to improve","step":null}],"missing_elements":["..."],"positive_points":["..."]}
+{
+    "overall_rating": "Good|Needs Improvement|Poor",
+    "summary": "Brief 1-2 sentence assessment",
+    "issues": [
+        {"severity": "Critical|Warning|Info", "issue": "Description of issue", "step": 1},
+        ...
+    ],
+    "suggestions": [
+        {"suggestion": "What to improve", "step": null},
+        ...
+    ],
+    "missing_elements": [
+        "Standard opening steps",
+        "HOLD POINTS",
+        ...
+    ],
+    "positive_points": [
+        "What the method does well",
+        ...
+    ]
+}
 
-Return ONLY the JSON object.`;
+Return ONLY the JSON object, no other text.`;
 
-        const result = await aiCall('review-method', prompt, { max_tokens: 3000 });
+        const result = await aiCall('review-method', prompt, { model: 'claude-sonnet-4-5-20250929', max_tokens: 2500 });
         let review;
         try {
             let jsonText = result.trim();
@@ -2469,7 +2593,7 @@ For each hazard, provide:
 Format: 1. [Hazard Name] | [Confidence] | [Reasoning]
 Only include hazards reasonably applicable to the work.`;
 
-        const result = await aiCall('suggest-hazards', prompt);
+        const result = await aiCall('suggest-hazards', prompt, { model: 'claude-sonnet-4-5-20250929' });
         const suggestions = result.split('\n')
             .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
             .filter(l => l.includes('|'))
@@ -3521,90 +3645,268 @@ async function runDeepAIReview() {
         const req = d.requirements || {};
         const env = d.environment || {};
 
-        // Build the document data for the prompt
-        const hazardNames = (d.selected_hazards || []).map(id => {
-            const h = MII_HAZARDS.find(hz => hz.id === id);
-            return h ? h.name : '?';
-        });
+        // Build the document data for the prompt - matching OG _build_review_prompt format
+        const promptParts = [];
 
-        const raText = ras.map(ra => {
-            const h = MII_HAZARDS.find(hz => hz.id === ra.hazard_id);
-            return `- ${h ? h.name : '?'}: Initial ${ra.initial_l}x${ra.initial_s}=${(ra.initial_l||1)*(ra.initial_s||1)}, Controls: ${(ra.controls||'').substring(0,200)}, Residual ${ra.final_l}x${ra.final_s}=${(ra.final_l||1)*(ra.final_s||1)}`;
-        }).join('\n');
+        // Job details
+        promptParts.push("## JOB DETAILS");
+        promptParts.push(`Job Number: ${jd.job_number || 'N/A'}`);
+        promptParts.push(`Job Name: ${jd.job_name || 'N/A'}`);
+        promptParts.push(`Location: ${jd.location || 'N/A'}`);
+        promptParts.push(`\nScope of Works:\n${jd.scope_of_works || jd.job_description || 'Not provided'}`);
 
-        const methodText = (d.method_steps || []).map((s, i) => `${i+1}. ${s.description || '(empty)'}`).join('\n');
+        // Method statement
+        promptParts.push("\n## METHOD STATEMENT");
+        const methodSteps = d.method_steps || [];
+        if (methodSteps.length) {
+            for (let i = 0; i < methodSteps.length; i++) {
+                const stepText = methodSteps[i].description || '(empty)';
+                promptParts.push(`${i+1}. ${stepText}`);
+            }
+        } else {
+            promptParts.push("No method steps provided");
+        }
 
-        const envText = (env.questions || [])
-            .filter(q => q.answer === 'YES')
-            .map(q => `- ${q.question}: YES. Mechanisms: ${(q.mechanism||'').substring(0,100)}. Controls: ${(q.control||'').substring(0,100)}`)
-            .join('\n') || 'No environmental impacts identified';
+        // Hazards and controls - each hazard as ### heading with Controls underneath
+        promptParts.push("\n## HAZARDS AND CONTROLS");
+        if (ras.length) {
+            for (const assessment of ras) {
+                const h = MII_HAZARDS.find(hz => hz.id === assessment.hazard_id);
+                const hazardName = h ? h.name : 'Unknown';
+                const controls = assessment.controls || 'None specified';
+                promptParts.push(`\n### ${hazardName}`);
+                promptParts.push(`Controls: ${controls}`);
+            }
+        } else {
+            promptParts.push("No hazard assessments provided");
+        }
 
-        const prompt = `Review this RAMS document:
+        // Equipment
+        promptParts.push("\n## EQUIPMENT REQUIREMENTS");
+        const equipment = req.equipment || [];
+        if (equipment.length) {
+            for (const item of equipment) {
+                const name = typeof item === 'object' ? (item.item || item.name || 'Unknown') : String(item);
+                promptParts.push(`- ${name}`);
+            }
+        } else {
+            promptParts.push("No equipment specified");
+        }
 
-## Job Details
-Job: ${jd.job_name || '?'} (${jd.job_number || '?'})
-Scope: ${jd.scope_of_works || '?'}
-Location: ${jd.location || '?'}, Works Area: ${jd.works_area || '?'}
+        // COSHH
+        promptParts.push("\n## COSHH SUBSTANCES");
+        const coshh = req.coshh || [];
+        if (coshh.length) {
+            for (const item of coshh) {
+                const name = typeof item === 'object' ? (item.substance || item.name || 'Unknown') : String(item);
+                const storage = typeof item === 'object' ? (item.storage_requirements || '') : '';
+                promptParts.push(`- ${name}`);
+                if (storage) promptParts.push(`  Storage: ${storage.substring(0, 80)}`);
+            }
+        } else {
+            promptParts.push("No COSHH substances specified");
+        }
 
-## Method Statement
-${methodText || 'No method steps'}
+        // PPE
+        promptParts.push("\n## PPE REQUIREMENTS");
+        const ppe = req.ppe || [];
+        if (ppe.length) {
+            for (const item of ppe) {
+                const name = typeof item === 'object' ? (item.item || item.name || 'Unknown') : String(item);
+                const standard = typeof item === 'object' ? (item.standard || '') : '';
+                promptParts.push(`- ${name}`);
+                if (standard) promptParts.push(`  Standard: ${standard.substring(0, 60)}`);
+            }
+        } else {
+            promptParts.push("No PPE specified");
+        }
 
-## Hazards Selected
-${hazardNames.join(', ') || 'None'}
+        // Environment
+        promptParts.push("\n## ENVIRONMENTAL ASSESSMENT");
+        const envQuestions = env.questions || [];
+        if (envQuestions.length) {
+            for (const item of envQuestions) {
+                const question = item.question || 'Unknown question';
+                const answer = item.answer || 'NO';
+                promptParts.push(`- ${question}: ${answer}`);
+                if (answer === 'YES') {
+                    const mechanism = item.mechanism || '';
+                    const controls = item.control || '';
+                    if (mechanism) promptParts.push(`  Mechanism: ${mechanism.substring(0, 100)}...`);
+                    if (controls) promptParts.push(`  Controls: ${controls.substring(0, 100)}...`);
+                }
+            }
+        } else {
+            promptParts.push("No environmental assessment provided");
+        }
 
-## Risk Assessment
-${raText || 'None'}
+        // SSW library integration
+        const matchedSSWs = matchRelevantSSWs(d);
+        const sswSection = buildSSWPromptSection(matchedSSWs);
+        if (sswSection) promptParts.push(sswSection);
 
-## Requirements
-PPE: ${(req.ppe||[]).join(', ') || 'None'}
-Equipment: ${(req.equipment||[]).join(', ') || 'None'}
-COSHH: ${(req.coshh||[]).join(', ') || 'None'}
+        promptParts.push("\n## YOUR TASK: METHOD-DRIVEN CROSS-REFERENCE");
+        promptParts.push("The Method Statement above is the source of truth. Perform:");
+        promptParts.push("1. **FORWARD CHECK**: Walk each method step \u2014 is every hazard, equipment need, substance, and PPE requirement addressed in the other sections?");
+        promptParts.push("2. **REVERSE CHECK**: Walk each RA/Equipment/COSHH/PPE entry \u2014 which method step justifies it? Flag unjustified entries.");
+        promptParts.push("3. **THREE-QUESTION RULE**: Every suggestion must cite: which step, what physical activity, what control/item.");
+        if (matchedSSWs.length) {
+            promptParts.push("4. **SSW COMPLIANCE**: Check document against ALL applicable SSW requirements above. Flag missing mandatory equipment, PPE, or violations.");
+        }
+        promptParts.push("\nApply all critical rules (activity-based inference, isolation awareness, client/contractor boundary, deduplication, OEM handling, maintenance tier awareness).");
+        promptParts.push("Return your suggestions as JSON.");
 
-## Environment
-${envText}
+        const prompt = promptParts.join("\n");
 
-Return your analysis as JSON.`;
+        const systemPrompt = `You are an expert UK Health & Safety professional (IOSH qualified) reviewing Risk Assessment Method Statements (RAMS) for MII Engineering Ltd.
 
-        const systemPrompt = `You are an expert UK Health & Safety professional (IOSH qualified) reviewing RAMS for MII Engineering Ltd.
+## CORE PRINCIPLE: THE METHOD STATEMENT IS THE SOURCE OF TRUTH
 
-YOUR REVIEW APPROACH: METHOD-DRIVEN CROSS-REFERENCE
+The method statement describes exactly what the technician physically does. Every other section of the RAMS must derive from and align with the method. The method was built through a clarifying Q&A process where the user provided context about the actual work \u2014 that context is already embedded in the method as written.
 
-FORWARD CHECK: Walk each method step and ask:
+**Your job is cross-referencing, not second-guessing.** Do NOT re-interpret the scope or infer activities not described in the method. Trust the method as written.
+
+## YOUR REVIEW APPROACH: SINGLE-PASS METHOD-DRIVEN CROSS-REFERENCE
+
+### FORWARD CHECK (Finding Gaps)
+Walk each method step and ask:
 1. What hazard does this step create? Is it in the Risk Assessment?
 2. What equipment does this step need? Is it in the Equipment list?
-3. What substances are physically used/contacted? Are they in COSHH?
+3. What substances are physically used/contacted in this step? Are they in COSHH?
 4. What PPE does this step require? Is it in the PPE list?
 5. What environmental impact could this step cause? Is it addressed?
 
-REVERSE CHECK: Walk each RA/Equipment/COSHH/PPE entry and ask:
+Only flag genuine gaps where a method step clearly creates a need that is not addressed.
+
+### REVERSE CHECK (Finding Bloat)
+Walk each entry in RA, Equipment, COSHH, PPE and ask:
 - Which specific method step requires this item?
+- If no step justifies it \u2192 recommend removal
 
-RULES:
-- Activity-based inference only (inspect=looking, not handling)
-- Isolation awareness (isolated hazards don't need additional controls)
-- Deduplication (don't suggest what's already covered)
-- Confidence calibration: 0.9-1.0 for clear gaps, 0.7-0.8 for foreseeable scenarios, 0.5-0.6 for context-dependent
+### THREE-QUESTION RULE
+Every suggestion you make MUST answer ALL THREE:
+1. **Which method step** does this relate to? (cite the step number)
+2. **What physical activity** in that step creates the hazard/need?
+3. **What specific control/item** addresses that activity?
 
-OUTPUT FORMAT:
+If you cannot answer all three \u2192 DO NOT make the suggestion.
+
+## CRITICAL RULES
+
+### Rule 1: Activity-Based Inference ONLY
+Base all suggestions on the PHYSICAL ACTIVITY described in each method step:
+- "Check condition of" / "visual inspection" / "inspect for" = LOOKING. No handling, no contact, no removal.
+- "Record reading" / "check gauge" / "note value" = READING. No handling of the substance being measured.
+- "Operate" / "perform cycles" / "check mechanism" = PHYSICAL INTERACTION with controls/handles only.
+- "Remove" / "replace" / "lift" / "transport" = HANDLING. Only then consider manual handling, COSHH contact, etc.
+
+Do NOT infer physical handling from inspection language. "Check condition of crank lever" means LOOKING at it, not removing it.
+
+### Rule 2: Isolation Awareness
+When the method describes equipment isolation (prove dead, LOTO, portable earths):
+- Hazards eliminated by isolation (arc flash, stored energy, rotating equipment, electrical contact) should NOT have additional controls suggested beyond the isolation procedure itself.
+- Do not suggest PPE for hazards that isolation eliminates (e.g. arc flash balaclava/face shield when equipment is isolated and proved dead).
+- The isolation procedure IS the control. Do not duplicate it under multiple hazard names.
+- Exception: PPE needed DURING the approach and isolation process itself (before equipment is proved dead) IS valid \u2014 e.g. arc flash coveralls worn while approaching to isolate.
+
+### Rule 3: Client/Contractor Boundary
+On client sites with permit-to-work systems:
+- Exclusion zones, HV switching schedules, LOTO system design, safety documentation systems = client/site operator's responsibility.
+- The RAMS should state "comply with [client] permit to work procedure" not define the procedure.
+- Do not suggest the contractor establish controls that are the site operator's responsibility.
+
+### Rule 4: Deduplication
+Do not suggest controls already covered under another hazard in the document. If a control applies to multiple hazards, it belongs under the primary hazard only. Other hazards should reference it, not restate it. Before making any suggestion, check whether the control already exists elsewhere in the document.
+
+### Rule 5: OEM-Referenced Work
+When the method references OEM procedures, manuals, or specifications:
+- Do not infer specific tool requirements, component weights, or technical values.
+- State "per OEM maintenance manual" rather than guessing specifications.
+- The OEM documentation defines the technical procedure; the RAMS defines the safety controls around it.
+
+### Rule 6: Maintenance Tier Awareness
+Understand maintenance tier context from the scope description:
+- M1 (visual/functional inspection): Checking, observing, recording, functional tests. Minimal physical intervention.
+- M2 (detailed inspection): Opening enclosures, detailed measurements, component testing. More physical intervention.
+- M4 (overhaul): Full disassembly, component replacement, heavy lifting. Maximum physical intervention.
+
+Controls must match the maintenance tier. Do not suggest M4-level controls (manual handling of components, specialist disassembly tools, heavy lifting equipment) for M1-level visual inspection work.
+
+### Rule 7: Foreseeable Abnormal Scenarios
+The method describes normal work. The RA should also cover foreseeable "what if" situations \u2014 but these MUST tie to specific method steps:
+- Valid: "During step X (SF6 pressure check), if gauge shows significant loss \u2192 evacuate and report (possible SF6 leak)"
+- Invalid: "SF6 equipment exists therefore suggest full SF6 handling COSHH" (no method step involves SF6 contact)
+
+This is a foreseeable outcome of a specific step, NOT speculation from equipment names or component descriptions.
+
+## SSW COMPLIANCE
+When Safe Systems of Work (SSW) documents are provided, check that the document complies with mandatory equipment, PPE, operational requirements, and prohibited actions. SSW violations are the highest priority \u2014 these are company procedures that must be followed.
+
+## OUTPUT FORMAT
+
+Return a JSON object:
 {
-  "suggestions": [
-    {
-      "type": "add_control|add_hazard|add_method_step|add_equipment|add_coshh|add_ppe|environment_flag|inadequate_control|method_sequence",
-      "section": "Risk Assessment|Hazards|Method|Environment|Requirements",
-      "target": "target name/step",
-      "title": "Short title (max 50 chars)",
-      "description": "Why this is needed",
-      "suggested_text": "The actual text to add",
-      "confidence": 0.0-1.0,
-      "justification": "Step [N] describes [activity]. This creates [need]."
-    }
-  ],
-  "summary": "Brief assessment"
+    "suggestions": [
+        {
+            "type": "<type>",
+            "section": "Risk Assessment" | "Hazards" | "Method" | "Environment" | "Requirements" | "SSW Compliance",
+            "target": "<target>",
+            "title": "Short title (max 50 chars)",
+            "description": "Why this is needed - reference the specific method step and physical activity",
+            "suggested_text": "The actual text to add or change",
+            "confidence": 0.0 to 1.0,
+            "justification": "Step [N] describes [physical activity]. This creates [hazard/need] which requires [control/item]."
+        }
+    ],
+    "summary": "Brief assessment \u2014 how well do the RA, Equipment, COSHH, PPE, and Environment sections align with the method statement?"
 }
 
-If document passes all checks: {"suggestions":[],"summary":"Document is well-aligned..."}`;
+## SUGGESTION TYPES
+- add_control: Add control measure to existing hazard
+- add_hazard: Add missing hazard (must be triggered by a method step activity)
+- add_method_step: Add missing method step (genuine procedural gap)
+- add_equipment: Add missing equipment (must be required by a method step)
+- add_coshh: Add missing COSHH substance (must be physically contacted in a method step)
+- add_ppe: Add missing PPE (must be required for a method step activity)
+- environment_flag: Environmental question should be YES (based on method activities)
+- ssw_violation: Non-compliance with SSW requirement
+- inadequate_control: Existing control insufficient for the specific activity described
+- method_sequence: Method step ordering or completeness issue
+- ra_method_gap: RA/Equipment/COSHH/PPE entry not justified by any method step, OR method step creates need not addressed
 
-        const result = await aiCall('review-document', prompt, { system: systemPrompt, max_tokens: 20000 });
+## TARGET FORMAT BY TYPE
+- add_control: Hazard name (e.g., "Working at height")
+- add_hazard: New hazard name to add
+- add_method_step: Position (e.g., "Before step 1", "After step 5")
+- add_equipment: Equipment name to add. suggested_text MUST contain the required safety precaution/control for using this equipment (e.g. inspection requirements, applicable standards, safe use instructions). Do NOT just repeat the equipment name.
+- add_coshh: COSHH substance name to add. suggested_text MUST contain storage requirements and handling precautions for this substance.
+- add_ppe: PPE item name to add. suggested_text MUST contain the applicable standard (e.g. EN 397, EN 388:2016) and any specification requirements (e.g. minimum rating, size).
+- environment_flag: Question ID (e.g., "noise", "emissions")
+- ssw_violation: SSW ID and requirement
+- inadequate_control: Hazard name with issue
+- method_sequence: Issue type
+- ra_method_gap: Section + item + gap description
+
+## CONFIDENCE CALIBRATION
+- 0.9-1.0: SSW violation, or method step explicitly describes activity requiring missing control/equipment
+- 0.7-0.8: Foreseeable abnormal scenario tied to specific method step, or genuine procedural gap
+- 0.5-0.6: Possible gap but context-dependent (e.g. may be client's responsibility, or depends on site specifics)
+- Below 0.5: Do not include \u2014 if you are not confident, the suggestion is likely noise
+
+## PRIORITY ORDER
+1. SSW violations (company procedure non-compliance)
+2. Method sequence issues (genuine procedural gaps only)
+3. Forward check gaps (method step creates need not addressed in RA/Equipment/COSHH/PPE)
+4. Inadequate controls (control exists but is insufficient for the specific activity)
+5. Reverse check bloat (RA/Equipment/COSHH/PPE entries not justified by any method step)
+
+If document passes all checks:
+{
+    "suggestions": [],
+    "summary": "Document is well-aligned: all sections are consistent with the method statement, controls are adequate for the described activities, and SSW requirements are met."
+}`;
+
+        const result = await aiCall('review-document', prompt, { system: systemPrompt, model: 'claude-sonnet-4-5-20250929', max_tokens: 20000 });
 
         // Parse JSON from response
         let parsed;
