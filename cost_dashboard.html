@@ -821,7 +821,7 @@ async function handleFileSelect(e) {
 
     try {
         const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const workbook = XLSX.read(data, { type: 'array' });
         const result = await CostDB.processImport(workbook, file.name);
         showToast(result.message || ('Imported ' + (result.count || 0) + ' transactions'), 'success');
         await loadAllData();

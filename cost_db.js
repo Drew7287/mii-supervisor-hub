@@ -1508,79 +1508,396 @@
 
     // ── Import Pipeline ────────────────────────────────────────────
 
+    // jw_trtype numeric code → readable trans_type (Opera 3 standard)
+    TRTYPE_MAP: { 1: 'Sales Invoice', 2: 'Purchase', 3: 'Labour', 4: 'General Cost', 5: 'Revenue', 6: 'Commitment' },
+
+    // Raw jwipr column index → field mapping (SELECT * FROM jwipr, 52 cols)
+    RAW_COLUMN_MAP: {
+      0: 'job_number',      // jw_cstdoc
+      3: 'cost_code',       // jw_ccode
+      7: 'cost_type_desc',  // jw_pcode
+      9: 'cost_type',       // jw_csttype
+      10: 'description',    // jw_desc
+      11: 'jw_trtype',      // jw_trtype (numeric)
+      12: 'trans_date',     // jw_trdate
+      15: 'quantity',       // jw_qty
+      17: 'value',          // jw_value
+      18: 'overhead_value', // jw_ohead
+      23: 'surname',        // jw_wgemp (employee code)
+      25: 'supplier_name',  // jw_placc (supplier code)
+      28: 'subcontractor',  // jw_subcnt
+      32: 'po_number',      // jw_podoc
+    },
+
+    // Curated format header aliases (case-insensitive matching)
+    HEADER_ALIASES: {
+      job_number: ['JOB NUMBER', 'JOB', 'JOB NO', 'JOBNUMBER', 'JOB_NUMBER'],
+      cost_code: ['COST CODE', 'COSTCODE', 'CODE'],
+      cost_code_desc: ['COST CODE DESC', 'COST CODE DESCRIPTION', 'CODE DESC', 'COSTCODEDESC'],
+      supplier_name: ['SUPPLIER', 'SUPPLIER NAME', 'SUPPLIERNAME'],
+      cost_type: ['COST TYPE', 'COSTTYPE', 'TYPE'],
+      cost_type_desc: ['COST TYPE DESC', 'COST TYPE DESCRIPTION', 'COSTTYPEDESC', 'TYPE DESC'],
+      quantity: ['QUANTITY', 'QTY'],
+      value: ['VALUE', 'AMOUNT'],
+      description: ['DESCRIPTION', 'DESC', 'NARRATIVE'],
+      jw_trtype: ['JW_TRTYPE', 'TRTYPE', 'JW TRTYPE'],
+      trans_type: ['TRANS TYPE', 'TRANSTYPE', 'TRANSACTION TYPE'],
+      overhead_value: ['OVERHEAD VALUE', 'OVERHEAD', 'OVERHEADVALUE'],
+      subcontractor: ['SUBCONTRACTOR', 'SUB CONTRACTOR', 'SUB'],
+      trans_date: ['DATE', 'TRANS DATE', 'TRANSDATE', 'TRANSACTION DATE'],
+      surname: ['SURNAME', 'LAST NAME'],
+      forename: ['FORENAME', 'FIRST NAME', 'FIRSTNAME'],
+      total_cost: ['TOTAL COST', 'TOTALCOST', 'TOTAL'],
+      po_number: ['PO NUMBER', 'PONUMBER', 'PO', 'PO NO'],
+    },
+
     /**
-     * Process an Opera 3 Excel workbook import.
-     * Parses the Excel file, groups rows by job_number, and imports each.
-     *
-     * @param {Object} workbook - XLSX workbook object
-     * @param {string} filename - original filename
-     * @returns {Promise<Object>} {message, jobs_updated, total_inserted, total_deleted}
+     * Detect if a header row represents raw jwipr format (52+ cols, starts with jw_cstdoc).
      */
-    async processImport(workbook, filename) {
+    _isRawFormat(header) {
+      if (!header || header.length < 50) return false;
+      const first = (header[0] || '').toString().trim().toLowerCase();
+      return first === 'jw_cstdoc' || header.some(h => (h || '').toString().trim().toLowerCase() === 'jw_cstdoc');
+    },
+
+    /**
+     * Build header→index map for curated format using header aliases.
+     */
+    _buildHeaderMap(header) {
+      const upper = header.map(h => (h || '').toString().trim().toUpperCase());
+      const map = {};
+      for (const [field, aliases] of Object.entries(this.HEADER_ALIASES)) {
+        for (const alias of aliases) {
+          const idx = upper.indexOf(alias);
+          if (idx >= 0) { map[field] = idx; break; }
+        }
+      }
+      return map;
+    },
+
+    /**
+     * Parse a date value robustly. Handles Excel date objects, DD/MM/YYYY,
+     * YYYY-MM-DD, DD.MM.YYYY, and corrupt dates (year > 2030).
+     * Always returns YYYY-MM-DD string or ''.
+     */
+    _parseDate(raw, rowData) {
+      if (raw == null || raw === '') return this._parseTrrefDate(rowData);
+
+      // Excel serial number (SheetJS sometimes gives these)
+      if (typeof raw === 'number') {
+        const d = new Date((raw - 25569) * 86400000);
+        if (!isNaN(d.getTime()) && d.getFullYear() <= 2030) {
+          return d.toISOString().split('T')[0];
+        }
+        return this._parseTrrefDate(rowData);
+      }
+
+      const s = raw.toString().trim();
+      if (!s) return this._parseTrrefDate(rowData);
+
+      // Try YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        const year = parseInt(s.substring(0, 4));
+        if (year > 2030) return this._parseTrrefDate(rowData);
+        return s.substring(0, 10);
+      }
+
+      // Try DD/MM/YYYY or DD.MM.YYYY
+      const match = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+      if (match) {
+        const year = parseInt(match[3]);
+        if (year > 2030) return this._parseTrrefDate(rowData);
+        return match[3] + '-' + match[2].padStart(2, '0') + '-' + match[1].padStart(2, '0');
+      }
+
+      // Try Date constructor as fallback
+      const d = new Date(s);
+      if (!isNaN(d.getTime()) && d.getFullYear() <= 2030) {
+        return d.toISOString().split('T')[0];
+      }
+
+      return this._parseTrrefDate(rowData);
+    },
+
+    /**
+     * Fallback: parse date from jw_trref (column 13) which often has dd.mm.yyyy.
+     * Only applicable for raw jwipr format.
+     */
+    _parseTrrefDate(rowData) {
+      if (!rowData || !Array.isArray(rowData) || rowData.length <= 13) return '';
+      const trref = (rowData[13] || '').toString().trim();
+      if (!trref) return '';
+
+      // dd.mm.yyyy or dd/mm/yyyy
+      const match = trref.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+      if (match) {
+        return match[3] + '-' + match[2].padStart(2, '0') + '-' + match[1].padStart(2, '0');
+      }
+
+      // yyyy-mm-dd
+      if (/^\d{4}-\d{2}-\d{2}/.test(trref)) {
+        return trref.substring(0, 10);
+      }
+
+      return '';
+    },
+
+    /**
+     * Parse a raw jwipr row (52 columns) into standard transaction dict.
+     */
+    _parseRawRow(rowData) {
+      if (!rowData || rowData.length < 33) return null;
+
+      const result = {};
+
+      // Map fixed columns
+      for (const [colStr, field] of Object.entries(this.RAW_COLUMN_MAP)) {
+        const col = parseInt(colStr);
+        result[field] = col < rowData.length ? rowData[col] : null;
+      }
+
+      // Job number required
+      const jobNum = (result.job_number || '').toString().trim();
+      if (!jobNum) return null;
+      result.job_number = jobNum;
+
+      // Derive trans_type from numeric jw_trtype
+      const rawTrtype = result.jw_trtype;
+      if (rawTrtype != null) {
+        const trInt = parseInt(rawTrtype);
+        if (!isNaN(trInt)) {
+          result.trans_type = this.TRTYPE_MAP[trInt] || ('Type ' + trInt);
+          result.jw_trtype = String(trInt);
+        } else {
+          result.trans_type = (rawTrtype || '').toString().trim();
+          result.jw_trtype = (rawTrtype || '').toString().trim();
+        }
+      } else {
+        result.trans_type = '';
+        result.jw_trtype = '';
+      }
+
+      // Parse date with corrupt-date handling (year > 2030 → fallback to jw_trref)
+      result.trans_date = this._parseDate(result.trans_date, rowData);
+
+      // Numeric fields → clean floats (2 decimal)
+      const val = parseFloat(result.value) || 0;
+      const ovh = parseFloat(result.overhead_value) || 0;
+      result.value = Math.round(val * 100) / 100;
+      result.overhead_value = Math.round(ovh * 100) / 100;
+      result.quantity = Math.round((parseFloat(result.quantity) || 0) * 100) / 100;
+
+      // Compute total_cost = value + overhead (desktop parity)
+      result.total_cost = Math.round((val + ovh) * 100) / 100;
+
+      // String fields → trim
+      for (const f of ['cost_code', 'cost_type_desc', 'description', 'subcontractor',
+                        'supplier_name', 'surname', 'po_number', 'cost_type']) {
+        result[f] = (result[f] || '').toString().trim();
+      }
+
+      // Fields not in raw format
+      result.cost_code_desc = '';
+      result.forename = '';
+
+      // Commitment detection: jw_trtype 6 = Commitment, PO/CO codes
+      const trUpper = result.jw_trtype.toUpperCase();
+      result.is_commitment = (trUpper === '6' || trUpper === 'PO' || trUpper === 'CO');
+
+      // Revenue detection: cost_code Z99
+      result.is_revenue = (result.cost_code.toUpperCase() === 'Z99');
+
+      return result;
+    },
+
+    /**
+     * Parse a curated-format row using header map.
+     */
+    _parseCuratedRow(rowData, headerMap) {
+      if (!rowData) return null;
+
+      const result = {};
+      for (const [field, idx] of Object.entries(headerMap)) {
+        result[field] = idx < rowData.length ? rowData[idx] : null;
+      }
+
+      // Job number required
+      const jobNum = (result.job_number || '').toString().trim();
+      if (!jobNum) return null;
+      result.job_number = jobNum;
+
+      // Parse date
+      result.trans_date = this._parseDate(result.trans_date, null);
+
+      // Derive trans_type from jw_trtype if trans_type not present
+      const rawTrtype = (result.jw_trtype || '').toString().trim();
+      if (rawTrtype && !result.trans_type) {
+        const trInt = parseInt(rawTrtype);
+        if (!isNaN(trInt)) {
+          result.trans_type = this.TRTYPE_MAP[trInt] || ('Type ' + trInt);
+          result.jw_trtype = String(trInt);
+        }
+      }
+
+      // Numeric fields
+      result.value = Math.round((parseFloat(result.value) || 0) * 100) / 100;
+      result.overhead_value = Math.round((parseFloat(result.overhead_value) || 0) * 100) / 100;
+      result.quantity = Math.round((parseFloat(result.quantity) || 0) * 100) / 100;
+
+      // Compute total_cost = value + overhead (desktop parity)
+      // Only use file's total_cost if no overhead (backwards compat)
+      const fileTotalCost = parseFloat(result.total_cost) || 0;
+      if (result.overhead_value !== 0) {
+        result.total_cost = Math.round((result.value + result.overhead_value) * 100) / 100;
+      } else if (fileTotalCost !== 0) {
+        result.total_cost = Math.round(fileTotalCost * 100) / 100;
+      } else {
+        result.total_cost = result.value;
+      }
+
+      // String fields → trim
+      for (const f of ['cost_code', 'cost_code_desc', 'supplier_name', 'cost_type',
+                        'cost_type_desc', 'description', 'subcontractor', 'surname',
+                        'forename', 'po_number', 'trans_type']) {
+        result[f] = (result[f] || '').toString().trim();
+      }
+
+      // Commitment detection
+      const trUpper = (result.jw_trtype || '').toString().trim().toUpperCase();
+      result.is_commitment = (trUpper === '6' || trUpper === 'PO' || trUpper === 'CO');
+
+      // Revenue detection
+      result.is_revenue = ((result.cost_code || '').toUpperCase() === 'Z99');
+
+      return result;
+    },
+
+    /**
+     * Compute SHA-256-like hash for deduplication (all 17 fields + mapping fields).
+     * Uses a deterministic string concat since browser crypto is async.
+     */
+    _computeRowHash(row) {
+      const parts = [
+        row.trans_date || '',
+        (row.job_number || '').toUpperCase(),
+        (row.cost_code || '').toUpperCase(),
+        (row.cost_code_desc || '').toUpperCase(),
+        (row.supplier_name || '').toUpperCase(),
+        (row.cost_type || '').toUpperCase(),
+        (row.cost_type_desc || '').toUpperCase(),
+        String(row.quantity || 0),
+        String(row.value || 0),
+        String(row.total_cost || 0),
+        String(row.overhead_value || 0),
+        (row.description || '').toUpperCase(),
+        (row.jw_trtype || '').toUpperCase(),
+        (row.trans_type || '').toUpperCase(),
+        (row.subcontractor || '').toUpperCase(),
+        (row.surname || '').toUpperCase(),
+        (row.forename || '').toUpperCase(),
+        (row.po_number || '').toUpperCase(),
+      ];
+      return parts.join('\x00');
+    },
+
+    /**
+     * Process an Opera 3 Excel/CSV workbook import.
+     * Auto-detects raw jwipr (52 cols) vs curated (18 cols with headers).
+     * Supports both XLSX (SheetJS workbook) and CSV (SheetJS workbook from CSV).
+     *
+     * @param {Object} workbook - XLSX workbook object (SheetJS)
+     * @param {string} filename - original filename
+     * @param {Object} [opts] - options
+     * @param {boolean} [opts.skipCommitments] - skip jw_trtype=6 rows (stale POs)
+     * @param {string}  [opts.dateAfter] - only import rows after this date (YYYY-MM-DD)
+     * @param {Array}   [opts.jobFilter] - only import these job numbers
+     * @returns {Promise<Object>} {message, jobs_updated, total_inserted, total_deleted, format}
+     */
+    async processImport(workbook, filename, opts = {}) {
       await MiiDB.ready();
 
-      // Parse the first sheet into JSON rows
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { raw: false });
 
-      if (!rawRows || rawRows.length === 0) {
+      // Get raw array-of-arrays (not JSON) so we can detect format
+      const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+
+      if (!aoa || aoa.length < 2) {
         throw new Error('No data found in file');
       }
 
-      // Normalize column names: Opera 3 exports have varying headers
-      const rows = rawRows.map(row => {
-        const r = {};
-        for (const [key, val] of Object.entries(row)) {
-          r[key.trim().toLowerCase().replace(/[\s\/]+/g, '_')] = val;
-        }
-        return r;
-      });
+      const header = aoa[0].map(h => (h || '').toString().trim());
+      const isRaw = this._isRawFormat(header);
+      const format = isRaw ? 'raw_jwipr' : 'curated';
+      console.log('[Import] Detected format:', format, '(' + header.length + ' columns)');
 
-      // Extract job numbers from data
-      const jobGroups = {};
-      for (const row of rows) {
-        const jobNum = (row.job_number || row.job || row.job_no || '').toString().trim();
-        if (!jobNum) continue;
-        if (!jobGroups[jobNum]) jobGroups[jobNum] = [];
+      // Parse all data rows
+      const parsedRows = [];
+      const jobFilter = opts.jobFilter ? new Set(opts.jobFilter.map(j => j.toString().trim())) : null;
 
-        // Parse date - handle DD/MM/YYYY or YYYY-MM-DD
-        let transDate = row.date || row.trans_date || row.transaction_date || '';
-        if (transDate && transDate.includes('/')) {
-          const parts = transDate.split('/');
-          if (parts.length === 3) {
-            transDate = parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
+      if (isRaw) {
+        for (let i = 1; i < aoa.length; i++) {
+          const rowData = aoa[i];
+          // Early skip: check job_number (col 0) before full parse
+          if (jobFilter) {
+            const rawJob = (rowData[0] || '').toString().trim();
+            if (!jobFilter.has(rawJob)) continue;
           }
+          const parsed = this._parseRawRow(rowData);
+          if (parsed) parsedRows.push(parsed);
         }
+      } else {
+        const headerMap = this._buildHeaderMap(header);
+        if (!headerMap.job_number && headerMap.job_number !== 0) {
+          throw new Error('No Job Number column found. Headers: ' + header.join(', '));
+        }
+        const jobColIdx = headerMap.job_number;
+        for (let i = 1; i < aoa.length; i++) {
+          const rowData = aoa[i];
+          // Early skip
+          if (jobFilter) {
+            const rawJob = (rowData[jobColIdx] || '').toString().trim();
+            if (!jobFilter.has(rawJob)) continue;
+          }
+          const parsed = this._parseCuratedRow(rowData, headerMap);
+          if (parsed) parsedRows.push(parsed);
+        }
+      }
 
-        const txn = {
-          trans_date: transDate,
-          cost_code: (row.cost_code || row.costcode || '').toString().trim(),
-          cost_code_desc: (row.cost_code_desc || row.costcode_desc || row.cost_code_description || '').toString().trim(),
-          supplier_name: (row.supplier || row.supplier_name || '').toString().trim(),
-          trans_type: (row.trans_type || row.type || row.transaction_type || '').toString().trim(),
-          cost_type: (row.cost_type || '').toString().trim(),
-          cost_type_desc: (row.cost_type_desc || row.cost_type_description || '').toString().trim(),
-          quantity: parseFloat(row.quantity || row.qty || row.hours || 0) || 0,
-          value: parseFloat(row.value || row.amount || 0) || 0,
-          total_cost: parseFloat(row.total_cost || row.total || row.net_value || row.value || 0) || 0,
-          overhead_value: parseFloat(row.overhead || row.overhead_value || 0) || 0,
-          description: (row.description || row.desc || '').toString().trim(),
-          jw_trtype: (row.jw_trtype || row.trtype || '').toString().trim(),
-          subcontractor: (row.subcontractor || '').toString().trim(),
-          surname: (row.surname || row.employee || '').toString().trim(),
-          forename: (row.forename || '').toString().trim(),
-          po_number: (row.po_number || row.po || row.order_no || '').toString().trim(),
-        };
+      // Filter: skip commitments (historical files with stale POs)
+      let filteredRows = parsedRows;
+      if (opts.skipCommitments) {
+        const before = filteredRows.length;
+        filteredRows = filteredRows.filter(r => (r.jw_trtype || '').toString().trim() !== '6');
+        const skipped = before - filteredRows.length;
+        if (skipped) console.log('[Import] Skipped', skipped, 'commitment rows');
+      }
 
-        jobGroups[jobNum].push(txn);
+      // Filter: date cutoff (avoid overlap between files)
+      if (opts.dateAfter) {
+        const cutoff = opts.dateAfter;
+        const before = filteredRows.length;
+        filteredRows = filteredRows.filter(r => {
+          if (!r.trans_date) return true; // keep rows without dates
+          return r.trans_date > cutoff;
+        });
+        const skipped = before - filteredRows.length;
+        if (skipped) console.log('[Import] Skipped', skipped, 'rows before', cutoff);
+      }
+
+      if (filteredRows.length === 0) {
+        return { message: 'No valid data rows after filtering', count: 0, jobs_updated: [], format };
+      }
+
+      // Group by job number
+      const jobGroups = {};
+      for (const row of filteredRows) {
+        const jn = row.job_number;
+        if (!jobGroups[jn]) jobGroups[jn] = [];
+        jobGroups[jn].push(row);
       }
 
       const jobNumbers = Object.keys(jobGroups);
-      if (jobNumbers.length === 0) {
-        throw new Error('No job numbers found in data');
-      }
-
       let totalInserted = 0, totalDeleted = 0;
       const jobsUpdated = [];
 
@@ -1597,6 +1914,7 @@
         jobs_updated: jobsUpdated,
         total_inserted: totalInserted,
         total_deleted: totalDeleted,
+        format,
       };
     },
 
@@ -1632,23 +1950,13 @@
         deleted = await this.deleteTransactionsInDateRange(jobId, startDate, endDate);
       }
 
-      // Deduplicate
+      // Deduplicate using full-field hash (desktop parity: SHA-256 of all 17+5 fields)
       const seen = new Set();
       const unique = [];
       let duplicatesSkipped = 0;
 
       for (const t of fileData) {
-        const key = [
-          (t.trans_date || ''),
-          (t.cost_code || '').toUpperCase(),
-          (t.supplier_name || '').toUpperCase(),
-          (t.surname || '').toUpperCase(),
-          String(parseFloat(t.value) || 0),
-          String(parseFloat(t.total_cost) || 0),
-          (t.po_number || '').toUpperCase(),
-          (t.description || '').toUpperCase(),
-        ].join('|');
-
+        const key = this._computeRowHash(t);
         if (seen.has(key)) {
           duplicatesSkipped++;
         } else {
