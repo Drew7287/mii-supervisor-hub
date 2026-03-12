@@ -281,7 +281,7 @@ textarea { resize: vertical; min-height: 80px; }
 
 <div class="topbar">
     <h1>RAMS Builder</h1>
-    <a href="index.html">&larr; Back to Hub</a>
+    <a href="hub.html">&larr; Back to Hub</a>
 </div>
 
 <!-- PRINT HEADER (only shows in print) -->
@@ -540,8 +540,15 @@ textarea { resize: vertical; min-height: 80px; }
 // PPE, Equipment, COSHH loaded from requirements_library.js (REQUIREMENTS_LIBRARY)
 const STEP_NAMES = ["Job Details", "Method", "Technical", "Hazards", "Risk Assessment", "Requirements", "Environment", "Review"];
 
-// Pre-selected hazard names (MII rule: always include)
-const AUTO_HAZARDS = ['Working at Height', 'Objects falling from above'];
+// Pre-selected hazard names (mandatory in OG RAMSBuilder - always auto-added)
+const AUTO_HAZARDS = [
+    'Hazardous Surroundings & Environments',
+    'Inadequate/ Incompetent Supervision',
+    'Poor Lighting',
+    'Slips, Trips and Falls \\ Poor Housekeeping',
+    'Trapping / Pinch Points',
+    'Unauthorised or Inadequate Access and Egress',
+];
 let activeCategoryFilter = 'All';
 
 let currentDoc = null;
@@ -3239,10 +3246,11 @@ function runRuleChecks() {
     const d = currentDoc;
     const checks = [];
     const sel = d.selected_hazards || [];
-    const wahId = MII_HAZARDS.find(h => h.name === 'Working at Height')?.id;
-    checks.push({ name: 'Working at Height hazard included', pass: sel.includes(wahId) });
-    const offaId = MII_HAZARDS.find(h => h.name === 'Objects falling from above')?.id;
-    checks.push({ name: 'Objects Falling from Above hazard included', pass: sel.includes(offaId) });
+    const missingMandatory = AUTO_HAZARDS.filter(name => {
+        const h = MII_HAZARDS.find(hz => hz.name === name);
+        return h && !sel.includes(h.id);
+    });
+    checks.push({ name: 'All mandatory hazards included (' + AUTO_HAZARDS.length + ')', pass: missingMandatory.length === 0 });
     checks.push({ name: 'All method steps have descriptions', pass: !(d.method_steps||[]).some(s => !s.description?.trim()) });
     const ras = d.risk_assessments || [];
     checks.push({ name: 'All risk scores completed', pass: ras.length > 0 && ras.every(ra => ra.initial_l && ra.initial_s && ra.final_l && ra.final_s) });
@@ -3924,7 +3932,6 @@ async function importJMSExcel(input) {
             }
         });
         // Auto-add mandatory hazards (with full RA data from library)
-        const AUTO_HAZARDS = ['Working at Height', 'Objects falling from above'];
         AUTO_HAZARDS.forEach(name => {
             const h = MII_HAZARDS.find(hz => hz.name === name);
             if (h && !doc.selected_hazards.includes(h.id)) {
