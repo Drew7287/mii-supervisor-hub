@@ -3255,7 +3255,6 @@ function runRuleChecks() {
     const ras = d.risk_assessments || [];
     checks.push({ name: 'All risk scores completed', pass: ras.length > 0 && ras.every(ra => ra.initial_l && ra.initial_s && ra.final_l && ra.final_s) });
     checks.push({ name: 'All hazards have control measures', pass: ras.every(ra => ra.controls?.trim()) });
-    checks.push({ name: 'No critical initial risk scores (>16)', pass: !ras.some(ra => (ra.initial_l||1)*(ra.initial_s||1) > 16) });
     checks.push({ name: 'All residual scores equal or lower than initial', pass: ras.every(ra => (ra.final_l||1)*(ra.final_s||1) <= (ra.initial_l||1)*(ra.initial_s||1)) });
     checks.push({ name: 'PPE items selected', pass: (d.requirements?.ppe || []).length > 0 });
     checks.push({ name: 'At least 2 hazards selected', pass: sel.length >= 2 });
