@@ -281,7 +281,7 @@ textarea { resize: vertical; min-height: 80px; }
 
 <div class="topbar">
     <h1>RAMS Builder</h1>
-    <a href="index.html">&larr; Back to Hub</a>
+    <a href="hub.html">&larr; Back to Hub</a>
 </div>
 
 <!-- PRINT HEADER (only shows in print) -->
@@ -3901,12 +3901,22 @@ async function importJMSExcel(input) {
                 });
             }
         });
-        // Auto-add mandatory hazards
+        // Auto-add mandatory hazards (with full RA data from library)
         const AUTO_HAZARDS = ['Working at Height', 'Objects falling from above'];
         AUTO_HAZARDS.forEach(name => {
             const h = MII_HAZARDS.find(hz => hz.name === name);
             if (h && !doc.selected_hazards.includes(h.id)) {
                 doc.selected_hazards.push(h.id);
+                doc.risk_assessments.push({
+                    hazard_id: h.id,
+                    initial_l: h.initial_likelihood || 3,
+                    initial_s: h.initial_severity || 3,
+                    controls: h.default_controls || '',
+                    final_l: h.final_likelihood || 2,
+                    final_s: h.final_severity || 2,
+                    who_harmed: h.who_harmed || 'Working Party and others',
+                    risk_description: h.risk_description || '',
+                });
             }
         });
         // Match imported requirements to library
