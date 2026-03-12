@@ -647,20 +647,6 @@
             </table>
         </div>
 
-        <!-- Import Transactions -->
-        <div class="modal-section">
-            <h3>Import Transactions</h3>
-            <p style="font-size:0.82rem;color:var(--text-light);margin:0 0 10px">
-                Select the Opera 3 export file to immediately import transactions for this job.
-                Only rows matching the job number above will be imported.
-            </p>
-            <div style="display:flex;align-items:center;gap:10px">
-                <button class="btn btn-secondary" onclick="document.getElementById('wiz-import-file').click()" style="font-size:0.82rem;padding:6px 14px">Select MII_Daily_Export.xlsx</button>
-                <input type="file" id="wiz-import-file" accept=".xlsx,.csv" style="display:none">
-                <span id="wiz-import-status" style="font-size:0.82rem;color:var(--text-light)">No file selected</span>
-            </div>
-        </div>
-
         <!-- Buttons -->
         <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border)">
             <button class="btn btn-secondary" onclick="closeAddJobModal()">Cancel</button>
@@ -930,13 +916,9 @@ async function handleFileSelect(e) {
 
 // ===== ADD JOB MODAL (desktop parity — single dialog) =====
 let _wizEstimate = null;
-let _wizImportWorkbook = null;
-let _wizImportFilename = null;
 
 function openAddJobModal() {
     _wizEstimate = null;
-    _wizImportWorkbook = null;
-    _wizImportFilename = null;
 
     // Reset fields
     document.getElementById('wiz-job-number').value = '';
@@ -945,7 +927,6 @@ function openAddJobModal() {
     document.getElementById('wiz-markup').value = '14';
     document.getElementById('wiz-estimate-ref').value = '';
     document.getElementById('wiz-ai-notes').value = '';
-    document.getElementById('wiz-import-status').textContent = 'No file selected';
 
     // Populate grouping/copy-mappings dropdowns
     populateJobDropdowns();
@@ -954,23 +935,6 @@ function openAddJobModal() {
     document.getElementById('add-job-modal').classList.add('active');
 }
 
-function setupImportInput() {
-    document.getElementById('wiz-import-file').addEventListener('change', async function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        e.target.value = '';
-        document.getElementById('wiz-import-status').textContent = 'Loading ' + file.name + '...';
-        try {
-            const data = await file.arrayBuffer();
-            _wizImportWorkbook = XLSX.read(data, { type: 'array' });
-            _wizImportFilename = file.name;
-            document.getElementById('wiz-import-status').innerHTML = '<span style="color:var(--success)">' + esc(file.name) + ' ready</span>';
-        } catch (err) {
-            _wizImportWorkbook = null;
-            document.getElementById('wiz-import-status').innerHTML = '<span style="color:var(--danger)">Failed to read: ' + esc(err.message) + '</span>';
-        }
-    });
-}
 
 function closeAddJobModal() {
     document.getElementById('add-job-modal').classList.remove('active');
@@ -1090,6 +1054,11 @@ function getCategoryValues() {
 }
 
 // --- Create Job ---
+// Desktop parity: create (or upgrade stub) → copy mappings → apply rules to
+// any existing transactions → offer AI for unmapped → show summary.
+// Transactions come from the standalone "Import Opera 3" button, NOT from a
+// file picker inside this dialog (the desktop reads from fixed SharePoint
+// paths automatically; the webapp equivalent is a separate bulk import step).
 async function createJob() {
     const btn = document.getElementById('btn-create-job');
 
@@ -1099,8 +1068,19 @@ async function createJob() {
     if (!jobNumber) { alert('Job number is required.'); document.getElementById('wiz-job-number').focus(); return; }
     if (!projectName) { alert('Project name is required.'); document.getElementById('wiz-project-name').focus(); return; }
 
+    // Check for existing job — if it's a stub from bulk import, upgrade it
     const existing = _jobs.find(function(j) { return j.job_number === jobNumber; });
-    if (existing) { alert('Job number ' + jobNumber + ' already exists.'); return; }
+    let isUpgrade = false;
+    if (existing) {
+        // A stub has name like "Job SW1234" and no contract values
+        const isStub = existing.job_name === ('Job ' + jobNumber) && (!existing.contract_value_total || existing.contract_value_total === 0);
+        if (isStub) {
+            isUpgrade = true;
+        } else {
+            alert('Job number ' + jobNumber + ' already exists with name "' + existing.job_name + '".\nOpen it from the dashboard to edit.');
+            return;
+        }
+    }
 
     btn.disabled = true;
 
@@ -1117,16 +1097,58 @@ async function createJob() {
             return { number: c.number, contract_value: c.contract_value };
         });
 
-        const jobId = await CostDB.createJob({
-            job_number: jobNumber,
-            job_name: projectName,
-            client: client,
-            markup: markup,
-            categories: categories,
-            estimate_ref: estimateRef,
-            ai_notes: aiNotes,
-            group_id: groupId,
-        });
+        let jobId;
+
+        if (isUpgrade) {
+            // Upgrade the stub job with real details
+            btn.textContent = 'Upgrading job...';
+            jobId = existing.id;
+            await CostDB.updateJob(jobId, {
+                job_name: projectName,
+                client: client,
+                markup_pct: markup,
+                estimate_ref: estimateRef,
+                ai_notes: aiNotes,
+                group_id: groupId,
+            });
+            // Update categories with contract values
+            const markupMultiplier = 1 + markup / 100;
+            const existingCats = (await MiiDB.getAll('cost_categories')).filter(function(c) { return c.job_id === jobId; });
+            for (const ec of existingCats) {
+                const userCat = categories.find(function(c) { return c.number === ec.category_number; });
+                if (userCat) {
+                    ec.contract_value = parseFloat(userCat.contract_value) || 0;
+                    ec.at_cost = markupMultiplier > 0 ? ec.contract_value / markupMultiplier : 0;
+                    await MiiDB.save('cost_categories', ec);
+                }
+            }
+            // Update job totals
+            const totalContract = categories.reduce(function(s, c) { return s + (parseFloat(c.contract_value) || 0); }, 0);
+            existing.contract_value_total = totalContract;
+            existing.budget_at_cost = markupMultiplier > 0 ? totalContract / markupMultiplier : 0;
+            existing.job_name = projectName;
+            existing.client = client;
+            existing.markup_pct = markup;
+            existing.estimate_ref = estimateRef;
+            existing.ai_notes = aiNotes;
+            existing.group_id = groupId;
+            existing.updated_at = new Date().toISOString();
+            await MiiDB.save('cost_jobs', existing);
+            CostDB.syncJobToServer(jobId).catch(function() {});
+        } else {
+            // Create new job
+            btn.textContent = 'Creating job...';
+            jobId = await CostDB.createJob({
+                job_number: jobNumber,
+                job_name: projectName,
+                client: client,
+                markup: markup,
+                categories: categories,
+                estimate_ref: estimateRef,
+                ai_notes: aiNotes,
+                group_id: groupId,
+            });
+        }
 
         // Copy mapping rules from another job if selected
         if (copyFromId) {
@@ -1158,31 +1180,16 @@ async function createJob() {
             }
         }
 
-        // === Full desktop-parity create pipeline ===
-        let txnCount = 0;
+        // === Desktop-parity post-create pipeline ===
+        // Check for existing transactions (from prior bulk Import Opera 3)
+        btn.textContent = 'Checking transactions...';
+        const allTxns = await MiiDB.getAll('cost_transactions');
+        const jobTxns = allTxns.filter(function(t) { return t.job_id === jobId; });
+        const txnCount = jobTxns.length;
         let mappedCount = 0;
         let unmappedCount = 0;
 
-        // Step 1: Import transactions if export file was selected
-        if (_wizImportWorkbook) {
-            btn.textContent = 'Importing transactions...';
-            try {
-                const importResult = await CostDB.processImport(
-                    _wizImportWorkbook,
-                    _wizImportFilename,
-                    { jobFilter: [jobNumber] }
-                );
-                txnCount = importResult.total_inserted || importResult.count || 0;
-            } catch (importErr) {
-                console.error('Import after create error:', importErr);
-                showToast('Job created but import failed: ' + importErr.message, 'error');
-                closeAddJobModal();
-                await loadAllData();
-                return;
-            }
-        }
-
-        // Step 2: Apply all mapping rules (global + job-specific + copied)
+        // Apply all mapping rules (global + job-specific + copied)
         if (txnCount > 0) {
             btn.textContent = 'Applying mapping rules...';
             try {
@@ -1194,12 +1201,12 @@ async function createJob() {
             }
         }
 
-        // Step 3: If unmapped transactions remain, offer AI mapping (desktop parity)
+        // If unmapped transactions remain, offer AI mapping (desktop parity)
         if (unmappedCount > 0) {
             btn.textContent = 'Create Job';
             btn.disabled = false;
             const askAi = confirm(
-                txnCount + ' transactions imported.\n' +
+                txnCount + ' transactions found.\n' +
                 mappedCount + ' mapped by rules, ' + unmappedCount + ' unmapped.\n\n' +
                 'Ask AI to create mapping rules for the unmapped transactions?\n' +
                 '(Choose Cancel to map manually later)'
@@ -1219,11 +1226,9 @@ async function createJob() {
                             aiResult.supplier_mappings || [],
                             aiResult.labour_mappings || []
                         );
-                        // Update counts after AI re-mapping
                         const finalMap = applyResult.mapping_result || {};
                         mappedCount = finalMap.mapped || mappedCount;
                         unmappedCount = finalMap.unmapped || 0;
-
                         showToast('AI created ' + totalRules + ' rules — ' + mappedCount + ' mapped, ' + unmappedCount + ' remaining', 'success');
                     } else {
                         showToast('AI found no new mapping rules to suggest', 'info');
@@ -1235,17 +1240,21 @@ async function createJob() {
             }
         }
 
-        // Step 4: Show creation summary
+        // Show creation summary
         if (txnCount > 0) {
             alert(
-                'Job ' + jobNumber + ' created successfully!\n\n' +
+                'Job ' + jobNumber + (isUpgrade ? ' upgraded' : ' created') + ' successfully!\n\n' +
                 'Transactions: ' + txnCount + '\n' +
                 'Mapped: ' + mappedCount + '\n' +
                 'Unmapped: ' + unmappedCount +
                 (unmappedCount > 0 ? '\n\nUse AI Suggest Rules on the job detail page to map remaining transactions.' : '')
             );
         } else {
-            showToast('Job ' + jobNumber + ' created (no transactions — use Import Opera 3 to add spend data)', 'success');
+            showToast(
+                'Job ' + jobNumber + (isUpgrade ? ' upgraded' : ' created') +
+                ' — no transactions yet. Use "Import Opera 3" on the dashboard to import spend data.',
+                'info'
+            );
         }
 
         closeAddJobModal();
@@ -1459,7 +1468,6 @@ async function refreshAll() {
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
     setupEstimateInput();
-    setupImportInput();
     loadAllData();
 });
 </script>

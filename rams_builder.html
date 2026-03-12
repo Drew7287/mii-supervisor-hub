@@ -1403,12 +1403,86 @@ const ACTIVITY_KEYWORDS = {
     "Pressure Systems": ["pressure", "hydraulic", "pneumatic", "compressed"],
 };
 
-const UK_HSE_REGULATIONS = `UK HSE MANUAL HANDLING REGULATIONS:
-- Under 25kg: 1 person can manually handle
-- 25-30kg: Team lift (2 persons) required
-- OVER 30kg: MECHANICAL LIFTING ONLY (crane, hoist, forklift, pallet truck)
-- ALWAYS state the weight when items are being moved
-- NEVER suggest manual handling for items over 30kg`;
+const UK_HSE_REGULATIONS = `=== MANUAL HANDLING RULES (ABSOLUTE - NO EXCEPTIONS) ===
+
+STRICT WEIGHT LIMITS:
+- 1 PERSON MAXIMUM: 25kg (ideal conditions only)
+- TEAM LIFT MAXIMUM: 30kg (2+ people, coordination reduces capacity)
+- OVER 30kg: MECHANICAL LIFTING REQUIRED - NO MANUAL HANDLING PERMITTED
+
+THIS IS NON-NEGOTIABLE:
+- ANY item over 25kg = cannot be lifted by 1 person
+- ANY item over 30kg = MUST use crane, hoist, forklift, pallet truck, etc.
+- NEVER write "team lift" for items over 30kg
+- NEVER suggest manual handling as an alternative to mechanical lifting for heavy items
+
+FACTORS THAT REDUCE SAFE LIMITS FURTHER:
+- Awkward posture (bending, twisting): Reduce limit by 50%
+- Extended reach (arms away from body): Reduce limit by 50%
+- Below knee or above shoulder: Reduce limit by 50%
+- Poor grip or unstable load: Reduce limit by 30%
+
+WHEN WRITING METHOD STEPS:
+- State the weight of items being handled
+- If under 25kg: "manually handle" or "carry" is acceptable
+- If 25-30kg: "team lift with 2 persons"
+- If over 30kg: MUST specify mechanical method (e.g., "lift using chain block", "move using pallet truck")
+
+CORRECT EXAMPLES:
+- "Lift motor (20kg) and position on base"
+- "Team lift gearbox (28kg) onto bench"
+- "Lift pump assembly (45kg) using chain block"
+- "Use forklift to move motor (80kg) to work area"
+
+WRONG - NEVER WRITE THESE:
+- "Team lift motor (50kg)" - exceeds 30kg limit
+- "Manually move assembly (40kg)" - exceeds limits
+- "2 persons lift (60kg)" - DANGEROUS, exceeds all limits`;
+
+// Standard opening steps - always included in method statements
+const STANDARD_OPENING_STEPS = [
+    "Ensure the job specific permits are signed on AS ADVISED BY THE JOB OWNER AND STATED IN THE CAT 1, PBS",
+    "Ensure all personnel have been briefed upon the content of the JMS and have signed acceptance of the document.",
+    "Before commencing work STOP & GO to risk assess the operation. Think about how your actions could affect yourself and those working around you!",
+];
+
+// Activity-specific HOLD POINTS
+const ACTIVITY_HOLD_POINTS = {
+    "Lifting Operations": [
+        "HOLD POINT - Before the use of lifting equipment, ensure daily pre-use inspections have been completed and documented",
+        "HOLD POINT - Point of work Lift Plan to be filled in before any lifting operation begins",
+    ],
+    "Hot Work": [
+        "Prior to commencing hot work position fire watcher with charged extinguisher, to be present during and for a minimum of 1 hour after hot working",
+    ],
+    "Confined Space Entry": [
+        "3 in 1 gas monitors to be worn at all times in confined space and gas test and confined space entry permit to be in place",
+        "HOLD POINT - Standby person to be in position before entry",
+    ],
+    "Isolation (LOTO)": [
+        "HOLD POINT - Confirm with Client operations that isolations are in place and activity can proceed",
+        "Obtain isolations and authorisations to carry out the repairs described in the JMS",
+    ],
+    "Work at Height": [
+        "HOLD POINT - Ensure fall arrest equipment has been inspected and is within test date",
+        "Ensure edge protection and guardrails are in place before commencing work at height",
+    ],
+    "Use of Power Tools": [
+        "HOLD POINT - Prior to commencing this work carry out any daily inspection that are required to power tools and equipment",
+    ],
+    "Use of Machinery": [
+        "HOLD POINT - Before the use of FORK LIFT TRUCK / TELE-HANDLER / MEWP, ensure operator is trained and equipment daily checks completed",
+    ],
+    "Electrical Work": [
+        "HOLD POINT - Confirm electrical isolation is in place and tested dead before work commences",
+    ],
+};
+
+// Standard closing steps
+const STANDARD_CLOSING_STEPS = [
+    "On completion of the work, all debris and equipment are to be removed from the area. Inform Client supervision work is complete.",
+    "Finally make sure that all members of the working party have left the work area and have been signed off the job.",
+];
 
 let _scopeBuilderState = {};
 
@@ -1677,59 +1751,141 @@ function collectScopeData() {
 
 function buildScopeContext(scopeData) {
     const lines = [];
+
+    // WHAT - Work description
     lines.push("=== WHAT IS BEING DONE (Scope of Works) ===");
-    lines.push(scopeData.work_description);
+    lines.push(scopeData.work_description || "");
     lines.push("");
-    if (scopeData.how_description) {
-        lines.push("=== HOW THE WORK WILL BE COMPLETED (KEY INFORMATION - USE THIS) ===");
-        lines.push(scopeData.how_description);
+
+    // Reference documents (uploaded by user)
+    // TODO: Reference document upload integration
+    const refDocs = scopeData.reference_documents || "";
+    const docNames = scopeData.uploaded_document_names || [];
+    if (refDocs) {
+        lines.push("=== REFERENCE DOCUMENTS (uploaded by user - USE THIS CONTEXT) ===");
+        lines.push(`The user uploaded ${docNames.length} document(s): ${docNames.join(', ')}`);
+        lines.push("");
+        lines.push("Extract relevant details from these documents to ensure the method");
+        lines.push("accurately reflects the scope of works and specifications provided.");
+        lines.push("");
+        lines.push("IMPORTANT: Do NOT reference document sections (e.g. 'refer to Section 4.2',");
+        lines.push("'as per the specification'). Extract and include the relevant technical");
+        lines.push("detail directly in the method steps in your own words. The method statement");
+        lines.push("must be completely self-contained - a worker reading it should never need");
+        lines.push("to look up another document.");
+        lines.push("");
+        lines.push(refDocs);
         lines.push("");
     }
-    if (scopeData.clarifying_answers) {
+
+    // HOW - THE KEY INFORMATION - Most important for SHEQ compliance
+    const howDescription = scopeData.how_description || "";
+    if (howDescription) {
+        lines.push("=== HOW THE WORK WILL BE COMPLETED (KEY INFORMATION - USE THIS) ===");
+        lines.push("The user has provided the following detailed approach. Use this as the PRIMARY");
+        lines.push("basis for the method statement. Expand on these details with specifics:");
+        lines.push("");
+        lines.push(howDescription);
+        lines.push("");
+    } else {
+        lines.push("=== HOW ===");
+        lines.push("No detailed approach provided - infer appropriate methods from equipment and activities");
+        lines.push("");
+    }
+
+    // Clarifying Q&A - CRITICAL information from user verification
+    const clarifyingAnswers = scopeData.clarifying_answers || {};
+    if (Object.keys(clarifyingAnswers).length > 0) {
         lines.push("=== USER ANSWERS TO CLARIFYING QUESTIONS (CRITICAL - USE THIS) ===");
-        for (const [qid, answer] of Object.entries(scopeData.clarifying_answers)) {
+        lines.push("The user has answered specific questions about details. USE THESE ANSWERS EXACTLY:");
+        lines.push("");
+        for (const [qid, answer] of Object.entries(clarifyingAnswers)) {
             lines.push(`- ${qid}: ${answer}`);
         }
         lines.push("");
+        lines.push("IMPORTANT: These answers override any assumptions. Incorporate them into the method.");
+        lines.push("");
     }
+
+    // Location
     if (scopeData.location_details) {
-        lines.push(`=== LOCATION ===\nDetails: ${scopeData.location_details}\n`);
+        lines.push("=== LOCATION ===");
+        lines.push(`Details: ${scopeData.location_details}`);
+        lines.push("");
     }
+
+    // Access & Egress
     const access = scopeData.access || {};
     if (access.access_details || access.egress_method) {
         lines.push("=== ACCESS & EGRESS ===");
         if (access.access_details) lines.push(`Access route: ${access.access_details}`);
-        if (access.egress_method) lines.push(`Emergency egress: ${access.egress_method}`);
+        if (access.egress_method) lines.push(`Emergency egress: ${access.egress_method || 'Same as access'}`);
         lines.push("");
     }
-    if (scopeData.key_items_weights?.length) {
+
+    // Key items and weights - CRITICAL for SHEQ
+    const weights = scopeData.key_items_weights || [];
+    if (weights.length) {
         lines.push("=== KEY ITEMS & WEIGHTS (MUST include in method) ===");
-        for (const item of scopeData.key_items_weights) {
+        for (const item of weights) {
             lines.push(`- ${item.item}: ${item.weight_kg}kg - handled by: ${item.handling_method}`);
         }
         lines.push("");
     }
-    if (scopeData.equipment?.length) {
-        lines.push(`=== EQUIPMENT & TOOLS ===\n${scopeData.equipment.join(', ')}\n`);
-    }
-    if (scopeData.activities?.length) {
-        lines.push("=== ACTIVITIES (requiring HOLD POINTS) ===");
-        scopeData.activities.forEach(a => lines.push(`- ${a}`));
+
+    // Equipment (with crane tonnage if applicable)
+    const equipment = scopeData.equipment || [];
+    if (equipment.length) {
+        const equipList = equipment.slice();
+        // Add crane tonnage if specified
+        const craneTonnage = scopeData.crane_tonnage || "";
+        if (craneTonnage && equipList.includes("Crane")) {
+            for (let i = 0; i < equipList.length; i++) {
+                if (equipList[i] === "Crane") equipList[i] = `Crane (${craneTonnage}T capacity)`;
+            }
+        }
+        lines.push("=== EQUIPMENT & TOOLS ===");
+        lines.push(equipList.join(", "));
         lines.push("");
     }
-    if (scopeData.safety_locations) {
-        const s = scopeData.safety_locations;
-        if (s.fire_extinguisher || s.first_aid || s.spill_kit) {
-            lines.push("=== SAFETY EQUIPMENT LOCATIONS ===");
-            if (s.fire_extinguisher) lines.push(`Fire extinguisher: ${s.fire_extinguisher}`);
-            if (s.first_aid) lines.push(`First aid: ${s.first_aid}`);
-            if (s.spill_kit) lines.push(`Spill kit: ${s.spill_kit}`);
-            lines.push("");
+
+    // Activities (determine which HOLD POINTS are needed)
+    const activities = scopeData.activities || [];
+    if (activities.length) {
+        lines.push("=== ACTIVITIES (requiring HOLD POINTS) ===");
+        for (const activity of activities) {
+            lines.push(`- ${activity}`);
+            // Add relevant hold points from our predefined list
+            if (ACTIVITY_HOLD_POINTS[activity]) {
+                for (const hp of ACTIVITY_HOLD_POINTS[activity]) {
+                    lines.push(`    * ${hp}`);
+                }
+            }
         }
+        lines.push("");
     }
+
+    // Safety locations (assembly point is on front page of RAMS, not in method)
+    const safety = scopeData.safety_locations || {};
+    if (safety.fire_extinguisher || safety.first_aid || safety.spill_kit) {
+        lines.push("=== SAFETY EQUIPMENT LOCATIONS (include in method) ===");
+        if (safety.fire_extinguisher) lines.push(`Fire extinguisher: ${safety.fire_extinguisher}`);
+        if (safety.first_aid) lines.push(`First aid: ${safety.first_aid}`);
+        if (safety.spill_kit) lines.push(`Spill kit: ${safety.spill_kit}`);
+        lines.push("");
+    }
+
+    // Complexity hint
     const c = scopeData.complexity || 'Moderate';
     lines.push(`=== COMPLEXITY: ${c} ===`);
-    lines.push(c === 'Simple' ? 'Generate 10-15 steps' : c === 'Complex' ? 'Generate 25-40 steps' : 'Generate 15-25 steps');
+    if (c === 'Simple') {
+        lines.push("Generate 10-15 detailed steps");
+    } else if (c === 'Complex') {
+        lines.push("Generate 25-40 detailed steps");
+    } else {
+        lines.push("Generate 15-25 detailed steps");
+    }
+
     return lines.join('\n');
 }
 
@@ -1749,7 +1905,9 @@ async function submitScopeBuilder() {
     // Phase 1: Get clarifying questions
     try {
         const context = buildScopeContext(scopeData);
-        const prompt = `You are a SHEQ expert reviewing a scope of works before writing a method statement.
+        const prompt = `You are a SHEQ (Safety, Health, Environment, Quality) expert reviewing a scope of works before writing a method statement.
+
+Your task is to identify CRITICAL MISSING DETAILS that you need to write a comprehensive method statement.
 
 SCOPE OF WORKS:
 ${context}
@@ -1757,24 +1915,59 @@ ${context}
 ${UK_HSE_REGULATIONS}
 
 PHILOSOPHY:
-- Every step must specify HOW something is done
+- Every step must specify HOW something is done (tools, techniques)
 - Weights and lifting methods must be specified for manual handling compliance
 - Site setup and material transport must be clear
+- What NOT to do must be included where safety-critical
 
-DO NOT ASK ABOUT: Number of personnel, PPE requirements, generic safety questions.
+DO NOT ASK ABOUT:
+- Number of personnel or team sizes
+- PPE requirements (assume standard PPE)
+- Generic safety questions
 
-ANALYZE AND IDENTIFY:
-1. Missing weights of items to be handled
-2. How materials/equipment will be transported to work area
+ANALYZE THE SCOPE AND IDENTIFY:
+1. Missing weights of items to be handled (CRITICAL for manual handling limits)
+2. How materials/equipment will be transported to the work area
 3. Missing tool/equipment specifications
-4. Missing sequence details
-5. Unclear lifting methods
+4. Missing bolt sizes, torque values, or specifications
+5. Missing sequence details (what order, what to do first)
+6. Missing safety-critical information (isolation points, permit requirements)
+7. Unclear lifting methods (must know weight to determine if mechanical lifting needed)
+8. Site setup requirements (barriers, staging areas)
 
-OUTPUT FORMAT - Return a JSON array:
-[{"question_id":"q1","question":"...","context":"...","suggested_answers":["..."],"is_critical":true}]
+MANUAL HANDLING LIMITS (use these in suggested answers):
+- Under 25kg: 1 person manual handling OK
+- 25-30kg: Team lift required
+- Over 30kg: Mechanical lifting REQUIRED
 
-Maximum 8 questions. If scope is comprehensive, return: []
-Return ONLY the JSON array.`;
+IMPORTANT GUIDELINES:
+- Only ask questions where the answer SIGNIFICANTLY affects the method
+- Keep questions specific and answerable
+- Provide suggested answers where possible to help the user
+- Maximum 8 questions - prioritize the most critical gaps
+- If the scope is already comprehensive, return fewer or no questions
+
+OUTPUT FORMAT - Return a JSON array of questions:
+[
+    {
+        "question_id": "q1",
+        "question": "What is the approximate weight of the motor?",
+        "context": "Needed to determine lifting method - manual, team lift, or mechanical",
+        "suggested_answers": ["Under 25kg (1 person manual)", "25-30kg (team lift)", "Over 30kg (mechanical lifting required)", "Unknown - will verify on site"],
+        "is_critical": true
+    },
+    {
+        "question_id": "q2",
+        "question": "How will the replacement parts be transported to the work area?",
+        "context": "Need to include material transport steps in the method",
+        "suggested_answers": ["Carried by hand (light items)", "Pallet truck", "Forklift", "Crane/overhead hoist"],
+        "is_critical": true
+    }
+]
+
+If no questions are needed, return: []
+
+Return ONLY the JSON array, no other text.`;
 
         const result = await aiCall('clarifying-questions', prompt, { max_tokens: 2000 });
         let questions = [];
@@ -1829,40 +2022,62 @@ async function generateMethodWithScope(scopeData) {
 
 AUDIENCE:
 - The reader is a COMPETENT tradesperson with general construction knowledge
-- They know how to use standard tools
-- They DON'T need to be told which spanner size
+- They know how to use standard tools (spanners, grinders, drills, etc.)
+- They understand basic PPE requirements and safe working practices
+- They DON'T need to be told which spanner size - they'll figure that out
 - They DO need to know the sequence of work and task-specific details
 
 WHAT TO INCLUDE:
 - SITE SETUP: How materials/equipment get to the work area, staging/laydown areas, barriers/signage
-- Sequence of work
+- Sequence of work (what order to do things)
+- What components/items are being worked on
 - Critical safety points SPECIFIC to this job
 - Hold points and permit requirements
-- Weights of items being handled
+- Weights of items being handled (CRITICAL for manual handling compliance)
 - Isolation points and tag-out locations
+- Unusual hazards or methods specific to this task
 - What NOT to do (only when not obvious)
+
+WHAT TO ASSUME THEY KNOW:
+- How to use standard hand and power tools
+- Standard PPE for common tasks
+- How to operate equipment they're qualified for
 
 ${UK_HSE_REGULATIONS}
 
+MANUAL HANDLING - ABSOLUTE LIMITS:
+- Under 25kg: 1 person can manually handle
+- 25-30kg: Team lift (2 persons) required
+- OVER 30kg: MECHANICAL LIFTING ONLY (crane, hoist, forklift, pallet truck)
+- ALWAYS state the weight when items are being moved
+- NEVER suggest manual handling or team lift for items over 30kg
+
 HANDLING MISSING INFORMATION:
-When a critical detail is missing, make a reasonable assumption and mark it with [VERIFY: brief note].
+When a critical detail is missing (lifting method, specific equipment, weights, etc.),
+make a reasonable assumption and mark it with [VERIFY: brief note].
+
 Examples:
 - "Transport motor (75kg) to work area using pallet truck"
 - "Lift pump assembly (45kg) using chain block [VERIFY: lifting point location]"
+- "Carry toolbox and consumables to work area"
+- "Team lift gearbox cover (28kg) onto bench"
 
 ${context}
 
 STRUCTURE:
 1. Opening steps (permits, briefings, area setup)
-2. Site preparation (barriers, signage, material staging)
-3. HOLD POINTS spread throughout
+2. Site preparation (barriers, signage, material staging, equipment positioning)
+3. HOLD POINTS spread throughout (before lifting, isolation, critical activities)
 4. Work execution steps
 5. Closing steps (cleanup, reinstatement, handback)
 
 HOLD POINT FORMAT: "HOLD POINT - [description]"
 
-OUTPUT: Return ONLY a numbered list of steps. Typical methods have 15-30 steps.
-Write like an experienced supervisor briefing a competent tradesperson.`;
+OUTPUT:
+Return ONLY a numbered list of steps. Typical methods have 15-30 steps.
+Write like an experienced supervisor briefing a competent tradesperson.
+
+Now generate the method statement:`;
 
         const result = await aiCall('generate-method', prompt, { max_tokens: 20000 });
         const steps = result.split('\n')
