@@ -490,13 +490,10 @@ textarea { resize: vertical; min-height: 80px; }
     <!-- Step 8: Review -->
     <div class="wizard-step" id="step-7" style="display:none;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-            <h3 style="color:var(--primary);">Review &amp; Export</h3>
+            <h3 style="color:var(--primary);">Review</h3>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button class="btn btn-outline btn-sm" onclick="runAIReview()">&#9881; AI Review</button>
                 <button class="btn btn-outline btn-sm" id="btn-submit-review" onclick="openSubmitReviewModal()">&#9993; Submit for Review</button>
-                <button class="btn btn-outline btn-sm" onclick="exportJSON()">&#128229; Export JSON</button>
-                <button class="btn btn-accent btn-sm" id="btn-export-excel" onclick="exportExcel()" title="Requires approval before export">&#128196; Export Excel</button>
-                <button class="btn btn-outline btn-sm" onclick="exportPDF()">&#128438; Print</button>
             </div>
         </div>
         <div id="ai-review-results" style="display:none;" class="card"></div>
@@ -509,6 +506,28 @@ textarea { resize: vertical; min-height: 80px; }
             <div class="sig-line"><div class="sig-label">H&amp;S Reviewer</div><div style="height:40px;"></div><div class="sig-date">Date: _______________</div></div>
             <div class="sig-line"><div class="sig-label">Site Manager</div><div style="height:40px;"></div><div class="sig-date">Date: _______________</div></div>
         </div>
+    </div>
+
+    <!-- Step 9: Export -->
+    <div class="wizard-step" id="step-8" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+            <h3 style="color:var(--primary);">Export</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-accent btn-sm" id="btn-export-excel" onclick="exportExcel()" title="Requires approval before export">&#128196; Export Excel</button>
+                <button class="btn btn-outline btn-sm" onclick="exportJSON()">&#128229; Export JSON</button>
+                <button class="btn btn-outline btn-sm" onclick="exportPDF()">&#128438; Print</button>
+            </div>
+        </div>
+        <div id="export-status" class="card" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px;">
+                <span id="export-status-icon" style="font-size:1.5rem;">&#9888;</span>
+                <div id="export-status-text">
+                    <strong>Document must be approved before Excel export.</strong>
+                    <p style="margin:4px 0 0;font-size:0.85rem;color:var(--text-light);">Submit for review on the previous step, then export here once approved.</p>
+                </div>
+            </div>
+        </div>
+        <div id="export-history"></div>
     </div>
 
     <!-- Wizard navigation -->
@@ -538,7 +557,7 @@ textarea { resize: vertical; min-height: 80px; }
 // MII_HAZARDS and HAZARD_CATEGORIES loaded from hazard_library.js
 
 // PPE, Equipment, COSHH loaded from requirements_library.js (REQUIREMENTS_LIBRARY)
-const STEP_NAMES = ["Job Details", "Method", "Technical", "Hazards", "Risk Assessment", "Requirements", "Environment", "Review"];
+const STEP_NAMES = ["Job Details", "Method", "Technical", "Hazards", "Risk Assessment", "Requirements", "Environment", "Review", "Export"];
 
 // Pre-selected hazard names (mandatory in OG RAMSBuilder - always auto-added)
 const AUTO_HAZARDS = [
@@ -633,19 +652,6 @@ function updateReviewBanner() {
         submitBtn.style.display = (status === 'draft' || status === 'rejected') ? '' : 'none';
     }
 
-    // Update export button - only enabled when approved
-    const exportBtn = document.getElementById('btn-export-excel');
-    if (exportBtn) {
-        if (status === 'approved') {
-            exportBtn.disabled = false;
-            exportBtn.title = 'Export to Excel';
-            exportBtn.style.opacity = '';
-        } else {
-            exportBtn.disabled = false; // keep clickable for the alert message
-            exportBtn.title = 'Requires approval before export';
-            exportBtn.style.opacity = '0.5';
-        }
-    }
 }
 
 function resubmitAfterRejection() {
@@ -2527,6 +2533,7 @@ function populateStep(step) {
         case 5: renderRequirements(); break;
         case 6: renderEnvironment(); break;
         case 7: renderReview(); break;
+        case 8: renderExportStep(); break;
     }
 }
 
@@ -3590,6 +3597,49 @@ function exportPDF() {
     window.print();
 }
 
+// ─── Export Step Renderer ─────────────────────────────────
+
+function renderExportStep() {
+    const d = currentDoc;
+    const statusEl = document.getElementById('export-status');
+    const iconEl = document.getElementById('export-status-icon');
+    const textEl = document.getElementById('export-status-text');
+    const exportBtn = document.getElementById('btn-export-excel');
+
+    if (d.status === 'approved') {
+        iconEl.textContent = '\u2705';
+        textEl.innerHTML = '<strong style="color:#27ae60;">Document approved - ready to export.</strong><p style="margin:4px 0 0;font-size:0.85rem;color:var(--text-light);">Click Export Excel to generate the formatted RAMS document.</p>';
+        statusEl.style.borderLeft = '4px solid #27ae60';
+        if (exportBtn) { exportBtn.disabled = false; exportBtn.style.opacity = ''; }
+    } else if (d.status === 'pending_review') {
+        iconEl.textContent = '\u23F3';
+        textEl.innerHTML = '<strong style="color:#f39c12;">Document pending review.</strong><p style="margin:4px 0 0;font-size:0.85rem;color:var(--text-light);">Waiting for reviewer approval before export is available.</p>';
+        statusEl.style.borderLeft = '4px solid #f39c12';
+        if (exportBtn) { exportBtn.disabled = true; exportBtn.style.opacity = '0.5'; }
+    } else if (d.status === 'rejected') {
+        iconEl.textContent = '\u274C';
+        textEl.innerHTML = '<strong style="color:#e74c3c;">Document rejected.</strong><p style="margin:4px 0 0;font-size:0.85rem;color:var(--text-light);">Address review comments and resubmit before exporting.</p>';
+        statusEl.style.borderLeft = '4px solid #e74c3c';
+        if (exportBtn) { exportBtn.disabled = true; exportBtn.style.opacity = '0.5'; }
+    } else {
+        iconEl.textContent = '\u26A0';
+        textEl.innerHTML = '<strong>Document must be approved before Excel export.</strong><p style="margin:4px 0 0;font-size:0.85rem;color:var(--text-light);">Submit for review on the previous step, then export here once approved.</p>';
+        statusEl.style.borderLeft = '4px solid var(--border)';
+        if (exportBtn) { exportBtn.disabled = true; exportBtn.style.opacity = '0.5'; }
+    }
+
+    // Render revision history
+    const historyEl = document.getElementById('export-history');
+    const history = d.revision_history || [];
+    if (history.length > 0) {
+        historyEl.innerHTML = '<div class="card"><h4 style="margin-bottom:12px;color:var(--primary);">Export History</h4><table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><thead><tr style="border-bottom:2px solid var(--border);"><th style="padding:8px;text-align:left;">Rev</th><th style="padding:8px;text-align:left;">Exported</th><th style="padding:8px;text-align:left;">By</th><th style="padding:8px;text-align:left;">Approved By</th></tr></thead><tbody>' +
+            history.map(r => `<tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:6px 8px;">Rev ${String(r.revision).padStart(3,'0')}</td><td style="padding:6px 8px;">${new Date(r.exported_at).toLocaleString('en-GB')}</td><td style="padding:6px 8px;">${escHtml(r.exported_by)}</td><td style="padding:6px 8px;">${escHtml(r.approved_by || '-')}</td></tr>`).join('') +
+            '</tbody></table></div>';
+    } else {
+        historyEl.innerHTML = '<div class="card" style="padding:24px;text-align:center;color:var(--text-light);"><p>No exports yet.</p></div>';
+    }
+}
+
 // ─── Excel Export (Template-Based) ───────────────────────
 
 // Helper: write value to a cell in a SheetJS worksheet (1-indexed row/col)
@@ -3624,7 +3674,11 @@ async function exportExcel() {
 
     const revision = (currentDoc.revision || 0) + 1;
     const jd = currentDoc.job_details || {};
-    const filename = `${currentDoc.rams_number || 'RAMS-Document'}_Rev${String(revision).padStart(3,'0')}.xlsx`;
+    const safeRams = (currentDoc.rams_number || 'RAMS-Document').replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+    const safeDesc = ((jd.job_name || '')).replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+    const filename = safeDesc
+        ? `${safeRams}_Rev${String(revision).padStart(3,'0')}_${safeDesc}.xlsx`
+        : `${safeRams}_Rev${String(revision).padStart(3,'0')}.xlsx`;
 
     // Build JSON payload for the server-side export API
     const payload = {
