@@ -930,18 +930,25 @@ function normaliseCategoryName(raw) {
 
 /**
  * Parse an MII Price Matrix estimate file.
- * Supports Format A (.xls-style, cols O-P) and Format B (.xlsx-style, cols L-N).
- * Uses SheetJS to read the workbook.
+ * Dynamically finds the column containing category names (Design, Labour, etc.)
+ * then locates the adjacent numeric column for contract values.
+ * Works across all known MII estimate formats (.xls, .xlsx, .xlsm).
  */
 function parseEstimate(workbook) {
-    // Find Price Matrix sheet
-    let sheetName = workbook.SheetNames.find(function(n) {
-        return n.toLowerCase().includes('price matrix');
-    });
+    // Find Price Matrix sheet (prefer TATA variant)
+    let sheetName = null;
+    for (const sn of workbook.SheetNames) {
+        const lower = sn.toLowerCase();
+        if (lower.includes('price matrix') && lower.includes('tata')) { sheetName = sn; break; }
+    }
+    if (!sheetName) {
+        sheetName = workbook.SheetNames.find(function(n) {
+            return n.toLowerCase().includes('price matrix');
+        });
+    }
     if (!sheetName) sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
 
-    // Get as array-of-arrays for cell-level access
     const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
     if (!aoa || aoa.length < 3) return null;
 
@@ -954,67 +961,123 @@ function parseEstimate(workbook) {
         parse_method: 'hardcoded',
     };
 
-    // Detect format by column count and content
-    const colCount = Math.max.apply(null, aoa.map(function(r) { return r ? r.length : 0; }));
-
-    // Try to find markup from first few rows (look for "@ XX%" pattern)
-    for (let r = 0; r < Math.min(5, aoa.length); r++) {
-        for (let c = 0; c < Math.min(25, (aoa[r] || []).length); c++) {
+    // === Step 1: Find markup ("@ XX%" pattern) ===
+    for (let r = 0; r < Math.min(10, aoa.length); r++) {
+        for (let c = 0; c < (aoa[r] || []).length; c++) {
             const cell = (aoa[r] || [])[c];
             if (cell && typeof cell === 'string') {
                 const mkMatch = cell.match(/@\s*(\d+(?:\.\d+)?)\s*%/);
-                if (mkMatch) {
-                    result.markup = parseFloat(mkMatch[1]);
-                }
+                if (mkMatch) result.markup = parseFloat(mkMatch[1]);
             }
         }
     }
 
-    // Format B (.xlsx): cols L(11), N(13) for categories, ref at row 4 col C
-    // Format A (.xls): cols O(14), P(15) for categories, ref at row 2 col C
-    // Try Format B first (more common now)
-    let categories = [];
+    // === Step 2: Find the column containing category names ===
+    // Scan rows 0-9, all columns, looking for 3+ recognised category names in one column
+    let nameCol = -1;
+    let nameRowStart = -1;
+    const colCount = Math.max.apply(null, aoa.slice(0, 10).map(function(r) { return r ? r.length : 0; }));
 
-    // Try Format B: cols L-N (11-13)
-    if (colCount >= 14) {
-        categories = _extractCategories(aoa, 11, 13);
-        if (categories.length > 0) {
-            result.estimate_ref = _cellStr(aoa, 3, 2); // Row 4, Col C
-            result.job_description = _cellStr(aoa, 5, 2); // Row 6, Col C
-            result.grand_total = _cellNum(aoa, 8, 2); // Row 9, Col C
-            if (!result.markup) result.markup = 20; // Format B default
-        }
-    }
-
-    // Try Format A: cols O-P (14-15) if Format B found nothing
-    if (categories.length === 0 && colCount >= 16) {
-        categories = _extractCategories(aoa, 14, 15);
-        if (categories.length > 0) {
-            result.estimate_ref = _cellStr(aoa, 1, 2); // Row 2, Col C
-            result.job_description = _cellStr(aoa, 3, 2); // Row 4, Col C
-            result.grand_total = _cellNum(aoa, 7, 2); // Row 8, Col C
-            if (!result.markup) result.markup = 14; // Format A default
-        }
-    }
-
-    // Fallback: scan all columns for category name + value pairs
-    if (categories.length === 0) {
-        categories = _extractCategoriesFallback(aoa);
-        // Try to find estimate ref anywhere
+    for (let c = 0; c < colCount; c++) {
+        let matchCount = 0;
+        let firstRow = -1;
         for (let r = 0; r < Math.min(10, aoa.length); r++) {
-            for (let c = 0; c < Math.min(10, (aoa[r] || []).length); c++) {
-                const v = _cellStr(aoa, r, c);
-                if (v && /^MII[-\s]/.test(v)) {
-                    result.estimate_ref = v;
-                    break;
-                }
+            const cellVal = _cellStr(aoa, r, c);
+            if (normaliseCategoryName(cellVal)) {
+                matchCount++;
+                if (firstRow < 0) firstRow = r;
             }
-            if (result.estimate_ref) break;
         }
-        if (!result.markup) result.markup = 14;
+        if (matchCount >= 3) {
+            nameCol = c;
+            nameRowStart = firstRow;
+            break;
+        }
+    }
+
+    if (nameCol < 0) return null; // No category column found
+
+    // === Step 3: Find the value column (numeric column to the right of names) ===
+    // Check columns after nameCol for the one with the most numeric values in rows with category names
+    let valCol = -1;
+    let bestCount = 0;
+    for (let vc = nameCol + 1; vc < colCount + 5; vc++) {
+        let numCount = 0;
+        for (let r = nameRowStart; r < Math.min(nameRowStart + 9, aoa.length); r++) {
+            const nameRaw = _cellStr(aoa, r, nameCol);
+            if (!normaliseCategoryName(nameRaw)) continue;
+            const v = aoa[r] ? aoa[r][vc] : undefined;
+            if (v != null && v !== '' && v !== '-') {
+                const num = parseFloat(v);
+                if (!isNaN(num)) numCount++;
+            }
+        }
+        if (numCount > bestCount) {
+            bestCount = numCount;
+            valCol = vc;
+        }
+    }
+
+    // If no value column found, try the column immediately after nameCol
+    if (valCol < 0) valCol = nameCol + 1;
+
+    // === Step 4: Extract categories ===
+    const categories = [];
+    for (let r = nameRowStart; r < Math.min(nameRowStart + 9, aoa.length); r++) {
+        const nameRaw = _cellStr(aoa, r, nameCol);
+        const catNum = normaliseCategoryName(nameRaw);
+        if (!catNum) continue;
+        if (categories.find(function(x) { return x.category_number === catNum; })) continue;
+
+        // Get value — handle "-" as zero
+        let val = 0;
+        const rawVal = aoa[r] ? aoa[r][valCol] : undefined;
+        if (rawVal != null && rawVal !== '' && rawVal !== '-') {
+            val = parseFloat(rawVal) || 0;
+        }
+
+        categories.push({
+            category_number: catNum,
+            category_name: CATEGORY_NAMES[catNum - 1] || nameRaw,
+            contract_value: Math.round(val * 100) / 100,
+        });
     }
 
     result.categories = categories;
+
+    // === Step 5: Extract metadata from first 10 rows ===
+    // Find estimate ref (MII-xxx pattern) and job description
+    for (let r = 0; r < Math.min(10, aoa.length); r++) {
+        const row = aoa[r] || [];
+        for (let c = 0; c < Math.min(nameCol, row.length); c++) {
+            const v = _cellStr(aoa, r, c);
+            if (!v) continue;
+
+            // MII reference
+            if (/^MII[-\s]/i.test(v) && !result.estimate_ref) {
+                result.estimate_ref = v;
+            }
+
+            // Labels in col A that tell us what col C contains
+            const upper = v.toUpperCase();
+            if (upper.includes('REFERENCE') && !upper.includes('CLIENT')) {
+                const ref = _cellStr(aoa, r, 2);
+                if (ref && /MII/i.test(ref)) result.estimate_ref = ref;
+            }
+            if (upper.includes('JOB DESCRIPTION') || upper.includes('DESCRIPTION')) {
+                const desc = _cellStr(aoa, r, 2);
+                if (desc && desc.length > 3) result.job_description = desc;
+            }
+            if (upper.includes('GRAND TOTAL')) {
+                // Grand total value could be in col C or further right
+                for (let gc = 2; gc < row.length; gc++) {
+                    const gv = parseFloat(aoa[r][gc]);
+                    if (!isNaN(gv) && gv > 0) { result.grand_total = gv; break; }
+                }
+            }
+        }
+    }
+
     if (!result.markup) result.markup = 14;
 
     return categories.length > 0 ? result : null;
@@ -1029,65 +1092,6 @@ function _cellStr(aoa, row, col) {
 function _cellNum(aoa, row, col) {
     if (row >= aoa.length || !aoa[row]) return 0;
     return parseFloat(aoa[row][col]) || 0;
-}
-
-/**
- * Extract categories from fixed column positions (Price Matrix standard layout).
- * nameCol = column index for category names, valCol = column index for contract values.
- * Scans rows 1-9 (0-indexed).
- */
-function _extractCategories(aoa, nameCol, valCol) {
-    const cats = [];
-    for (let r = 1; r <= Math.min(9, aoa.length - 1); r++) {
-        const nameRaw = _cellStr(aoa, r, nameCol);
-        const val = _cellNum(aoa, r, valCol);
-
-        // Skip empty rows
-        if (!nameRaw && val === 0) continue;
-
-        let catNum = normaliseCategoryName(nameRaw);
-        // If name not recognised but value exists, infer from row position
-        if (!catNum && val !== 0) catNum = r;
-        if (!catNum || catNum < 1 || catNum > 8) continue;
-
-        // Check we haven't already got this category
-        if (cats.find(function(c) { return c.category_number === catNum; })) continue;
-
-        cats.push({
-            category_number: catNum,
-            category_name: CATEGORY_NAMES[catNum - 1] || nameRaw,
-            contract_value: Math.round(val * 100) / 100,
-        });
-    }
-    return cats;
-}
-
-/**
- * Fallback: scan all cells looking for known category names next to numbers.
- */
-function _extractCategoriesFallback(aoa) {
-    const cats = [];
-    for (let r = 0; r < aoa.length && r < 20; r++) {
-        const row = aoa[r] || [];
-        for (let c = 0; c < row.length - 1; c++) {
-            const catNum = normaliseCategoryName(row[c]);
-            if (catNum && !cats.find(function(x) { return x.category_number === catNum; })) {
-                // Look for a number in subsequent columns
-                for (let nc = c + 1; nc < Math.min(c + 4, row.length); nc++) {
-                    const val = parseFloat(row[nc]);
-                    if (!isNaN(val) && val !== 0) {
-                        cats.push({
-                            category_number: catNum,
-                            category_name: CATEGORY_NAMES[catNum - 1],
-                            contract_value: Math.round(val * 100) / 100,
-                        });
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    return cats;
 }
 
 async function handleEstimateFile(e) {
