@@ -417,6 +417,8 @@
         <div class="header-subtitle" id="hdr-subtitle">--</div>
     </div>
     <span class="status-badge" id="hdr-status">--</span>
+    <button onclick="document.getElementById('job-import-file').click()" style="margin-left:12px;padding:6px 14px;background:#0078d4;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:inherit;font-weight:600">Import Transactions</button>
+    <input type="file" id="job-import-file" accept=".xlsx,.csv" style="display:none">
 </div>
 
 <!-- TAB BAR -->
@@ -1112,8 +1114,8 @@ function renderTransactions() {
     // AI suggest button — count unmapped
     const unmappedCount = transactions.filter(t => !t.mapped_category && !t.is_revenue && !t.is_commitment).length;
     if (unmappedCount > 0) {
-        html += '<button onclick="askAiSuggest()" id="btn-ai-suggest" style="margin-left:auto;padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:4px" title="Ask AI to categorise unmapped transactions">';
-        html += '&#9733; AI Suggest (' + unmappedCount + ' unmapped)</button>';
+        html += '<button onclick="askAiSuggest()" id="btn-ai-suggest" style="margin-left:auto;padding:6px 14px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:4px" title="Ask AI to create mapping rules for unmapped transactions">';
+        html += '&#9733; AI Suggest Rules (' + unmappedCount + ' unmapped)</button>';
     }
     html += '</div>';
 
@@ -1244,49 +1246,68 @@ async function startCatEdit(el, txnId) {
 
 async function askAiSuggest() {
     const btn = document.getElementById('btn-ai-suggest');
-    if (btn) { btn.disabled = true; btn.textContent = 'Thinking...'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Analysing patterns...'; }
     try {
-        const result = await CostDB.aiSuggestCategories(_jobId);
-        const suggestions = result.suggestions || [];
-        const unmapped = result.unmapped_txns || [];
+        const result = await CostDB.aiSuggestMappings(_jobId);
+        const sRules = result.supplier_mappings || [];
+        const lRules = result.labour_mappings || [];
 
-        if (!suggestions.length) {
-            alert('AI returned no suggestions.');
+        if (!sRules.length && !lRules.length) {
+            alert('AI returned no mapping rules. ' + result.unmapped_count + ' unmapped transactions analysed across ' + result.pattern_count + ' patterns.');
             return;
         }
 
-        // Build review modal
+        // Build review modal — show proposed RULES, not individual transactions
         let html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center" id="ai-modal">';
-        html += '<div style="background:#fff;border-radius:12px;max-width:700px;width:95%;max-height:80vh;overflow:auto;padding:20px">';
-        html += '<h3 style="margin:0 0 12px">AI Category Suggestions</h3>';
-        html += '<p style="font-size:0.85rem;color:var(--text-light);margin:0 0 12px">' + suggestions.length + ' suggestions. Check the ones you want to accept.</p>';
-        html += '<table style="width:100%;font-size:0.82rem;border-collapse:collapse">';
-        html += '<thead><tr><th style="text-align:left;padding:4px">Accept</th><th>Supplier/Code</th><th>Suggested</th><th>Confidence</th><th>Reason</th></tr></thead><tbody>';
+        html += '<div style="background:#fff;border-radius:12px;max-width:800px;width:95%;max-height:85vh;overflow:auto;padding:24px">';
+        html += '<h3 style="margin:0 0 4px">AI Mapping Rules</h3>';
+        html += '<p style="font-size:0.85rem;color:var(--text-light);margin:0 0 16px">'
+            + 'Analysed ' + result.unmapped_count + ' unmapped transactions (' + result.pattern_count + ' unique patterns). '
+            + 'These rules will apply to <strong>all current and future imports</strong>. Uncheck any you disagree with.</p>';
 
-        suggestions.forEach((s, idx) => {
-            const t = unmapped[s.txn_index] || {};
-            const catLabel = catName(s.category_number);
-            const confColor = s.confidence === 'high' ? '#16a34a' : (s.confidence === 'medium' ? '#ca8a04' : '#dc2626');
-            html += '<tr>';
-            html += '<td style="padding:4px"><input type="checkbox" checked data-idx="' + idx + '" class="ai-accept"></td>';
-            html += '<td style="padding:4px">' + (t.supplier_name || t.cost_code || '—') + '</td>';
-            html += '<td style="padding:4px">' + s.category_number + ' - ' + catLabel + '</td>';
-            html += '<td style="padding:4px;color:' + confColor + '">' + (s.confidence || 'low') + '</td>';
-            html += '<td style="padding:4px;font-size:0.78rem">' + (s.reason || '') + '</td>';
-            html += '</tr>';
-        });
+        // Supplier rules
+        if (sRules.length) {
+            html += '<h4 style="margin:0 0 8px;font-size:0.9rem">Supplier Rules (' + sRules.length + ')</h4>';
+            html += '<table style="width:100%;font-size:0.82rem;border-collapse:collapse;margin-bottom:16px">';
+            html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px;width:30px"></th><th style="padding:6px;text-align:left">Supplier Prefix</th><th style="padding:6px;text-align:left">Code Prefix</th><th style="padding:6px;text-align:left">Category</th><th style="padding:6px;text-align:left">Reason</th></tr></thead><tbody>';
+            sRules.forEach((r, idx) => {
+                html += '<tr style="border-bottom:1px solid #eee">';
+                html += '<td style="padding:6px"><input type="checkbox" checked data-type="supplier" data-idx="' + idx + '" class="ai-rule-accept"></td>';
+                html += '<td style="padding:6px;font-weight:500">' + esc(r.supplier_prefix) + '</td>';
+                html += '<td style="padding:6px">' + esc(r.cost_code_prefix || '(any)') + '</td>';
+                html += '<td style="padding:6px">' + r.category_number + ' - ' + catName(r.category_number) + '</td>';
+                html += '<td style="padding:6px;font-size:0.78rem;color:var(--text-light)">' + esc(r.note || '') + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        }
 
-        html += '</tbody></table>';
+        // Labour rules
+        if (lRules.length) {
+            html += '<h4 style="margin:0 0 8px;font-size:0.9rem">Labour Rules (' + lRules.length + ')</h4>';
+            html += '<table style="width:100%;font-size:0.82rem;border-collapse:collapse;margin-bottom:16px">';
+            html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px;width:30px"></th><th style="padding:6px;text-align:left">Cost Code</th><th style="padding:6px;text-align:left">Category</th><th style="padding:6px;text-align:left">Reason</th></tr></thead><tbody>';
+            lRules.forEach((r, idx) => {
+                html += '<tr style="border-bottom:1px solid #eee">';
+                html += '<td style="padding:6px"><input type="checkbox" checked data-type="labour" data-idx="' + idx + '" class="ai-rule-accept"></td>';
+                html += '<td style="padding:6px;font-weight:500">' + esc(r.cost_code) + '</td>';
+                html += '<td style="padding:6px">' + r.category_number + ' - ' + catName(r.category_number) + '</td>';
+                html += '<td style="padding:6px;font-size:0.78rem;color:var(--text-light)">' + esc(r.note || '') + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        }
+
         html += '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">';
         html += '<button onclick="document.getElementById(\'ai-modal\').remove()" style="padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer">Cancel</button>';
-        html += '<button onclick="applyAiSuggestions()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">Apply Selected</button>';
+        html += '<button onclick="applyAiRules()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">Create Rules &amp; Re-map</button>';
         html += '</div></div></div>';
 
         document.body.insertAdjacentHTML('beforeend', html);
 
-        // Store references for apply
-        window._aiSuggestions = suggestions;
-        window._aiUnmapped = unmapped;
+        // Store for apply
+        window._aiSupplierRules = sRules;
+        window._aiLabourRules = lRules;
 
     } catch(e) {
         console.error('AI suggest error:', e);
@@ -1296,35 +1317,53 @@ async function askAiSuggest() {
     }
 }
 
-async function applyAiSuggestions() {
-    const checks = document.querySelectorAll('.ai-accept:checked');
-    const suggestions = window._aiSuggestions || [];
-    const unmapped = window._aiUnmapped || [];
+async function applyAiRules() {
+    const applyBtn = event.target;
+    applyBtn.disabled = true;
+    applyBtn.textContent = 'Creating rules...';
 
-    let applied = 0;
-    for (const cb of checks) {
-        const idx = parseInt(cb.dataset.idx);
-        const s = suggestions[idx];
-        const t = unmapped[s.txn_index];
-        if (!s || !t) continue;
+    try {
+        const sRules = window._aiSupplierRules || [];
+        const lRules = window._aiLabourRules || [];
 
-        try {
-            await CostDB.manuallyMapTransaction(t.id, s.category_number);
-            applied++;
-        } catch(e) {
-            console.warn('Failed to apply AI suggestion:', e);
+        // Collect checked rules
+        const acceptedSupplier = [];
+        const acceptedLabour = [];
+        document.querySelectorAll('.ai-rule-accept:checked').forEach(cb => {
+            const idx = parseInt(cb.dataset.idx);
+            if (cb.dataset.type === 'supplier' && sRules[idx]) acceptedSupplier.push(sRules[idx]);
+            if (cb.dataset.type === 'labour' && lRules[idx]) acceptedLabour.push(lRules[idx]);
+        });
+
+        if (!acceptedSupplier.length && !acceptedLabour.length) {
+            alert('No rules selected.');
+            return;
         }
+
+        // Create mapping rules and re-run mapping engine
+        const result = await CostDB.applyAiMappingRules(_jobId, acceptedSupplier, acceptedLabour);
+
+        // Remove modal
+        const modal = document.getElementById('ai-modal');
+        if (modal) modal.remove();
+
+        // Reload all data
+        _data = await CostDB.getFullAnalysis(_jobId);
+        _tabDirty = [true, true, true, true, true, true];
+        renderTransactions();
+
+        const mr = result.mapping_result || {};
+        alert(
+            'Created ' + result.supplier_created + ' supplier rule(s) and ' + result.labour_created + ' labour rule(s).\n' +
+            'Re-mapped: ' + (mr.mapped || 0) + ' mapped, ' + (mr.unmapped || 0) + ' still unmapped.'
+        );
+    } catch(e) {
+        console.error('Apply AI rules error:', e);
+        alert('Failed to apply rules: ' + e.message);
+    } finally {
+        applyBtn.disabled = false;
+        applyBtn.textContent = 'Create Rules & Re-map';
     }
-
-    // Remove modal
-    const modal = document.getElementById('ai-modal');
-    if (modal) modal.remove();
-
-    // Reload data
-    _data = await CostDB.getFullAnalysis(_jobId);
-    _tabDirty = [true, true, true, true, true, true];
-    renderTransactions();
-    alert(applied + ' AI suggestions applied.');
 }
 
 
@@ -1529,6 +1568,41 @@ async function saveBudgets() {
         alert('Failed to save: ' + e.message);
     }
 }
+
+// ===== PER-JOB IMPORT =====
+document.getElementById('job-import-file').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file || !_jobId || !_data || !_data.job) return;
+    e.target.value = '';
+
+    const jobNumber = _data.job.job_number;
+    const btn = this.previousElementSibling;
+    const origText = btn.textContent;
+    btn.textContent = 'Importing...';
+    btn.disabled = true;
+
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const result = await CostDB.processImport(workbook, file.name, { jobFilter: [jobNumber] });
+        const txnCount = result.total_inserted || result.count || 0;
+
+        // Reload all data
+        _data = await CostDB.getFullAnalysis(_jobId);
+        _tabDirty = [true, true, true, true, true, true];
+        _tabLoaded = [false, false, false, false, false, false];
+        populateHeader(_data.job);
+        renderTab(document.querySelector('.tab-btn.active').dataset.tab | 0);
+
+        alert('Imported ' + txnCount + ' transactions for ' + jobNumber + ' from ' + file.name);
+    } catch (err) {
+        console.error('Job import error:', err);
+        alert('Import failed: ' + err.message);
+    } finally {
+        btn.textContent = origText;
+        btn.disabled = false;
+    }
+});
 
 // ===== INIT =====
 if ('serviceWorker' in navigator && location.protocol === 'file:') {

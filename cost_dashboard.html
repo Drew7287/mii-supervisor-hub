@@ -461,11 +461,53 @@
         /* Hidden file input */
         .hidden { display: none; }
 
+        /* ===== ADD JOB MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            overflow-y: auto;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 16px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-container {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            max-width: 720px;
+            width: 100%;
+            padding: 24px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin: 0; }
+        .modal-close {
+            background: none; border: none; font-size: 1.5rem; cursor: pointer;
+            color: var(--text-light); padding: 4px 8px; border-radius: 4px;
+        }
+        .modal-close:hover { color: var(--text); background: #e8e8e8; }
+        .modal-section {
+            margin-bottom: 20px;
+        }
+        .modal-section h3 {
+            font-size: 0.85rem; font-weight: 700; color: var(--primary);
+            margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .stats-bar { grid-template-columns: repeat(2, 1fr); }
             .form-row { grid-template-columns: 1fr; }
             .table-scroll { font-size: 0.78rem; }
+            .modal-container { margin: 16px; }
         }
         @media (max-width: 480px) {
             .stats-bar { grid-template-columns: 1fr; }
@@ -514,81 +556,115 @@
     <button class="context-menu-item danger" id="ctx-delete" onclick="ctxDelete()">Delete</button>
 </div>
 
-<!-- Add Job Modal -->
+<!-- ===== ADD JOB MODAL (desktop parity — single dialog) ===== -->
 <div class="modal-overlay" id="add-job-modal">
-    <div class="modal-box">
+    <div class="modal-container">
         <div class="modal-header">
             <h2>Add New Job</h2>
-            <button class="modal-close-x" onclick="closeAddJobModal()">&times;</button>
+            <button class="modal-close" onclick="closeAddJobModal()">&times;</button>
         </div>
-        <div class="modal-body">
+
+        <!-- Job Details -->
+        <div class="modal-section">
+            <h3>Job Details</h3>
             <div class="form-row">
                 <div class="form-group">
                     <label>Job Number *</label>
-                    <input type="text" id="modal-job-number" placeholder="e.g. SW4455" required>
+                    <input type="text" id="wiz-job-number" placeholder="e.g. SW4455">
                 </div>
                 <div class="form-group">
                     <label>Project Name *</label>
-                    <input type="text" id="modal-project-name" placeholder="e.g. Hirwaun Power Plant" required>
+                    <input type="text" id="wiz-project-name" placeholder="e.g. Hirwaun Power Plant">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>Client</label>
-                    <input type="text" id="modal-client" value="Tata Steel">
+                    <input type="text" id="wiz-client" value="Tata Steel">
                 </div>
                 <div class="form-group">
                     <label>Markup %</label>
-                    <input type="number" id="modal-markup" value="14" min="1" max="50">
+                    <input type="number" id="wiz-markup" value="14" min="1" max="50">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>Estimate Ref</label>
-                    <input type="text" id="modal-estimate-ref" placeholder="e.g. MII-24-E25104">
+                    <input type="text" id="wiz-estimate-ref" placeholder="e.g. MII-24-E25104">
                 </div>
-                <div class="form-group" style="display:flex;align-items:flex-end">
-                    <div>
-                        <label>&nbsp;</label>
-                        <button type="button" class="btn-modal-save" onclick="document.getElementById('estimate-file-input').click()" style="background:var(--primary);font-size:0.85rem;padding:8px 14px">Load Estimate File</button>
-                        <input type="file" id="estimate-file-input" class="hidden" accept=".xls,.xlsx,.xlsm" onchange="handleEstimateFile(event)" style="display:none">
-                        <span id="estimate-status" style="font-size:0.78rem;color:var(--text-light);margin-left:8px"></span>
-                    </div>
+                <div class="form-group">
+                    <label>AI Notes <span style="font-size:0.7rem;color:var(--text-light)">(optional context for AI mapping)</span></label>
+                    <input type="text" id="wiz-ai-notes" placeholder="e.g. BF5 electrical scope...">
                 </div>
-            </div>
-            <div class="form-row" style="margin-bottom:8px">
-                <div class="form-group" style="width:100%">
-                    <label>AI Notes <span style="font-size:0.75rem;color:var(--text-light)">(context for AI mapping)</span></label>
-                    <textarea id="modal-ai-notes" rows="2" placeholder="Optional notes about the job scope, e.g. BF5 Copper Cooler replacement..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;resize:vertical"></textarea>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Budget Categories</label>
-                <table class="cat-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Category Name</th>
-                            <th class="right">Contract Value &pound;</th>
-                            <th class="right">At Cost &pound;</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cat-table-body"></tbody>
-                    <tfoot>
-                        <tr>
-                            <td></td>
-                            <td>Total</td>
-                            <td class="right" id="cat-total-contract">&pound;0.00</td>
-                            <td class="right" id="cat-total-cost">&pound;0.00</td>
-                        </tr>
-                    </tfoot>
-                </table>
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn-modal-cancel" onclick="closeAddJobModal()">Cancel</button>
-            <button class="btn-modal-save" id="btn-create-job" onclick="createJob()">Create Job</button>
+
+        <!-- Grouping -->
+        <div class="modal-section">
+            <h3>Project Grouping</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Add to existing project</label>
+                    <select id="wiz-group-select" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:inherit">
+                        <option value="">None (standalone)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Copy mappings from</label>
+                    <select id="wiz-copy-mappings" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:inherit">
+                        <option value="">(none &mdash; add mappings later)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="modal-section">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+                <h3 style="margin:0;border:none;padding:0">Budget Categories</h3>
+                <button class="btn btn-secondary" onclick="triggerEstimateLoad()" style="font-size:0.78rem;padding:5px 12px">Load Estimate File</button>
+                <input type="file" id="wiz-estimate-file" accept=".xls,.xlsx,.xlsm" style="display:none">
+            </div>
+
+            <table class="cat-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Category Name</th>
+                        <th class="right">Contract Value &pound;</th>
+                        <th class="right">At Cost &pound;</th>
+                    </tr>
+                </thead>
+                <tbody id="wiz-cat-body"></tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td><strong>Total</strong></td>
+                        <td class="right" id="wiz-cat-total-contract"><strong>&pound;0.00</strong></td>
+                        <td class="right" id="wiz-cat-total-cost"><strong>&pound;0.00</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Import Transactions -->
+        <div class="modal-section">
+            <h3>Import Transactions</h3>
+            <p style="font-size:0.82rem;color:var(--text-light);margin:0 0 10px">
+                Select the Opera 3 export file to immediately import transactions for this job.
+                Only rows matching the job number above will be imported.
+            </p>
+            <div style="display:flex;align-items:center;gap:10px">
+                <button class="btn btn-secondary" onclick="document.getElementById('wiz-import-file').click()" style="font-size:0.82rem;padding:6px 14px">Select MII_Daily_Export.xlsx</button>
+                <input type="file" id="wiz-import-file" accept=".xlsx,.csv" style="display:none">
+                <span id="wiz-import-status" style="font-size:0.82rem;color:var(--text-light)">No file selected</span>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border)">
+            <button class="btn btn-secondary" onclick="closeAddJobModal()">Cancel</button>
+            <button class="btn btn-primary" id="btn-create-job" onclick="createJob()">Create Job</button>
         </div>
     </div>
 </div>
@@ -806,7 +882,8 @@ async function ctxToggleStatus() {
 
 async function ctxDelete() {
     if (!_ctxJobId) return;
-    const job = _jobs.find(function(j) { return j.id === _ctxJobId; });
+    const jobId = _ctxJobId;
+    const job = _jobs.find(function(j) { return j.id === jobId; });
     if (!job) return;
     hideContextMenu();
 
@@ -818,7 +895,7 @@ async function ctxDelete() {
     }
 
     try {
-        await CostDB.deleteJob(_ctxJobId);
+        await CostDB.deleteJob(jobId);
         showToast('Job ' + job.job_number + ' deleted', 'success');
         await loadAllData();
     } catch (err) {
@@ -851,45 +928,138 @@ async function handleFileSelect(e) {
     }
 }
 
-// ===== ADD JOB MODAL =====
+// ===== ADD JOB MODAL (desktop parity — single dialog) =====
+let _wizEstimate = null;
+let _wizImportWorkbook = null;
+let _wizImportFilename = null;
+
 function openAddJobModal() {
-    document.getElementById('modal-job-number').value = '';
-    document.getElementById('modal-project-name').value = '';
-    document.getElementById('modal-client').value = 'Tata Steel';
-    document.getElementById('modal-markup').value = '14';
-    document.getElementById('modal-estimate-ref').value = '';
-    document.getElementById('modal-ai-notes').value = '';
-    document.getElementById('estimate-status').textContent = '';
-    document.getElementById('btn-create-job').disabled = false;
+    _wizEstimate = null;
+    _wizImportWorkbook = null;
+    _wizImportFilename = null;
 
-    const tbody = document.getElementById('cat-table-body');
-    tbody.innerHTML = '';
-    CATEGORY_NAMES.forEach(function(name, i) {
-        const row = document.createElement('tr');
-        row.innerHTML = '<td class="cat-num">' + (i + 1) + '</td>' +
-            '<td>' + esc(name) + '</td>' +
-            '<td class="right"><input type="number" class="cat-contract" data-idx="' + i + '" value="0" min="0" step="0.01" oninput="updateCatTotals()"></td>' +
-            '<td class="right at-cost" id="cat-cost-' + i + '">&pound;0.00</td>';
-        tbody.appendChild(row);
-    });
+    // Reset fields
+    document.getElementById('wiz-job-number').value = '';
+    document.getElementById('wiz-project-name').value = '';
+    document.getElementById('wiz-client').value = 'Tata Steel';
+    document.getElementById('wiz-markup').value = '14';
+    document.getElementById('wiz-estimate-ref').value = '';
+    document.getElementById('wiz-ai-notes').value = '';
+    document.getElementById('wiz-import-status').textContent = 'No file selected';
 
-    updateCatTotals();
+    // Populate grouping/copy-mappings dropdowns
+    populateJobDropdowns();
+    buildCatTable();
+
     document.getElementById('add-job-modal').classList.add('active');
-    document.getElementById('modal-job-number').focus();
+}
+
+function setupImportInput() {
+    document.getElementById('wiz-import-file').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        e.target.value = '';
+        document.getElementById('wiz-import-status').textContent = 'Loading ' + file.name + '...';
+        try {
+            const data = await file.arrayBuffer();
+            _wizImportWorkbook = XLSX.read(data, { type: 'array' });
+            _wizImportFilename = file.name;
+            document.getElementById('wiz-import-status').innerHTML = '<span style="color:var(--success)">' + esc(file.name) + ' ready</span>';
+        } catch (err) {
+            _wizImportWorkbook = null;
+            document.getElementById('wiz-import-status').innerHTML = '<span style="color:var(--danger)">Failed to read: ' + esc(err.message) + '</span>';
+        }
+    });
 }
 
 function closeAddJobModal() {
     document.getElementById('add-job-modal').classList.remove('active');
 }
 
-document.getElementById('add-job-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeAddJobModal();
-});
+function populateJobDropdowns() {
+    const groupSel = document.getElementById('wiz-group-select');
+    const copySel = document.getElementById('wiz-copy-mappings');
+    // Clear existing options (keep first)
+    while (groupSel.options.length > 1) groupSel.remove(1);
+    while (copySel.options.length > 1) copySel.remove(1);
 
-function updateCatTotals() {
-    const markup = parseFloat(document.getElementById('modal-markup').value) || 14;
+    (_jobs || []).forEach(function(j) {
+        const label = j.job_number + ' - ' + (j.job_name || '');
+        const opt1 = document.createElement('option');
+        opt1.value = j.id; opt1.textContent = label;
+        groupSel.appendChild(opt1);
+        const opt2 = document.createElement('option');
+        opt2.value = j.id; opt2.textContent = label;
+        copySel.appendChild(opt2);
+    });
+}
+
+// --- Estimate file loading (optional — fills categories) ---
+function triggerEstimateLoad() {
+    document.getElementById('wiz-estimate-file').click();
+}
+
+function setupEstimateInput() {
+    document.getElementById('wiz-estimate-file').addEventListener('change', function(e) {
+        if (e.target.files[0]) processEstimateFile(e.target.files[0]);
+        e.target.value = '';
+    });
+}
+
+async function processEstimateFile(file) {
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const result = parseEstimate(workbook);
+
+        if (!result || result.categories.length === 0) {
+            showToast('Could not extract categories from ' + file.name, 'error');
+            return;
+        }
+
+        _wizEstimate = result;
+
+        // Pre-fill fields from estimate
+        if (result.estimate_ref) document.getElementById('wiz-estimate-ref').value = result.estimate_ref;
+        if (result.job_description) document.getElementById('wiz-project-name').value = result.job_description;
+        if (result.markup) document.getElementById('wiz-markup').value = result.markup;
+
+        // Rebuild category table with estimate values
+        buildCatTable();
+
+        showToast('Loaded ' + result.categories.length + ' categories from ' + file.name, 'success');
+    } catch (err) {
+        console.error('Estimate parse error:', err);
+        showToast('Parse error: ' + err.message, 'error');
+    }
+}
+
+// --- Categories table ---
+function buildCatTable() {
+    const tbody = document.getElementById('wiz-cat-body');
+    tbody.innerHTML = '';
+
+    CATEGORY_NAMES.forEach(function(name, i) {
+        let val = 0;
+        if (_wizEstimate) {
+            const match = _wizEstimate.categories.find(function(c) { return c.category_number === i + 1; });
+            if (match) val = match.contract_value;
+        }
+        const row = document.createElement('tr');
+        row.innerHTML = '<td class="cat-num">' + (i + 1) + '</td>' +
+            '<td>' + esc(name) + '</td>' +
+            '<td class="right"><input type="number" class="wiz-cat-input" data-idx="' + i + '" value="' + val.toFixed(2) + '" min="0" step="0.01" oninput="updateWizCatTotals()"></td>' +
+            '<td class="right at-cost" id="wiz-cat-cost-' + i + '">&pound;0.00</td>';
+        tbody.appendChild(row);
+    });
+
+    updateWizCatTotals();
+}
+
+function updateWizCatTotals() {
+    const markup = parseFloat(document.getElementById('wiz-markup').value) || 14;
     const multiplier = 1 + markup / 100;
-    const inputs = document.querySelectorAll('.cat-contract');
+    const inputs = document.querySelectorAll('.wiz-cat-input');
     let totalContract = 0;
     let totalCost = 0;
 
@@ -899,14 +1069,197 @@ function updateCatTotals() {
         const ac = cv / multiplier;
         totalContract += cv;
         totalCost += ac;
-        document.getElementById('cat-cost-' + idx).textContent = formatGBP(ac);
+        const costEl = document.getElementById('wiz-cat-cost-' + idx);
+        if (costEl) costEl.textContent = formatGBP(ac);
     });
 
-    document.getElementById('cat-total-contract').textContent = formatGBP(totalContract);
-    document.getElementById('cat-total-cost').textContent = formatGBP(totalCost);
+    document.getElementById('wiz-cat-total-contract').innerHTML = '<strong>' + formatGBP(totalContract) + '</strong>';
+    document.getElementById('wiz-cat-total-cost').innerHTML = '<strong>' + formatGBP(totalCost) + '</strong>';
 }
 
-document.getElementById('modal-markup').addEventListener('input', updateCatTotals);
+function getCategoryValues() {
+    const inputs = document.querySelectorAll('.wiz-cat-input');
+    const markup = parseFloat(document.getElementById('wiz-markup').value) || 14;
+    const multiplier = 1 + markup / 100;
+    const cats = [];
+    inputs.forEach(function(input, i) {
+        const cv = parseFloat(input.value) || 0;
+        cats.push({ number: i + 1, name: CATEGORY_NAMES[i], contract_value: cv, at_cost: cv / multiplier });
+    });
+    return cats;
+}
+
+// --- Create Job ---
+async function createJob() {
+    const btn = document.getElementById('btn-create-job');
+
+    const jobNumber = document.getElementById('wiz-job-number').value.trim();
+    const projectName = document.getElementById('wiz-project-name').value.trim();
+
+    if (!jobNumber) { alert('Job number is required.'); document.getElementById('wiz-job-number').focus(); return; }
+    if (!projectName) { alert('Project name is required.'); document.getElementById('wiz-project-name').focus(); return; }
+
+    const existing = _jobs.find(function(j) { return j.job_number === jobNumber; });
+    if (existing) { alert('Job number ' + jobNumber + ' already exists.'); return; }
+
+    btn.disabled = true;
+
+    try {
+        const client = document.getElementById('wiz-client').value.trim();
+        const markup = parseFloat(document.getElementById('wiz-markup').value) || 14;
+        const estimateRef = document.getElementById('wiz-estimate-ref').value.trim();
+        const aiNotes = document.getElementById('wiz-ai-notes').value.trim();
+        const groupId = document.getElementById('wiz-group-select').value || null;
+        const copyFromId = document.getElementById('wiz-copy-mappings').value || null;
+
+        const cats = getCategoryValues();
+        const categories = cats.map(function(c) {
+            return { number: c.number, contract_value: c.contract_value };
+        });
+
+        const jobId = await CostDB.createJob({
+            job_number: jobNumber,
+            job_name: projectName,
+            client: client,
+            markup: markup,
+            categories: categories,
+            estimate_ref: estimateRef,
+            ai_notes: aiNotes,
+            group_id: groupId,
+        });
+
+        // Copy mapping rules from another job if selected
+        if (copyFromId) {
+            try {
+                const sms = (await MiiDB.getAll('cost_supplier_mappings')).filter(function(m) { return m.job_id === copyFromId; });
+                const lms = (await MiiDB.getAll('cost_labour_mappings')).filter(function(m) { return m.job_id === copyFromId; });
+                for (const m of sms) {
+                    await CostDB.createSupplierMapping({
+                        supplier_prefix: m.supplier_prefix,
+                        cost_code_prefix: m.cost_code_prefix || '',
+                        category_number: m.category_number,
+                        job_id: jobId,
+                        note: 'Copied from ' + jobNumber,
+                    });
+                }
+                for (const m of lms) {
+                    await CostDB.createLabourMapping({
+                        cost_code: m.cost_code,
+                        category_number: m.category_number,
+                        job_id: jobId,
+                        note: 'Copied from ' + jobNumber,
+                    });
+                }
+                if (sms.length || lms.length) {
+                    showToast('Copied ' + sms.length + ' supplier + ' + lms.length + ' labour rules', 'info');
+                }
+            } catch (copyErr) {
+                console.warn('Failed to copy mappings:', copyErr);
+            }
+        }
+
+        // === Full desktop-parity create pipeline ===
+        let txnCount = 0;
+        let mappedCount = 0;
+        let unmappedCount = 0;
+
+        // Step 1: Import transactions if export file was selected
+        if (_wizImportWorkbook) {
+            btn.textContent = 'Importing transactions...';
+            try {
+                const importResult = await CostDB.processImport(
+                    _wizImportWorkbook,
+                    _wizImportFilename,
+                    { jobFilter: [jobNumber] }
+                );
+                txnCount = importResult.total_inserted || importResult.count || 0;
+            } catch (importErr) {
+                console.error('Import after create error:', importErr);
+                showToast('Job created but import failed: ' + importErr.message, 'error');
+                closeAddJobModal();
+                await loadAllData();
+                return;
+            }
+        }
+
+        // Step 2: Apply all mapping rules (global + job-specific + copied)
+        if (txnCount > 0) {
+            btn.textContent = 'Applying mapping rules...';
+            try {
+                const mapResult = await CostDB.applyMappings(jobId);
+                mappedCount = mapResult.mapped || 0;
+                unmappedCount = mapResult.unmapped || 0;
+            } catch (mapErr) {
+                console.warn('Mapping after create error:', mapErr);
+            }
+        }
+
+        // Step 3: If unmapped transactions remain, offer AI mapping (desktop parity)
+        if (unmappedCount > 0) {
+            btn.textContent = 'Create Job';
+            btn.disabled = false;
+            const askAi = confirm(
+                txnCount + ' transactions imported.\n' +
+                mappedCount + ' mapped by rules, ' + unmappedCount + ' unmapped.\n\n' +
+                'Ask AI to create mapping rules for the unmapped transactions?\n' +
+                '(Choose Cancel to map manually later)'
+            );
+
+            if (askAi) {
+                btn.disabled = true;
+                btn.textContent = 'AI analysing patterns...';
+                try {
+                    const aiResult = await CostDB.aiSuggestMappings(jobId);
+                    const totalRules = (aiResult.supplier_mappings || []).length + (aiResult.labour_mappings || []).length;
+
+                    if (totalRules > 0) {
+                        btn.textContent = 'Creating ' + totalRules + ' rules...';
+                        const applyResult = await CostDB.applyAiMappingRules(
+                            jobId,
+                            aiResult.supplier_mappings || [],
+                            aiResult.labour_mappings || []
+                        );
+                        // Update counts after AI re-mapping
+                        const finalMap = applyResult.mapping_result || {};
+                        mappedCount = finalMap.mapped || mappedCount;
+                        unmappedCount = finalMap.unmapped || 0;
+
+                        showToast('AI created ' + totalRules + ' rules — ' + mappedCount + ' mapped, ' + unmappedCount + ' remaining', 'success');
+                    } else {
+                        showToast('AI found no new mapping rules to suggest', 'info');
+                    }
+                } catch (aiErr) {
+                    console.error('AI mapping error:', aiErr);
+                    showToast('AI mapping failed: ' + aiErr.message + ' — you can try again from the job detail page', 'error');
+                }
+            }
+        }
+
+        // Step 4: Show creation summary
+        if (txnCount > 0) {
+            alert(
+                'Job ' + jobNumber + ' created successfully!\n\n' +
+                'Transactions: ' + txnCount + '\n' +
+                'Mapped: ' + mappedCount + '\n' +
+                'Unmapped: ' + unmappedCount +
+                (unmappedCount > 0 ? '\n\nUse AI Suggest Rules on the job detail page to map remaining transactions.' : '')
+            );
+        } else {
+            showToast('Job ' + jobNumber + ' created (no transactions — use Import Opera 3 to add spend data)', 'success');
+        }
+
+        closeAddJobModal();
+        await loadAllData();
+    } catch (err) {
+        console.error('Create job error:', err);
+        showToast('Failed to create job: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Job';
+    }
+}
+
+document.getElementById('wiz-markup').addEventListener('input', updateWizCatTotals);
 
 // ===== ESTIMATE FILE PARSER =====
 
@@ -1094,116 +1447,7 @@ function _cellNum(aoa, row, col) {
     return parseFloat(aoa[row][col]) || 0;
 }
 
-async function handleEstimateFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const status = document.getElementById('estimate-status');
-    status.textContent = 'Parsing...';
-    status.style.color = 'var(--text-light)';
-
-    try {
-        const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array' });
-        const result = parseEstimate(workbook);
-
-        if (!result || result.categories.length === 0) {
-            status.textContent = 'Could not extract categories. Expected MII Price Matrix format.';
-            status.style.color = 'var(--danger)';
-            return;
-        }
-
-        // Auto-fill estimate ref
-        if (result.estimate_ref) {
-            document.getElementById('modal-estimate-ref').value = result.estimate_ref;
-        }
-
-        // Auto-fill project name from job description
-        if (result.job_description) {
-            const nameField = document.getElementById('modal-project-name');
-            if (!nameField.value.trim()) {
-                nameField.value = result.job_description;
-            }
-        }
-
-        // Auto-fill markup
-        if (result.markup) {
-            document.getElementById('modal-markup').value = result.markup;
-        }
-
-        // Fill category contract values
-        const inputs = document.querySelectorAll('.cat-contract');
-        result.categories.forEach(function(cat) {
-            const idx = cat.category_number - 1;
-            if (idx >= 0 && idx < inputs.length) {
-                inputs[idx].value = cat.contract_value.toFixed(2);
-            }
-        });
-
-        updateCatTotals();
-
-        status.textContent = 'Loaded ' + result.categories.length + ' categories from ' + file.name;
-        status.style.color = 'var(--success, #16a34a)';
-
-    } catch (err) {
-        console.error('Estimate parse error:', err);
-        status.textContent = 'Parse error: ' + err.message;
-        status.style.color = 'var(--danger)';
-    }
-
-    // Reset file input so same file can be re-selected
-    e.target.value = '';
-}
-
-
-async function createJob() {
-    const jobNumber = document.getElementById('modal-job-number').value.trim();
-    const projectName = document.getElementById('modal-project-name').value.trim();
-    const client = document.getElementById('modal-client').value.trim();
-    const markup = parseFloat(document.getElementById('modal-markup').value) || 14;
-    const estimateRef = document.getElementById('modal-estimate-ref').value.trim();
-    const aiNotes = document.getElementById('modal-ai-notes').value.trim();
-
-    if (!jobNumber) { alert('Job number is required.'); return; }
-    if (!projectName) { alert('Project name is required.'); return; }
-
-    // Check for duplicate
-    const existing = _jobs.find(function(j) { return j.job_number === jobNumber; });
-    if (existing) { alert('Job number ' + jobNumber + ' already exists.'); return; }
-
-    const btn = document.getElementById('btn-create-job');
-    btn.disabled = true;
-
-    try {
-        // Gather category contract values
-        const inputs = document.querySelectorAll('.cat-contract');
-        const categories = [];
-        inputs.forEach(function(input, i) {
-            categories.push({
-                number: i + 1,
-                contract_value: parseFloat(input.value) || 0,
-            });
-        });
-
-        await CostDB.createJob({
-            job_number: jobNumber,
-            job_name: projectName,
-            client: client,
-            markup: markup,
-            categories: categories,
-            estimate_ref: estimateRef,
-            ai_notes: aiNotes,
-        });
-
-        closeAddJobModal();
-        showToast('Job ' + jobNumber + ' created', 'success');
-        await loadAllData();
-    } catch (err) {
-        console.error('Create job error:', err);
-        showToast('Failed to create job: ' + err.message, 'error');
-        btn.disabled = false;
-    }
-}
+// (handleEstimateFile and createJob replaced by wizard functions above)
 
 // ===== REFRESH =====
 async function refreshAll() {
@@ -1214,6 +1458,8 @@ async function refreshAll() {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
+    setupEstimateInput();
+    setupImportInput();
     loadAllData();
 });
 </script>

@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estimate Builder &mdash; MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --mii-blue: #003087;
+            --mii-red: #C8102E;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* Topbar */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* Layout */
+        .container { max-width: 1100px; margin: 0 auto; padding: 16px 24px; }
+
+        /* Header card */
+        .header-card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+        .header-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .header-row:last-child { margin-bottom: 0; }
+        .field label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            margin-bottom: 3px;
+        }
+        .field input, .field select {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.12);
+        }
+
+        /* Status badge */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-badge.draft { background: #e8f0fe; color: var(--accent); }
+        .status-badge.submitted { background: #fff3cd; color: #856404; }
+        .status-badge.approved { background: #C6EFCE; color: #006600; }
+
+        /* Section accordion */
+        .section-card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s;
+        }
+        .section-header:hover { background: #f8f9fb; }
+        .section-chevron {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            margin-right: 10px;
+            transition: transform 0.2s;
+            width: 12px;
+        }
+        .section-card.open .section-chevron { transform: rotate(90deg); }
+        .section-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .section-title {
+            flex: 1;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .section-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+        .section-total {
+            font-weight: 700;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+        .section-body {
+            display: none;
+            padding: 0 20px 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .section-card.open .section-body { display: block; }
+
+        /* Line item tables */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            margin-top: 12px;
+        }
+        .items-table th {
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .items-table th.r { text-align: right; }
+        .items-table td { padding: 4px 4px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+        .items-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
+        .items-table input, .items-table select {
+            width: 100%;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-family: inherit;
+        }
+        .items-table input[type="number"] { text-align: right; font-variant-numeric: tabular-nums; }
+        .items-table input:focus, .items-table select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.12);
+        }
+        .item-desc { min-width: 150px; }
+        .item-num { width: 65px; }
+        .item-rate { width: 72px; }
+        .item-hrs { width: 55px; }
+        .item-total { font-weight: 700; white-space: nowrap; min-width: 80px; }
+
+        .btn-add-line {
+            margin-top: 8px;
+            padding: 5px 14px;
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            background: none;
+            font-size: 0.78rem;
+            font-family: inherit;
+            color: var(--accent);
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-add-line:hover { background: #f0f6ff; border-color: var(--accent); }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .btn-remove:hover { color: var(--danger); background: #fde8ea; }
+
+        /* Grand total footer */
+        .grand-total-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 2px solid var(--primary);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 32px;
+            z-index: 40;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+        }
+        .gt-item { text-align: center; }
+        .gt-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-light); }
+        .gt-value { font-size: 1.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+        /* Action buttons */
+        .action-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .btn {
+            padding: 7px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background: var(--mii-blue); color: var(--white); }
+        .btn-secondary { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+        .btn-success { background: var(--success); color: var(--white); }
+        .btn-danger { background: var(--danger); color: var(--white); }
+
+        /* Shift calculator modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--white);
+            border-radius: 10px;
+            width: 94%;
+            max-width: 520px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+            padding: 24px;
+        }
+        .modal-box h3 { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            padding: 12px 20px;
+            font-size: 0.85rem;
+            max-width: 380px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.25s ease-out;
+        }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.info { border-left: 4px solid var(--accent); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+        /* Estimates list */
+        .est-list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .est-list-item:hover { background: #f8f9fb; }
+        .est-list-item:last-child { border-bottom: none; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-row { grid-template-columns: 1fr 1fr; }
+            .grand-total-bar { gap: 16px; flex-wrap: wrap; }
+        }
+        @media (max-width: 480px) {
+            .header-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Estimate Builder</h1>
+    <a href="index.html">&larr; Hub</a>
+</div>
+
+<!-- Estimates List View -->
+<div class="container" id="list-view">
+    <div class="action-bar">
+        <button class="btn btn-primary" onclick="createNewEstimate()">+ New Estimate</button>
+        <button class="btn btn-secondary" onclick="location.href='hub.html'">Back to Hub</button>
+    </div>
+    <div class="header-card" id="estimates-list">
+        <div style="text-align:center;padding:24px;color:var(--text-light)">Loading estimates...</div>
+    </div>
+</div>
+
+<!-- Estimate Editor View -->
+<div class="container" id="editor-view" style="display:none">
+    <!-- Header -->
+    <div class="action-bar">
+        <button class="btn btn-secondary" onclick="backToList()">&larr; All Estimates</button>
+        <button class="btn btn-primary" onclick="openShiftCalc()">Shift Calculator</button>
+        <button class="btn btn-success" onclick="exportToJob()">Export to Job</button>
+        <button class="btn btn-secondary" onclick="saveEstimate()">Save</button>
+    </div>
+
+    <div class="header-card">
+        <div class="header-row">
+            <div class="field">
+                <label>Estimate Name</label>
+                <input type="text" id="est-name" placeholder="e.g. BF5 Copper Coolers Decommissioning">
+            </div>
+            <div class="field">
+                <label>Estimate Ref</label>
+                <input type="text" id="est-ref" placeholder="e.g. MII-E-26-27387">
+            </div>
+            <div class="field">
+                <label>Client</label>
+                <input type="text" id="est-client" value="Tata Steel">
+            </div>
+        </div>
+        <div class="header-row">
+            <div class="field">
+                <label>Rate Card</label>
+                <select id="est-rate-card" onchange="onEstRateCardChange()">
+                    <option value="">No rate card</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>MII Markup %</label>
+                <input type="number" id="est-markup" value="14" min="0" max="50" step="0.5" oninput="recalcAll()">
+            </div>
+            <div class="field">
+                <label>Materials Markup %</label>
+                <input type="number" id="est-mat-markup" value="2.5" min="0" max="20" step="0.1">
+            </div>
+        </div>
+    </div>
+
+    <!-- 8 Sections -->
+    <div id="sections-container"></div>
+</div>
+
+<!-- Grand Total Footer (visible in editor) -->
+<div class="grand-total-bar" id="grand-total-bar" style="display:none">
+    <div class="gt-item">
+        <div class="gt-label">Man-Hours</div>
+        <div class="gt-value" id="gt-manhours" style="color:var(--accent)">0</div>
+    </div>
+    <div class="gt-item">
+        <div class="gt-label">At Cost</div>
+        <div class="gt-value" id="gt-atcost" style="color:var(--text)">&#163;0</div>
+    </div>
+    <div class="gt-item">
+        <div class="gt-label">Contract Value</div>
+        <div class="gt-value" id="gt-contract" style="color:var(--success)">&#163;0</div>
+    </div>
+    <div class="gt-item">
+        <div class="gt-label">Margin</div>
+        <div class="gt-value" id="gt-margin" style="color:var(--mii-blue)">&#163;0</div>
+    </div>
+</div>
+
+<!-- Shift Calculator Modal -->
+<div class="modal-overlay" id="shift-modal">
+    <div class="modal-box">
+        <h3>Shift Calculator</h3>
+        <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:16px">Calculate weekly hours distribution across Rate A-E based on shift pattern</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div class="field">
+                <label>Shift Start</label>
+                <input type="time" id="shift-start" value="07:00">
+            </div>
+            <div class="field">
+                <label>Shift End</label>
+                <input type="time" id="shift-end" value="17:30">
+            </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+            <label style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-light);display:block;margin-bottom:6px">Working Days</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap" id="shift-days">
+                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="mon"> Mon</label>
+                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="tue"> Tue</label>
+                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="wed"> Wed</label>
+                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="thu"> Thu</label>
+                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" checked data-day="fri"> Fri</label>
+                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" data-day="sat"> Sat</label>
+                <label style="font-size:0.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" data-day="sun"> Sun</label>
+            </div>
+        </div>
+
+        <div style="background:#f8f9fb;border-radius:8px;padding:14px;margin-bottom:16px">
+            <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;color:var(--text-light);margin-bottom:8px">Weekly Hours per Rate Type</div>
+            <div id="shift-results" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center">
+                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate A</div><div style="font-size:1.1rem;font-weight:800" id="sr-a">0</div></div>
+                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate B</div><div style="font-size:1.1rem;font-weight:800" id="sr-b">0</div></div>
+                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate C</div><div style="font-size:1.1rem;font-weight:800" id="sr-c">0</div></div>
+                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate D</div><div style="font-size:1.1rem;font-weight:800" id="sr-d">0</div></div>
+                <div><div style="font-size:0.65rem;font-weight:700;color:var(--text-light)">Rate E</div><div style="font-size:1.1rem;font-weight:800" id="sr-e">0</div></div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-secondary" onclick="closeShiftCalc()">Cancel</button>
+            <button class="btn btn-primary" onclick="calcShift()">Calculate</button>
+            <button class="btn btn-success" onclick="applyShiftHours()">Apply to All Labour</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="mii-db.js"></script>
+<script src="cost_db.js"></script>
+<script>
+// ===== ADMIN-ONLY ACCESS CHECK =====
+(function() {
+    const userJson = localStorage.getItem('mii_user');
+    const token = localStorage.getItem('mii_token');
+    if (!token || !userJson) { location.href = 'hub.html'; return; }
+    const user = JSON.parse(userJson);
+    if (user.role !== 'ADMIN') { location.href = 'hub.html'; return; }
+})();
+
+// ===== CONSTANTS =====
+const CATS = CostDB.DEFAULT_CATEGORIES;
+const SECTION_COLORS = ['#003087','#0078d4','#28a745','#e6a000','#8e44ad','#dc3545','#17a2b8','#6c757d'];
+
+let _estId = null;        // current estimate id
+let _estData = null;      // full estimate data
+let _rateCardGrades = []; // current rate card grades
+
+// ===== HELPERS =====
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function fmt(v) { return CostDB.formatGBP(v, 2); }
+function fmtShort(v) {
+    const n = parseFloat(v) || 0;
+    if (Math.abs(n) >= 1000000) return '\u00A3' + (n / 1000000).toFixed(1) + 'M';
+    if (Math.abs(n) >= 1000) return '\u00A3' + (n / 1000).toFixed(0) + 'K';
+    return '\u00A3' + n.toFixed(0);
+}
+
+function showToast(message, type) {
+    type = type || 'info';
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.innerHTML = '<span>' + esc(message) + '</span>';
+    container.appendChild(toast);
+    setTimeout(function() {
+        toast.style.animation = 'slideOut 0.25s ease-in forwards';
+        setTimeout(function() { toast.remove(); }, 250);
+    }, 3000);
+}
+
+// ===== LIST VIEW =====
+async function loadEstimatesList() {
+    const ests = await CostDB.getEstimates();
+    const container = document.getElementById('estimates-list');
+
+    if (ests.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light)">' +
+            '<p style="font-size:0.95rem;margin-bottom:12px">No estimates yet</p>' +
+            '<p style="font-size:0.82rem">Click "New Estimate" to create your first estimate</p></div>';
+        return;
+    }
+
+    let html = '';
+    for (const est of ests) {
+        const summary = await CostDB.getEstimateSummary(est.id);
+        const total = summary ? summary.grand_contract_value : 0;
+        const items = summary ? summary.sections.reduce(function(s, sec) { return s + sec.item_count; }, 0) : 0;
+        const date = est.updated_at ? new Date(est.updated_at).toLocaleDateString('en-GB') : '';
+
+        html += '<div class="est-list-item" onclick="openEstimate(\'' + est.id + '\')">' +
+            '<div style="flex:1">' +
+            '<div style="font-weight:700;font-size:0.88rem">' + esc(est.name || 'Untitled') + '</div>' +
+            '<div style="font-size:0.75rem;color:var(--text-light)">' + esc(est.estimate_ref || '') +
+            (est.client ? ' \u2014 ' + esc(est.client) : '') + '</div></div>' +
+            '<div style="text-align:right;margin-right:16px">' +
+            '<div style="font-weight:700;font-variant-numeric:tabular-nums">' + fmt(total) + '</div>' +
+            '<div style="font-size:0.7rem;color:var(--text-light)">' + items + ' items</div></div>' +
+            '<div><span class="status-badge ' + (est.status || 'draft') + '">' + (est.status || 'draft') + '</span></div>' +
+            '<div style="font-size:0.75rem;color:var(--text-light);margin-left:16px;min-width:70px">' + date + '</div>' +
+            '</div>';
+    }
+    container.innerHTML = html;
+}
+
+async function createNewEstimate() {
+    const id = await CostDB.createEstimate({
+        name: 'New Estimate',
+        client: 'Tata Steel',
+        markup_pct: 14,
+        materials_markup_pct: 2.5,
+    });
+    await openEstimate(id);
+}
+
+async function openEstimate(id) {
+    _estId = id;
+    _estData = await CostDB.getEstimate(id);
+    if (!_estData) { showToast('Estimate not found', 'error'); return; }
+
+    // Switch views
+    document.getElementById('list-view').style.display = 'none';
+    document.getElementById('editor-view').style.display = '';
+    document.getElementById('grand-total-bar').style.display = '';
+
+    // Fill header
+    document.getElementById('est-name').value = _estData.name || '';
+    document.getElementById('est-ref').value = _estData.estimate_ref || '';
+    document.getElementById('est-client').value = _estData.client || 'Tata Steel';
+    document.getElementById('est-markup').value = _estData.markup_pct || 14;
+    document.getElementById('est-mat-markup').value = _estData.materials_markup_pct || 2.5;
+
+    // Load rate cards dropdown
+    await loadRateCardDropdown();
+    if (_estData.rate_card_id) {
+        document.getElementById('est-rate-card').value = _estData.rate_card_id;
+        await loadRateCardGrades(_estData.rate_card_id);
+    }
+
+    renderSections();
+    recalcAll();
+}
+
+function backToList() {
+    saveEstimate();
+    document.getElementById('list-view').style.display = '';
+    document.getElementById('editor-view').style.display = 'none';
+    document.getElementById('grand-total-bar').style.display = 'none';
+    _estId = null;
+    _estData = null;
+    loadEstimatesList();
+}
+
+// ===== RATE CARD =====
+async function loadRateCardDropdown() {
+    const cards = await CostDB.getRateCards();
+    const sel = document.getElementById('est-rate-card');
+    while (sel.options.length > 1) sel.remove(1);
+    cards.forEach(function(c) {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name + ' (' + c.year + ')';
+        sel.appendChild(opt);
+    });
+}
+
+async function loadRateCardGrades(cardId) {
+    if (!cardId) { _rateCardGrades = []; return; }
+    const card = await CostDB.getRateCard(cardId);
+    _rateCardGrades = card ? card.grades || [] : [];
+}
+
+async function onEstRateCardChange() {
+    const cardId = document.getElementById('est-rate-card').value;
+    await loadRateCardGrades(cardId);
+
+    if (cardId && _estId) {
+        const updated = await CostDB.applyRateCardToEstimate(_estId, cardId);
+        if (updated > 0) {
+            _estData = await CostDB.getEstimate(_estId);
+            renderSections();
+            recalcAll();
+            showToast('Applied rates to ' + updated + ' labour lines', 'success');
+        }
+    }
+}
+
+function buildGradeOptions(selectedId) {
+    let html = '<option value="">Select grade...</option>';
+    _rateCardGrades.forEach(function(g) {
+        const sel = g.id === selectedId ? ' selected' : '';
+        html += '<option value="' + g.id + '"' + sel + '>' + esc(g.grade_name) + '</option>';
+    });
+    return html;
+}
+
+// ===== RENDER SECTIONS =====
+function renderSections() {
+    const container = document.getElementById('sections-container');
+    let html = '';
+
+    CATS.forEach(function(cat, ci) {
+        const sn = cat.number;
+        const items = (_estData.sections && _estData.sections[sn]) || [];
+        const isLabour = sn <= 2;
+        const sectionTotal = items.reduce(function(s, i) { return s + (i.line_total || 0); }, 0);
+
+        html += '<div class="section-card' + (items.length > 0 ? ' open' : '') + '" id="sec-' + sn + '">';
+        html += '<div class="section-header" onclick="toggleSection(' + sn + ')">';
+        html += '<span class="section-chevron">&#9654;</span>';
+        html += '<span class="section-num" style="background:' + SECTION_COLORS[ci] + '">' + sn + '</span>';
+        html += '<span class="section-title">' + esc(cat.name) + '</span>';
+        html += '<div class="section-meta">';
+        html += '<span>' + items.length + ' items</span>';
+        html += '<span class="section-total" id="sec-total-' + sn + '">' + fmt(sectionTotal) + '</span>';
+        html += '</div></div>';
+
+        html += '<div class="section-body">';
+
+        if (isLabour) {
+            html += renderLabourTable(sn, items);
+        } else {
+            html += renderMaterialTable(sn, items);
+        }
+
+        html += '<button class="btn-add-line" onclick="addLine(' + sn + ',\'' + (isLabour ? 'labour' : 'material') + '\')">+ Add Line</button>';
+        html += '</div></div>';
+    });
+
+    container.innerHTML = html;
+}
+
+function renderLabourTable(sn, items) {
+    let html = '<table class="items-table"><thead><tr>';
+    html += '<th>Description / Grade</th>';
+    html += '<th class="r" title="Number of people">Heads</th>';
+    html += '<th class="r" title="Duration in weeks">Weeks</th>';
+    html += '<th class="r" title="Rate A normal hours">Hrs A</th>';
+    html += '<th class="r" title="Rate A \u00A3/hr">Rate A</th>';
+    html += '<th class="r" title="Rate B midweek OT hours">Hrs B</th>';
+    html += '<th class="r" title="Rate B \u00A3/hr">Rate B</th>';
+    html += '<th class="r" title="Rate C night hours">Hrs C</th>';
+    html += '<th class="r" title="Rate C \u00A3/hr">Rate C</th>';
+    html += '<th class="r">Total</th>';
+    html += '<th></th>';
+    html += '</tr></thead><tbody>';
+
+    items.forEach(function(item) {
+        html += '<tr data-id="' + item.id + '">';
+        html += '<td><input class="item-desc" value="' + esc(item.description) + '" data-field="description" onchange="updateField(this)">';
+        if (_rateCardGrades.length > 0) {
+            html += '<select style="margin-top:2px;font-size:0.72rem" data-field="grade" onchange="onGradeChange(this,\'' + item.id + '\')">' + buildGradeOptions(item.grade_id) + '</select>';
+        }
+        html += '</td>';
+        html += '<td><input type="number" class="item-hrs" value="' + (item.headcount || 0) + '" data-field="headcount" min="0" oninput="updateField(this)"></td>';
+        html += '<td><input type="number" class="item-hrs" value="' + (item.duration_weeks || 1) + '" data-field="duration_weeks" min="0.1" step="0.5" oninput="updateField(this)"></td>';
+        html += '<td><input type="number" class="item-hrs" value="' + (parseFloat(item.hours_a) || 0) + '" data-field="hours_a" min="0" step="0.5" oninput="updateField(this)"></td>';
+        html += '<td><input type="number" class="item-rate" value="' + (parseFloat(item.rate_a) || 0).toFixed(2) + '" data-field="rate_a" min="0" step="0.01" oninput="updateField(this)"></td>';
+        html += '<td><input type="number" class="item-hrs" value="' + (parseFloat(item.hours_b) || 0) + '" data-field="hours_b" min="0" step="0.5" oninput="updateField(this)"></td>';
+        html += '<td><input type="number" class="item-rate" value="' + (parseFloat(item.rate_b) || 0).toFixed(2) + '" data-field="rate_b" min="0" step="0.01" oninput="updateField(this)"></td>';
+        html += '<td><input type="number" class="item-hrs" value="' + (parseFloat(item.hours_c) || 0) + '" data-field="hours_c" min="0" step="0.5" oninput="updateField(this)"></td>';
+        html += '<td><input type="number" class="item-rate" value="' + (parseFloat(item.rate_c) || 0).toFixed(2) + '" data-field="rate_c" min="0" step="0.01" oninput="updateField(this)"></td>';
+        html += '<td class="r item-total" id="item-total-' + item.id + '">' + fmt(item.line_total || 0) + '</td>';
+        html += '<td><button class="btn-remove" onclick="removeLine(\'' + item.id + '\')">&times;</button></td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    return html;
+}
+
+function renderMaterialTable(sn, items) {
+    const showMarkup = sn === 5; // Materials section
+
+    let html = '<table class="items-table"><thead><tr>';
+    html += '<th>Description</th>';
+    html += '<th class="r">Qty</th>';
+    html += '<th>Unit</th>';
+    html += '<th class="r">Rate (\u00A3)</th>';
+    if (showMarkup) html += '<th class="r">Markup %</th>';
+    html += '<th class="r">Total</th>';
+    html += '<th></th>';
+    html += '</tr></thead><tbody>';
+
+    items.forEach(function(item) {
+        html += '<tr data-id="' + item.id + '">';
+        html += '<td><input class="item-desc" value="' + esc(item.description) + '" data-field="description" onchange="updateField(this)"></td>';
+        html += '<td><input type="number" class="item-num" value="' + (item.quantity || 0) + '" data-field="quantity" min="0" step="0.01" oninput="updateField(this)"></td>';
+        html += '<td><select data-field="unit" onchange="updateField(this)" style="width:70px">' +
+            '<option' + (item.unit === 'each' ? ' selected' : '') + '>each</option>' +
+            '<option' + (item.unit === 'days' ? ' selected' : '') + '>days</option>' +
+            '<option' + (item.unit === 'weeks' ? ' selected' : '') + '>weeks</option>' +
+            '<option' + (item.unit === 'hrs' ? ' selected' : '') + '>hrs</option>' +
+            '<option' + (item.unit === 'lot' ? ' selected' : '') + '>lot</option>' +
+            '<option' + (item.unit === 'm' ? ' selected' : '') + '>m</option>' +
+            '<option' + (item.unit === 'tonne' ? ' selected' : '') + '>tonne</option>' +
+            '</select></td>';
+        html += '<td><input type="number" class="item-rate" value="' + (parseFloat(item.unit_rate) || 0).toFixed(2) + '" data-field="unit_rate" min="0" step="0.01" oninput="updateField(this)"></td>';
+        if (showMarkup) html += '<td><input type="number" class="item-hrs" value="' + (item.markup_pct || 0) + '" data-field="markup_pct" min="0" step="0.1" oninput="updateField(this)"></td>';
+        html += '<td class="r item-total" id="item-total-' + item.id + '">' + fmt(item.line_total || 0) + '</td>';
+        html += '<td><button class="btn-remove" onclick="removeLine(\'' + item.id + '\')">&times;</button></td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    return html;
+}
+
+function toggleSection(sn) {
+    document.getElementById('sec-' + sn).classList.toggle('open');
+}
+
+// ===== FIELD UPDATES =====
+function getItemRow(el) {
+    return el.closest('tr');
+}
+
+async function updateField(el) {
+    const row = getItemRow(el);
+    if (!row) return;
+    const itemId = row.getAttribute('data-id');
+    const field = el.getAttribute('data-field');
+    let value = el.value;
+
+    // Parse numbers
+    if (el.type === 'number') value = parseFloat(value) || 0;
+
+    const updates = {};
+    updates[field] = value;
+
+    await CostDB.updateEstimateItem(itemId, updates);
+
+    // Update totals
+    const item = await MiiDB.get('cost_estimate_items', itemId);
+    if (item) {
+        document.getElementById('item-total-' + itemId).textContent = fmt(item.line_total);
+    }
+
+    // Update the in-memory data and section totals
+    _estData = await CostDB.getEstimate(_estId);
+    recalcAll();
+}
+
+async function onGradeChange(sel, itemId) {
+    const gradeId = sel.value;
+    if (!gradeId) return;
+
+    const grade = _rateCardGrades.find(function(g) { return g.id === gradeId; });
+    if (!grade) return;
+
+    await CostDB.updateEstimateItem(itemId, {
+        grade_id: gradeId,
+        grade_name: grade.grade_name,
+        rate_a: parseFloat(grade.rate_a) || 0,
+        rate_b: parseFloat(grade.rate_b) || 0,
+        rate_c: parseFloat(grade.rate_c) || 0,
+        rate_d: parseFloat(grade.rate_d) || 0,
+        rate_e: parseFloat(grade.rate_e) || 0,
+    });
+
+    // Refresh this section
+    _estData = await CostDB.getEstimate(_estId);
+    renderSections();
+    recalcAll();
+}
+
+// ===== ADD/REMOVE LINES =====
+async function addLine(sn, lineType) {
+    await CostDB.addEstimateItem(_estId, sn, lineType, {
+        markup_pct: sn === 5 ? (parseFloat(document.getElementById('est-mat-markup').value) || 2.5) : 0,
+    });
+    _estData = await CostDB.getEstimate(_estId);
+    renderSections();
+
+    // Open the section
+    document.getElementById('sec-' + sn).classList.add('open');
+}
+
+async function removeLine(itemId) {
+    await CostDB.removeEstimateItem(itemId);
+    _estData = await CostDB.getEstimate(_estId);
+    renderSections();
+    recalcAll();
+}
+
+// ===== RECALCULATE =====
+function recalcAll() {
+    if (!_estData) return;
+
+    const markup = parseFloat(document.getElementById('est-markup').value) || 14;
+    const multiplier = 1 + markup / 100;
+    let grandAtCost = 0;
+    let totalManHours = 0;
+
+    for (let sn = 1; sn <= 8; sn++) {
+        const items = (_estData.sections && _estData.sections[sn]) || [];
+        const sectionTotal = items.reduce(function(s, i) { return s + (i.line_total || 0); }, 0);
+        const sectionMH = items.reduce(function(s, i) { return s + CostDB.calculateManHours(i); }, 0);
+        grandAtCost += sectionTotal;
+        totalManHours += sectionMH;
+
+        const el = document.getElementById('sec-total-' + sn);
+        if (el) el.textContent = fmt(sectionTotal);
+    }
+
+    const contractValue = grandAtCost * multiplier;
+    const margin = contractValue - grandAtCost;
+
+    document.getElementById('gt-manhours').textContent = Math.round(totalManHours).toLocaleString();
+    document.getElementById('gt-atcost').textContent = fmt(grandAtCost);
+    document.getElementById('gt-contract').textContent = fmt(contractValue);
+    document.getElementById('gt-margin').textContent = fmt(margin);
+}
+
+// ===== SAVE =====
+async function saveEstimate() {
+    if (!_estId) return;
+
+    await CostDB.updateEstimate(_estId, {
+        name: document.getElementById('est-name').value.trim(),
+        estimate_ref: document.getElementById('est-ref').value.trim(),
+        client: document.getElementById('est-client').value.trim(),
+        markup_pct: parseFloat(document.getElementById('est-markup').value) || 14,
+        materials_markup_pct: parseFloat(document.getElementById('est-mat-markup').value) || 2.5,
+        rate_card_id: document.getElementById('est-rate-card').value || null,
+    });
+
+    showToast('Estimate saved', 'success');
+}
+
+// ===== EXPORT TO JOB =====
+async function exportToJob() {
+    if (!_estId) return;
+
+    await saveEstimate();
+    const summary = await CostDB.getEstimateSummary(_estId);
+    if (!summary) return;
+
+    const name = document.getElementById('est-name').value.trim() || 'Untitled';
+    const client = document.getElementById('est-client').value.trim();
+    const estRef = document.getElementById('est-ref').value.trim();
+
+    // Build category array for createJob
+    const categories = summary.sections.map(function(sec) {
+        return { number: sec.section_number, contract_value: sec.contract_value };
+    });
+
+    const jobNumber = prompt('Enter Job Number for this estimate:', '');
+    if (!jobNumber) return;
+
+    try {
+        await CostDB.createJob({
+            job_number: jobNumber,
+            job_name: name,
+            client: client,
+            markup: summary.markup_pct,
+            categories: categories,
+            estimate_ref: estRef,
+            rate_card_id: document.getElementById('est-rate-card').value || null,
+        });
+
+        await CostDB.updateEstimate(_estId, { job_id: jobNumber, status: 'submitted' });
+        showToast('Job ' + jobNumber + ' created from estimate', 'success');
+    } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+    }
+}
+
+// ===== SHIFT CALCULATOR =====
+function openShiftCalc() {
+    document.getElementById('shift-modal').classList.add('active');
+    calcShift();
+}
+
+function closeShiftCalc() {
+    document.getElementById('shift-modal').classList.remove('active');
+}
+
+document.getElementById('shift-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeShiftCalc();
+});
+
+function calcShift() {
+    const startStr = document.getElementById('shift-start').value;
+    const endStr = document.getElementById('shift-end').value;
+    if (!startStr || !endStr) return;
+
+    const start = parseTime(startStr);
+    const end = parseTime(endStr);
+    const shiftHours = end > start ? end - start : (24 - start) + end;
+
+    // NAECI rules:
+    // Rate A (Normal): Mon-Thu 8h, Fri 6h = 38h max
+    // Rate B (MW OT): Midweek after normal shift to midnight
+    // Rate C (Night): Midnight to 07:00
+    // Rate D (Weekend): First 4h Saturday morning
+    // Rate E (Weekend+): After 4h Saturday through Sunday
+
+    const days = document.querySelectorAll('#shift-days input:checked');
+    let hoursA = 0, hoursB = 0, hoursC = 0, hoursD = 0, hoursE = 0;
+
+    days.forEach(function(cb) {
+        const day = cb.getAttribute('data-day');
+
+        if (day === 'sat') {
+            // First 4h = Rate D, rest = Rate E
+            hoursD += Math.min(shiftHours, 4);
+            if (shiftHours > 4) hoursE += shiftHours - 4;
+        } else if (day === 'sun') {
+            // All Sunday = Rate E
+            hoursE += shiftHours;
+        } else {
+            // Weekday
+            const normalMax = day === 'fri' ? 6 : 8;
+            const normalHrs = Math.min(shiftHours, normalMax);
+            hoursA += normalHrs;
+
+            // Overtime after normal
+            if (shiftHours > normalMax) {
+                const otHrs = shiftHours - normalMax;
+                // If end is after midnight, split between B and C
+                if (end <= 7) {
+                    hoursC += otHrs;
+                } else if (start + shiftHours > 24) {
+                    // Crosses midnight
+                    const toMidnight = 24 - (start + normalMax);
+                    hoursB += Math.max(0, toMidnight);
+                    hoursC += otHrs - Math.max(0, toMidnight);
+                } else {
+                    hoursB += otHrs;
+                }
+            }
+        }
+    });
+
+    document.getElementById('sr-a').textContent = hoursA.toFixed(1);
+    document.getElementById('sr-b').textContent = hoursB.toFixed(1);
+    document.getElementById('sr-c').textContent = hoursC.toFixed(1);
+    document.getElementById('sr-d').textContent = hoursD.toFixed(1);
+    document.getElementById('sr-e').textContent = hoursE.toFixed(1);
+}
+
+function parseTime(str) {
+    const parts = str.split(':');
+    return parseInt(parts[0]) + parseInt(parts[1]) / 60;
+}
+
+async function applyShiftHours() {
+    if (!_estId) return;
+
+    const hA = parseFloat(document.getElementById('sr-a').textContent) || 0;
+    const hB = parseFloat(document.getElementById('sr-b').textContent) || 0;
+    const hC = parseFloat(document.getElementById('sr-c').textContent) || 0;
+    const hD = parseFloat(document.getElementById('sr-d').textContent) || 0;
+    const hE = parseFloat(document.getElementById('sr-e').textContent) || 0;
+
+    const allItems = await MiiDB.getAll('cost_estimate_items');
+    const labourItems = allItems.filter(function(i) {
+        return i.estimate_id === _estId && i.line_type === 'labour';
+    });
+
+    for (const item of labourItems) {
+        await CostDB.updateEstimateItem(item.id, {
+            hours_a: hA,
+            hours_b: hB,
+            hours_c: hC,
+            hours_d: hD,
+            hours_e: hE,
+        });
+    }
+
+    _estData = await CostDB.getEstimate(_estId);
+    renderSections();
+    recalcAll();
+    closeShiftCalc();
+    showToast('Applied shift hours to ' + labourItems.length + ' labour lines', 'success');
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Check URL for estimate id
+    const params = new URLSearchParams(window.location.search);
+    const estId = params.get('id');
+
+    if (estId) {
+        openEstimate(estId);
+    } else {
+        loadEstimatesList();
+    }
+});
+</script>
+</body>
+</html>

@@ -26,6 +26,29 @@
     { number: 8, name: 'Travel & Accommodation' },
   ];
 
+  // NAECI standard labour grades
+  const DEFAULT_GRADES = [
+    { grade_number: 1, grade_name: 'Eng. Co-ordinator' },
+    { grade_number: 2, grade_name: 'Supervisor' },
+    { grade_number: 3, grade_name: 'Grade 6 - PICWP/Chargehand' },
+    { grade_number: 4, grade_name: 'Grade 5 - Coded Welder' },
+    { grade_number: 5, grade_name: 'Grade 5 - Fitters/Riggers/Welders' },
+    { grade_number: 6, grade_name: 'Grade 4 - Craftsman' },
+    { grade_number: 7, grade_name: 'Grade 3 - Semi Skilled' },
+  ];
+
+  // Rate types (8 NAECI overtime categories)
+  const RATE_COLUMNS = [
+    { key: 'rate_a', header: 'Rate A (Normal)',   tooltip: 'Normal time: 8h Mon-Thu, 6h Fri' },
+    { key: 'rate_b', header: 'Rate B (MW OT)',    tooltip: 'Midweek overtime: after shift to midnight' },
+    { key: 'rate_c', header: 'Rate C (Night)',     tooltip: 'Night overtime: midnight to 07:00' },
+    { key: 'rate_d', header: 'Rate D (Wknd)',      tooltip: 'Weekend: first 4h Saturday morning' },
+    { key: 'rate_e', header: 'Rate E (Wknd+)',     tooltip: 'Weekend: after 4h Saturday to Monday 07:00' },
+    { key: 'rate_f', header: 'Rate F',             tooltip: 'Additional rate type F' },
+    { key: 'rate_g', header: 'Rate G',             tooltip: 'Additional rate type G' },
+    { key: 'rate_h', header: 'Rate H',             tooltip: 'Additional rate type H' },
+  ];
+
   // ── Helpers ────────────────────────────────────────────────────
 
   function generateId() {
@@ -176,7 +199,8 @@
      * @returns {Promise<string>} job id
      */
     async createJob({ job_number, job_name, client = '', markup = 14, categories = [], notes = '',
-                       estimate_ref = '', ai_notes = '', group_id = null }) {
+                       estimate_ref = '', ai_notes = '', group_id = null,
+                       expected_start = null, expected_end = null, rate_card_id = null }) {
       await MiiDB.ready();
 
       const jobId = generateId();
@@ -193,6 +217,9 @@
         notes,
         estimate_ref,
         ai_notes,
+        expected_start: expected_start || null,
+        expected_end: expected_end || null,
+        rate_card_id: rate_card_id || null,
         status: 'active',
         is_group: false,
         group_id,
@@ -805,7 +832,7 @@
         let matched = false;
         const costCodeUpper = (t.cost_code || '').toUpperCase();
         const supplierUpper = (t.supplier_name || '').toUpperCase();
-        const costCodeDescUpper = (t.cost_code_desc || '').toUpperCase();
+        const costCodeDescUpper = (t.cost_code_desc || t.cost_code || '').toUpperCase();
 
         // Try labour match first: exact cost_code match
         for (const lm of labourMappings) {
@@ -2094,16 +2121,52 @@
     },
 
     /**
-     * Ask AI to suggest categories for unmapped transactions.
-     * Returns array of {txn_index, category_number, confidence, reason}.
+     * Ask AI to suggest reusable mapping RULES for unmapped transactions.
+     * Ported from desktop ai_mapping_service.py — sends deduplicated patterns,
+     * returns supplier/labour mapping rules (not per-transaction suggestions).
+     *
+     * @param {string} jobId
+     * @returns {Promise<Object>} {supplier_mappings, labour_mappings, unmapped_count, pattern_count}
      */
-    async aiSuggestCategories(jobId) {
+    async aiSuggestMappings(jobId) {
       const token = localStorage.getItem('mii_token');
       if (!token) throw new Error('Not logged in');
 
       const allTxns = await MiiDB.getAll('cost_transactions');
-      const unmapped = allTxns.filter(t => t.job_id === jobId && (!t.mapped_category || t.mapped_category === 0));
-      if (!unmapped.length) return [];
+      const unmapped = allTxns.filter(t =>
+        t.job_id === jobId &&
+        (!t.mapped_category || t.mapped_category === 0) &&
+        !t.is_revenue &&
+        t.mapping_source !== 'manual'
+      );
+      if (!unmapped.length) return { supplier_mappings: [], labour_mappings: [], unmapped_count: 0, pattern_count: 0 };
+
+      // Deduplicate into patterns grouped by (supplier_name, cost_code) — desktop parity
+      const seen = {};
+      for (const t of unmapped) {
+        const supplier = (t.supplier_name || '').trim();
+        const costCode = (t.cost_code || '').trim();
+        const key = supplier + '\x00' + costCode;
+        if (!seen[key]) {
+          seen[key] = {
+            supplier_name: supplier,
+            cost_code: costCode,
+            cost_code_desc: (t.cost_code_desc || '').trim(),
+            cost_type: (t.cost_type || '').trim(),
+            cost_type_desc: (t.cost_type_desc || '').trim(),
+            description: (t.description || '').trim(),
+            jw_trtype: (t.jw_trtype || '').trim(),
+            count: 1,
+          };
+        } else {
+          seen[key].count++;
+        }
+      }
+
+      // Sort by frequency descending, limit to 100 patterns
+      const patterns = Object.values(seen)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 100);
 
       // Get existing mappings for context
       const supplierMappings = await MiiDB.getAll('cost_supplier_mappings');
@@ -2113,17 +2176,19 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({
-          transactions: unmapped.slice(0, 50).map(t => ({
-            supplier_name: t.supplier_name || t.subcontractor || '',
-            cost_code: t.cost_code || '',
-            cost_code_desc: t.cost_code_desc || '',
-            trans_type: t.trans_type || '',
-            description: t.description || '',
-            value: t.value || t.total_cost || 0,
-          })),
+          patterns,
           existing_mappings: {
-            supplier: supplierMappings.slice(0, 30),
-            labour: labourMappings.slice(0, 30),
+            supplier: supplierMappings.slice(0, 30).map(m => ({
+              supplier_prefix: m.supplier_prefix || '',
+              cost_code_prefix: m.cost_code_prefix || '',
+              category_number: m.category_number,
+              note: m.note || '',
+            })),
+            labour: labourMappings.slice(0, 30).map(m => ({
+              cost_code: m.cost_code || '',
+              category_number: m.category_number,
+              note: m.note || '',
+            })),
           },
         }),
       });
@@ -2134,7 +2199,50 @@
       }
 
       const data = await resp.json();
-      return { suggestions: data.suggestions || [], unmapped_txns: unmapped.slice(0, 50) };
+      return {
+        supplier_mappings: data.supplier_mappings || [],
+        labour_mappings: data.labour_mappings || [],
+        unmapped_count: unmapped.length,
+        pattern_count: patterns.length,
+      };
+    },
+
+    /**
+     * Apply AI-suggested mapping rules: create actual supplier/labour mapping
+     * records, then re-run applyMappings to categorise all transactions.
+     *
+     * @param {string} jobId
+     * @param {Array} supplierRules - [{supplier_prefix, cost_code_prefix, category_number, note}]
+     * @param {Array} labourRules - [{cost_code, category_number, note}]
+     * @returns {Promise<Object>} {supplier_created, labour_created, mapping_result}
+     */
+    async applyAiMappingRules(jobId, supplierRules, labourRules) {
+      const counts = { supplier_created: 0, labour_created: 0 };
+
+      for (const r of supplierRules) {
+        await this.createSupplierMapping({
+          supplier_prefix: (r.supplier_prefix || '').toUpperCase(),
+          cost_code_prefix: (r.cost_code_prefix || '').toUpperCase(),
+          category_number: r.category_number,
+          job_id: jobId,
+          note: r.note || 'AI suggested',
+        });
+        counts.supplier_created++;
+      }
+
+      for (const r of labourRules) {
+        await this.createLabourMapping({
+          cost_code: (r.cost_code || '').toUpperCase(),
+          category_number: r.category_number,
+          job_id: jobId,
+          note: r.note || 'AI suggested',
+        });
+        counts.labour_created++;
+      }
+
+      // Re-run mapping engine with new rules
+      const mappingResult = await this.applyMappings(jobId);
+      return { ...counts, mapping_result: mappingResult };
     },
 
     /**
@@ -2146,6 +2254,425 @@
       await this.syncTransactionsToServer(jobId);
     },
 
+    // ── Estimates ───────────────────────────────────────────────────
+
+    /**
+     * Calculate line item total.
+     * Labour: headcount * duration * SUM(hours_X * rate_X)
+     * Material: quantity * unit_rate * (1 + markup_pct/100)
+     */
+    calculateItemTotal(item) {
+      if (item.line_type === 'labour') {
+        let sum = 0;
+        for (const k of ['a','b','c','d','e']) {
+          sum += (parseFloat(item['hours_' + k]) || 0) * (parseFloat(item['rate_' + k]) || 0);
+        }
+        return (parseFloat(item.headcount) || 0) * (parseFloat(item.duration_weeks) || 1) * sum;
+      }
+      // material
+      const qty = parseFloat(item.quantity) || 0;
+      const rate = parseFloat(item.unit_rate) || 0;
+      const mkp = parseFloat(item.markup_pct) || 0;
+      return qty * rate * (1 + mkp / 100);
+    },
+
+    /**
+     * Calculate man-hours for a labour line item.
+     */
+    calculateManHours(item) {
+      if (item.line_type !== 'labour') return 0;
+      let totalHrs = 0;
+      for (const k of ['a','b','c','d','e']) {
+        totalHrs += parseFloat(item['hours_' + k]) || 0;
+      }
+      return (parseFloat(item.headcount) || 0) * (parseFloat(item.duration_weeks) || 1) * totalHrs;
+    },
+
+    /**
+     * Create a new estimate.
+     * @returns {Promise<string>} estimate id
+     */
+    async createEstimate({ name = '', estimate_ref = '', client = '', rate_card_id = null,
+                            markup_pct = 14, materials_markup_pct = 2.5, job_id = null, notes = '' }) {
+      await MiiDB.ready();
+      const id = generateId();
+      const now = new Date().toISOString();
+
+      const est = {
+        id,
+        name,
+        estimate_ref,
+        client,
+        rate_card_id,
+        job_id,
+        markup_pct: parseFloat(markup_pct) || 14,
+        materials_markup_pct: parseFloat(materials_markup_pct) || 2.5,
+        status: 'draft',
+        shift_pattern: null,
+        notes,
+        version: 1,
+        created_at: now,
+        updated_at: now,
+      };
+      await MiiDB.save('cost_estimates', est);
+      this.syncEstimateToServer(id).catch(() => {});
+      return id;
+    },
+
+    /**
+     * Get all estimates (headers only).
+     */
+    async getEstimates() {
+      await MiiDB.ready();
+      const ests = await MiiDB.getAll('cost_estimates');
+      return ests.sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+    },
+
+    /**
+     * Get full estimate with items grouped by section.
+     */
+    async getEstimate(estimateId) {
+      await MiiDB.ready();
+      const est = await MiiDB.get('cost_estimates', estimateId);
+      if (!est) return null;
+
+      const allItems = await MiiDB.getAll('cost_estimate_items');
+      const items = allItems.filter(i => i.estimate_id === estimateId);
+      items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+      // Group by section
+      est.sections = {};
+      for (let s = 1; s <= 8; s++) {
+        est.sections[s] = items.filter(i => i.section_number === s);
+      }
+      est.items = items;
+      return est;
+    },
+
+    /**
+     * Update estimate header fields.
+     */
+    async updateEstimate(estimateId, updates) {
+      await MiiDB.ready();
+      const est = await MiiDB.get('cost_estimates', estimateId);
+      if (!est) return;
+      Object.assign(est, updates, { updated_at: new Date().toISOString() });
+      await MiiDB.save('cost_estimates', est);
+      this.syncEstimateToServer(estimateId).catch(() => {});
+    },
+
+    /**
+     * Delete estimate and all its items.
+     */
+    async deleteEstimate(estimateId) {
+      await MiiDB.ready();
+      const allItems = await MiiDB.getAll('cost_estimate_items');
+      for (const item of allItems) {
+        if (item.estimate_id === estimateId) await MiiDB.remove('cost_estimate_items', item.id);
+      }
+      await MiiDB.remove('cost_estimates', estimateId);
+    },
+
+    /**
+     * Add a line item to an estimate section.
+     * @param {string} estimateId
+     * @param {number} sectionNumber - 1-8
+     * @param {string} lineType - 'labour' or 'material'
+     * @param {Object} data - line item fields
+     * @returns {Promise<string>} item id
+     */
+    async addEstimateItem(estimateId, sectionNumber, lineType, data = {}) {
+      await MiiDB.ready();
+
+      // Get next sort order
+      const allItems = await MiiDB.getAll('cost_estimate_items');
+      const sectionItems = allItems.filter(i => i.estimate_id === estimateId && i.section_number === sectionNumber);
+      const maxOrder = sectionItems.reduce((m, i) => Math.max(m, i.sort_order || 0), 0);
+
+      const item = {
+        id: generateId(),
+        estimate_id: estimateId,
+        section_number: sectionNumber,
+        sort_order: maxOrder + 1,
+        line_type: lineType,
+        description: data.description || '',
+        // Labour fields
+        grade_id: data.grade_id || null,
+        grade_name: data.grade_name || '',
+        headcount: data.headcount || 0,
+        duration_weeks: data.duration_weeks || 1,
+        hours_a: data.hours_a || 0,
+        hours_b: data.hours_b || 0,
+        hours_c: data.hours_c || 0,
+        hours_d: data.hours_d || 0,
+        hours_e: data.hours_e || 0,
+        rate_a: data.rate_a || 0,
+        rate_b: data.rate_b || 0,
+        rate_c: data.rate_c || 0,
+        rate_d: data.rate_d || 0,
+        rate_e: data.rate_e || 0,
+        // Material fields
+        quantity: data.quantity || 0,
+        unit: data.unit || 'each',
+        unit_rate: data.unit_rate || 0,
+        markup_pct: data.markup_pct || (sectionNumber === 5 ? 2.5 : 0),
+        // Computed
+        line_total: 0,
+        notes: data.notes || '',
+      };
+      item.line_total = this.calculateItemTotal(item);
+      await MiiDB.save('cost_estimate_items', item);
+
+      // Touch estimate updated_at
+      const est = await MiiDB.get('cost_estimates', estimateId);
+      if (est) { est.updated_at = new Date().toISOString(); await MiiDB.save('cost_estimates', est); }
+
+      return item.id;
+    },
+
+    /**
+     * Update a line item and recalculate its total.
+     */
+    async updateEstimateItem(itemId, updates) {
+      await MiiDB.ready();
+      const item = await MiiDB.get('cost_estimate_items', itemId);
+      if (!item) return;
+      Object.assign(item, updates);
+      item.line_total = this.calculateItemTotal(item);
+      await MiiDB.save('cost_estimate_items', item);
+    },
+
+    /**
+     * Remove a line item.
+     */
+    async removeEstimateItem(itemId) {
+      await MiiDB.ready();
+      await MiiDB.remove('cost_estimate_items', itemId);
+    },
+
+    /**
+     * Get estimate summary: totals per section + grand total.
+     */
+    async getEstimateSummary(estimateId) {
+      const est = await this.getEstimate(estimateId);
+      if (!est) return null;
+
+      const markup = 1 + (est.markup_pct || 14) / 100;
+      const sections = [];
+      let grandAtCost = 0;
+      let totalManHours = 0;
+
+      for (let s = 1; s <= 8; s++) {
+        const items = est.sections[s] || [];
+        const atCost = items.reduce((sum, i) => sum + (i.line_total || 0), 0);
+        const manHours = items.reduce((sum, i) => sum + this.calculateManHours(i), 0);
+        grandAtCost += atCost;
+        totalManHours += manHours;
+        sections.push({
+          section_number: s,
+          name: DEFAULT_CATEGORIES[s - 1].name,
+          item_count: items.length,
+          at_cost: atCost,
+          contract_value: atCost * markup,
+          man_hours: manHours,
+        });
+      }
+
+      return {
+        sections,
+        grand_at_cost: grandAtCost,
+        grand_contract_value: grandAtCost * markup,
+        total_man_hours: totalManHours,
+        markup_pct: est.markup_pct,
+      };
+    },
+
+    /**
+     * Apply rate card rates to all labour items in an estimate.
+     */
+    async applyRateCardToEstimate(estimateId, rateCardId) {
+      const card = await this.getRateCard(rateCardId);
+      if (!card || !card.grades) return 0;
+
+      const allItems = await MiiDB.getAll('cost_estimate_items');
+      const labourItems = allItems.filter(i => i.estimate_id === estimateId && i.line_type === 'labour');
+      let updated = 0;
+
+      for (const item of labourItems) {
+        // Match grade by grade_name or grade_id
+        let grade = null;
+        if (item.grade_id) grade = card.grades.find(g => g.id === item.grade_id);
+        if (!grade && item.grade_name) {
+          grade = card.grades.find(g => g.grade_name === item.grade_name);
+        }
+        if (!grade) continue;
+
+        item.rate_a = parseFloat(grade.rate_a) || 0;
+        item.rate_b = parseFloat(grade.rate_b) || 0;
+        item.rate_c = parseFloat(grade.rate_c) || 0;
+        item.rate_d = parseFloat(grade.rate_d) || 0;
+        item.rate_e = parseFloat(grade.rate_e) || 0;
+        item.grade_id = grade.id;
+        item.line_total = this.calculateItemTotal(item);
+        await MiiDB.save('cost_estimate_items', item);
+        updated++;
+      }
+
+      // Update estimate rate_card_id
+      await this.updateEstimate(estimateId, { rate_card_id: rateCardId });
+      return updated;
+    },
+
+    /**
+     * Sync estimate + items to server.
+     */
+    async syncEstimateToServer(estimateId) {
+      const token = localStorage.getItem('mii_token');
+      if (!token) return;
+      try {
+        const est = await this.getEstimate(estimateId);
+        if (!est) return;
+        const resp = await fetch(MII_API + '/cost/estimates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(est),
+        });
+        if (resp.ok) console.log('[CostSync] Estimate synced:', est.name);
+      } catch (e) {
+        console.log('[CostSync] Estimate sync offline:', e.message);
+      }
+    },
+
+    // ── Rate Cards ─────────────────────────────────────────────────
+
+    /**
+     * Create a new rate card with default 7 NAECI grades.
+     * @param {Object} params - { name, client, year }
+     * @returns {Promise<string>} rate card id
+     */
+    async createRateCard({ name, client = '', year = new Date().getFullYear() }) {
+      await MiiDB.ready();
+      const cardId = generateId();
+      const now = new Date().toISOString();
+
+      const card = {
+        id: cardId,
+        name: name || `${client || 'New'} ${year}`,
+        client,
+        year: parseInt(year) || new Date().getFullYear(),
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+      };
+      await MiiDB.save('cost_rate_cards', card);
+
+      // Create default 7 grades with zero rates
+      for (const def of DEFAULT_GRADES) {
+        const grade = {
+          id: generateId(),
+          rate_card_id: cardId,
+          grade_number: def.grade_number,
+          grade_name: def.grade_name,
+          rate_a: '0', rate_b: '0', rate_c: '0', rate_d: '0',
+          rate_e: '0', rate_f: '0', rate_g: '0', rate_h: '0',
+          sort_order: def.grade_number,
+          created_at: now,
+        };
+        await MiiDB.save('cost_rate_grades', grade);
+      }
+
+      this.syncRateCardToServer(cardId).catch(() => {});
+      return cardId;
+    },
+
+    /**
+     * Get all rate cards.
+     * @returns {Promise<Array>}
+     */
+    async getRateCards() {
+      await MiiDB.ready();
+      const cards = await MiiDB.getAll('cost_rate_cards');
+      return cards.sort((a, b) => (b.year || 0) - (a.year || 0));
+    },
+
+    /**
+     * Get a single rate card with its grades.
+     * @param {string} cardId
+     * @returns {Promise<Object|null>}
+     */
+    async getRateCard(cardId) {
+      await MiiDB.ready();
+      const card = await MiiDB.get('cost_rate_cards', cardId);
+      if (!card) return null;
+
+      const allGrades = await MiiDB.getAll('cost_rate_grades');
+      card.grades = allGrades
+        .filter(g => g.rate_card_id === cardId)
+        .sort((a, b) => a.sort_order - b.sort_order);
+      return card;
+    },
+
+    /**
+     * Update rate card metadata.
+     * @param {string} cardId
+     * @param {Object} updates - { name, client, year, is_active }
+     */
+    async updateRateCard(cardId, updates) {
+      await MiiDB.ready();
+      const card = await MiiDB.get('cost_rate_cards', cardId);
+      if (!card) return;
+      Object.assign(card, updates, { updated_at: new Date().toISOString() });
+      await MiiDB.save('cost_rate_cards', card);
+      this.syncRateCardToServer(cardId).catch(() => {});
+    },
+
+    /**
+     * Update a rate grade (rates, name, etc.).
+     * @param {string} gradeId
+     * @param {Object} updates
+     */
+    async updateRateGrade(gradeId, updates) {
+      await MiiDB.ready();
+      const grade = await MiiDB.get('cost_rate_grades', gradeId);
+      if (!grade) return;
+      Object.assign(grade, updates);
+      await MiiDB.save('cost_rate_grades', grade);
+      this.syncRateCardToServer(grade.rate_card_id).catch(() => {});
+    },
+
+    /**
+     * Delete a rate card and all its grades.
+     * @param {string} cardId
+     */
+    async deleteRateCard(cardId) {
+      await MiiDB.ready();
+      const allGrades = await MiiDB.getAll('cost_rate_grades');
+      for (const g of allGrades) {
+        if (g.rate_card_id === cardId) await MiiDB.remove('cost_rate_grades', g.id);
+      }
+      await MiiDB.remove('cost_rate_cards', cardId);
+    },
+
+    /**
+     * Sync rate card + grades to server.
+     */
+    async syncRateCardToServer(cardId) {
+      const token = localStorage.getItem('mii_token');
+      if (!token) return;
+      try {
+        const card = await this.getRateCard(cardId);
+        if (!card) return;
+        const resp = await fetch(MII_API + '/cost/rate-cards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(card),
+        });
+        if (resp.ok) console.log('[CostSync] Rate card synced:', card.name);
+      } catch (e) {
+        console.log('[CostSync] Rate card sync offline:', e.message);
+      }
+    },
+
     // ── Exposed Helpers ────────────────────────────────────────────
 
     generateId,
@@ -2155,6 +2682,8 @@
     getWeekCommencing,
     getYearMonth,
     DEFAULT_CATEGORIES,
+    DEFAULT_GRADES,
+    RATE_COLUMNS,
   };
 
   const MII_API = 'https://mii-hub-api.azurewebsites.net/api';

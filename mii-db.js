@@ -17,7 +17,7 @@
   'use strict';
 
   const DB_NAME = 'mii-hub';
-  const DB_VERSION = 8;
+  const DB_VERSION = 10;
 
   // IndexedDB store name → localStorage key mapping
   const STORE_LS_MAP = {
@@ -60,6 +60,10 @@
     'cost_supplier_mappings',
     'cost_labour_mappings',
     'cost_imports',
+    'cost_rate_cards',
+    'cost_rate_grades',
+    'cost_estimates',
+    'cost_estimate_items',
   ];
 
   // Reference data stores (pulled from server, not pushed via sync_queue)
@@ -88,6 +92,8 @@
           'daily_reports', 'havs_entries', 'certificates', 'rams_documents',
           'cost_jobs', 'cost_categories', 'cost_transactions',
           'cost_supplier_mappings', 'cost_labour_mappings', 'cost_imports',
+          'cost_rate_cards', 'cost_rate_grades',
+          'cost_estimates', 'cost_estimate_items',
         ];
         ARRAY_STORES.forEach((name) => {
           if (!INDEXED_STORES.includes(name) && !db.objectStoreNames.contains(name)) {
@@ -163,6 +169,32 @@
         // cost_imports store (import batch records)
         if (!db.objectStoreNames.contains('cost_imports')) {
           db.createObjectStore('cost_imports', { keyPath: 'id' });
+        }
+
+        // cost_rate_cards store (NAECI rate cards)
+        if (!db.objectStoreNames.contains('cost_rate_cards')) {
+          const rcStore = db.createObjectStore('cost_rate_cards', { keyPath: 'id' });
+          rcStore.createIndex('is_active', 'is_active', { unique: false });
+        }
+
+        // cost_rate_grades store (grades within rate cards)
+        if (!db.objectStoreNames.contains('cost_rate_grades')) {
+          const rgStore = db.createObjectStore('cost_rate_grades', { keyPath: 'id' });
+          rgStore.createIndex('rate_card_id', 'rate_card_id', { unique: false });
+        }
+
+        // cost_estimates store
+        if (!db.objectStoreNames.contains('cost_estimates')) {
+          const ceStore = db.createObjectStore('cost_estimates', { keyPath: 'id' });
+          ceStore.createIndex('job_id', 'job_id', { unique: false });
+          ceStore.createIndex('status', 'status', { unique: false });
+        }
+
+        // cost_estimate_items store
+        if (!db.objectStoreNames.contains('cost_estimate_items')) {
+          const eiStore = db.createObjectStore('cost_estimate_items', { keyPath: 'id' });
+          eiStore.createIndex('estimate_id', 'estimate_id', { unique: false });
+          eiStore.createIndex('est_section', ['estimate_id', 'section_number'], { unique: false });
         }
 
         // Reference data stores (keyed by employee_number)
