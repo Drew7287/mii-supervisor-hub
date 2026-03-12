@@ -580,6 +580,123 @@
             border-radius: 4px;
         }
         .est-list-delete:hover { color: var(--danger); background: #fde8ea; }
+
+        /* Rate Card Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 100;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 60px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            width: 95%;
+            max-width: 960px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            animation: modalIn 0.2s ease;
+        }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: none; } }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--white);
+            border-radius: 12px 12px 0 0;
+            z-index: 2;
+        }
+        .modal-header h2 { font-size: 1rem; font-weight: 700; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .modal-close:hover { background: #f0f0f0; color: var(--text); }
+        .modal-body { padding: 20px; }
+        .rc-list-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .rc-list-item:hover { background: #f8f9fb; border-color: var(--accent); }
+        .rc-list-item.active { background: #e8f0fe; border-color: var(--accent); }
+        .rc-list-name { flex: 1; font-weight: 600; font-size: 0.85rem; }
+        .rc-list-meta { font-size: 0.72rem; color: var(--text-light); margin-right: 12px; }
+        .rc-edit-section { margin-top: 16px; }
+        .rc-edit-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .rc-edit-header input {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        .rc-edit-header input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.12);
+        }
+        .rc-grades-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            margin-top: 8px;
+        }
+        .rc-grades-table th {
+            padding: 6px 4px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            border-bottom: 2px solid var(--border);
+            text-align: center;
+        }
+        .rc-grades-table th:first-child { text-align: left; min-width: 180px; }
+        .rc-grades-table td { padding: 3px 2px; border-bottom: 1px solid #f5f5f5; }
+        .rc-grades-table input {
+            width: 100%;
+            padding: 4px 4px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-family: inherit;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .rc-grades-table input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.12);
+        }
+        .rc-grades-table input.grade-name { text-align: left; font-weight: 600; }
+        .rc-blended { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; font-size: 0.78rem; padding: 4px 6px; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -593,6 +710,7 @@
 <div class="container" id="list-view">
     <div class="action-bar">
         <button class="btn btn-primary" onclick="createNewEstimate()">+ New Estimate</button>
+        <button class="btn btn-secondary" onclick="openRateCardModal()">Rate Cards</button>
         <button class="btn btn-secondary" onclick="location.href='hub.html'">Back to Hub</button>
     </div>
     <div class="header-card" id="estimates-list">
@@ -646,7 +764,9 @@
             <div class="field"><label style="visibility:hidden">x</label>
                 <button class="btn btn-secondary btn-sm" onclick="applyRateCardRates()" style="width:100%">Apply Rate Card</button>
             </div>
-            <div class="field"></div>
+            <div class="field"><label style="visibility:hidden">x</label>
+                <button class="btn btn-secondary btn-sm" onclick="openRateCardModal()" style="width:100%">Manage Rate Cards</button>
+            </div>
             <div class="field"></div>
         </div>
     </div>
@@ -1749,6 +1869,142 @@ function renderForecast() {
     panel.innerHTML = html;
 }
 
+// ── Rate Card Modal ────────────────────────────────────────────
+let _rcEditId = null;
+let _rcEditGrades = [];
+
+function openRateCardModal() {
+    _rcEditId = null;
+    _rcEditGrades = [];
+    document.getElementById('rc-modal').classList.add('open');
+    renderRateCardList();
+}
+
+function closeRateCardModal() {
+    document.getElementById('rc-modal').classList.remove('open');
+    loadRateCardOptions();
+}
+
+async function renderRateCardList() {
+    const cards = await CostDB.getRateCards();
+    const listEl = document.getElementById('rc-list');
+    const editEl = document.getElementById('rc-edit-area');
+
+    if (!cards.length) {
+        listEl.innerHTML = '<div style="padding:16px;color:var(--text-light);text-align:center">No rate cards yet. Create one below.</div>';
+    } else {
+        let html = '';
+        for (const c of cards) {
+            const active = (_rcEditId === c.id) ? ' active' : '';
+            html += '<div class="rc-list-item' + active + '" onclick="editRateCard(\'' + c.id + '\')">'
+                + '<span class="rc-list-name">' + (c.name || 'Unnamed') + '</span>'
+                + '<span class="rc-list-meta">' + (c.client || '') + ' &middot; ' + (c.year || '') + '</span>'
+                + '<button class="btn-remove" title="Delete" onclick="event.stopPropagation();deleteRateCard(\'' + c.id + '\')">&times;</button>'
+                + '</div>';
+        }
+        listEl.innerHTML = html;
+    }
+
+    if (_rcEditId) {
+        await renderRateCardEditor();
+    } else {
+        editEl.innerHTML = '<div style="padding:16px;color:var(--text-light);text-align:center;font-size:0.82rem">Select a rate card to edit, or create a new one.</div>';
+    }
+}
+
+async function createRateCard() {
+    const name = prompt('Rate card name (e.g. "Siemens 2026"):');
+    if (!name) return;
+    const client = prompt('Client name:', '') || '';
+    const year = prompt('Year:', new Date().getFullYear().toString()) || new Date().getFullYear();
+    const id = await CostDB.createRateCard({ name, client, year: parseInt(year) });
+    _rcEditId = id;
+    await renderRateCardList();
+}
+
+async function editRateCard(cardId) {
+    _rcEditId = cardId;
+    await renderRateCardList();
+}
+
+async function deleteRateCard(cardId) {
+    if (!confirm('Delete this rate card?')) return;
+    await CostDB.deleteRateCard(cardId);
+    if (_rcEditId === cardId) _rcEditId = null;
+    // If the deleted card was selected on the estimate, clear it
+    if (_est && _est.rate_card_id === cardId) {
+        _est.rate_card_id = null;
+        _rateCardGrades = [];
+        await CostDB.updateEstimate(_estId, { rate_card_id: null });
+    }
+    await renderRateCardList();
+}
+
+async function renderRateCardEditor() {
+    const card = await CostDB.getRateCard(_rcEditId);
+    if (!card) return;
+    _rcEditGrades = card.grades || [];
+    const editEl = document.getElementById('rc-edit-area');
+
+    // Get the current default shift pattern for blended rate preview
+    const shiftKey = _est ? (_est.shift_pattern || '7x12h_day') : '7x12h_day';
+    const shiftLabel = SHIFT_PATTERNS[shiftKey] ? SHIFT_PATTERNS[shiftKey].label : shiftKey;
+
+    let html = '<div class="rc-edit-section">';
+    html += '<div class="rc-edit-header">';
+    html += '<input class="grade-name" value="' + (card.name || '') + '" placeholder="Card name" style="flex:1;font-weight:700" onchange="updateRateCardMeta(\'name\', this.value)">';
+    html += '<input value="' + (card.client || '') + '" placeholder="Client" style="width:140px" onchange="updateRateCardMeta(\'client\', this.value)">';
+    html += '<input type="number" value="' + (card.year || '') + '" placeholder="Year" style="width:80px" onchange="updateRateCardMeta(\'year\', parseInt(this.value))">';
+    html += '</div>';
+
+    html += '<table class="rc-grades-table"><thead><tr>';
+    html += '<th>Grade</th>';
+    html += '<th>Rate A</th><th>Rate B</th><th>Rate C</th><th>Rate D</th><th>Rate E</th>';
+    html += '<th title="Blended rate for ' + shiftLabel + ' shift pattern">Blended (' + shiftLabel + ')</th>';
+    html += '</tr></thead><tbody>';
+
+    for (const g of _rcEditGrades) {
+        const blended = calcBlendedRate(
+            parseFloat(g.rate_a) || 0, parseFloat(g.rate_b) || 0,
+            parseFloat(g.rate_c) || 0, parseFloat(g.rate_d) || 0,
+            parseFloat(g.rate_e) || 0, shiftKey
+        );
+        html += '<tr>';
+        html += '<td><input class="grade-name" value="' + (g.grade_name || '') + '" onchange="updateGrade(\'' + g.id + '\', \'grade_name\', this.value)"></td>';
+        html += '<td><input type="number" step="0.01" value="' + (g.rate_a || 0) + '" onchange="updateGrade(\'' + g.id + '\', \'rate_a\', this.value)"></td>';
+        html += '<td><input type="number" step="0.01" value="' + (g.rate_b || 0) + '" onchange="updateGrade(\'' + g.id + '\', \'rate_b\', this.value)"></td>';
+        html += '<td><input type="number" step="0.01" value="' + (g.rate_c || 0) + '" onchange="updateGrade(\'' + g.id + '\', \'rate_c\', this.value)"></td>';
+        html += '<td><input type="number" step="0.01" value="' + (g.rate_d || 0) + '" onchange="updateGrade(\'' + g.id + '\', \'rate_d\', this.value)"></td>';
+        html += '<td><input type="number" step="0.01" value="' + (g.rate_e || 0) + '" onchange="updateGrade(\'' + g.id + '\', \'rate_e\', this.value)"></td>';
+        html += '<td class="rc-blended">&pound;' + blended.toFixed(2) + '</td>';
+        html += '</tr>';
+    }
+
+    html += '</tbody></table></div>';
+    editEl.innerHTML = html;
+}
+
+async function updateRateCardMeta(field, value) {
+    if (!_rcEditId) return;
+    const updates = {};
+    updates[field] = value;
+    await CostDB.updateRateCard(_rcEditId, updates);
+    // Update list name/meta
+    renderRateCardList();
+}
+
+async function updateGrade(gradeId, field, value) {
+    if (field !== 'grade_name') value = value.toString();
+    const updates = {};
+    updates[field] = value;
+    await CostDB.updateRateGrade(gradeId, updates);
+    // Update local copy for blended rate recalc
+    const g = _rcEditGrades.find(gr => gr.id === gradeId);
+    if (g) g[field] = value;
+    // Re-render to update blended rate column
+    if (field !== 'grade_name') renderRateCardEditor();
+}
+
 // ── Rate Cards ─────────────────────────────────────────────────
 async function loadRateCardOptions() {
     const select = document.getElementById('est-rate-card');
@@ -1885,8 +2141,42 @@ async function exportToJob() {
 }
 
 // ── Init ───────────────────────────────────────────────────────
+// ── Seed Rate Cards ────────────────────────────────────────────
+async function seedBuiltInRateCards() {
+    const existing = await CostDB.getRateCards();
+    if (existing.some(c => c.name === 'Siemens 2026')) return; // already seeded
+
+    const SIEMENS_2026 = [
+        { grade_number: 1, grade_name: 'Eng. Co-ordinator',           rate_a: '53.02', rate_b: '63.00', rate_c: '80.39', rate_d: '66.48', rate_e: '83.87' },
+        { grade_number: 2, grade_name: 'Supervisor',                   rate_a: '46.91', rate_b: '54.88', rate_c: '69.95', rate_d: '58.36', rate_e: '73.43' },
+        { grade_number: 3, grade_name: 'Grade 6 - PICWP/Chargehand',  rate_a: '45.31', rate_b: '52.75', rate_c: '67.21', rate_d: '56.23', rate_e: '70.69' },
+        { grade_number: 4, grade_name: 'Grade 5 - Coded Welder',      rate_a: '44.43', rate_b: '51.32', rate_c: '65.19', rate_d: '54.80', rate_e: '68.66' },
+        { grade_number: 5, grade_name: 'Grade 5 - Fitters/Riggers/Welders', rate_a: '43.68', rate_b: '50.57', rate_c: '64.41', rate_d: '54.06', rate_e: '67.90' },
+        { grade_number: 6, grade_name: 'Grade 4 - Craftsman',         rate_a: '41.91', rate_b: '48.23', rate_c: '61.40', rate_d: '51.71', rate_e: '64.88' },
+        { grade_number: 7, grade_name: 'Grade 3 - Semi Skilled',      rate_a: '36.74', rate_b: '41.41', rate_c: '52.67', rate_d: '44.88', rate_e: '56.14' },
+    ];
+
+    const cardId = await CostDB.createRateCard({ name: 'Siemens 2026', client: 'Siemens', year: 2026 });
+    // Update the auto-created grades with actual rates
+    const card = await CostDB.getRateCard(cardId);
+    if (card && card.grades) {
+        for (const g of card.grades) {
+            const src = SIEMENS_2026.find(s => s.grade_number === g.grade_number);
+            if (src) {
+                await CostDB.updateRateGrade(g.id, {
+                    grade_name: src.grade_name,
+                    rate_a: src.rate_a, rate_b: src.rate_b, rate_c: src.rate_c,
+                    rate_d: src.rate_d, rate_e: src.rate_e,
+                });
+            }
+        }
+    }
+    console.log('[Estimate] Seeded Siemens 2026 rate card');
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     await MiiDB.ready();
+    await seedBuiltInRateCards();
     // Check for ?id= parameter
     const params = new URLSearchParams(window.location.search);
     const editId = params.get('id');
@@ -1897,5 +2187,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 </script>
+
+<!-- Rate Card Modal -->
+<div class="modal-overlay" id="rc-modal" onclick="if(event.target===this)closeRateCardModal()">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Rate Cards</h2>
+            <button class="modal-close" onclick="closeRateCardModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom:12px">
+                <button class="btn btn-primary btn-sm" onclick="createRateCard()">+ New Rate Card</button>
+            </div>
+            <div id="rc-list"></div>
+            <div id="rc-edit-area"></div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
