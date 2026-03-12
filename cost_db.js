@@ -2121,6 +2121,100 @@
     },
 
     /**
+     * Fetch transactions for a job from the server (SharePoint → API → client).
+     * Server-side equivalent of desktop's _process_staging_for_job().
+     * Downloads both All_Batches.csv and MII_Daily_Export.xlsx from SharePoint,
+     * parses, filters by job number, deduplicates, and returns transactions.
+     *
+     * @param {string} jobId - existing job ID in IndexedDB
+     * @param {string} jobNumber - job number to filter by
+     * @returns {Promise<Object>} {imported, total_from_server, already_existed}
+     */
+    async processJobFromServer(jobId, jobNumber) {
+      const token = localStorage.getItem('mii_token');
+      if (!token) throw new Error('Not logged in');
+
+      // Call server endpoint
+      const resp = await fetch(MII_API + '/cost/process-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ job_number: jobNumber }),
+      });
+
+      if (resp.status === 503) {
+        throw new Error('SharePoint integration not configured on server');
+      }
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || 'Server import failed');
+      }
+
+      const data = await resp.json();
+      const serverTxns = data.transactions || [];
+
+      if (serverTxns.length === 0) {
+        return { imported: 0, total_from_server: 0, already_existed: 0 };
+      }
+
+      // Compute date range for date-range replace
+      const dates = serverTxns.map(t => t.trans_date).filter(Boolean).sort();
+      const startDate = dates[0] || '';
+      const endDate = dates[dates.length - 1] || '';
+
+      // Delete existing transactions in this date range (date-range replace)
+      let deleted = 0;
+      if (startDate && endDate) {
+        deleted = await this.deleteTransactionsInDateRange(jobId, startDate, endDate);
+      }
+
+      // Deduplicate within the batch
+      const seen = new Set();
+      const unique = [];
+      for (const t of serverTxns) {
+        const key = this._computeRowHash(t);
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(t);
+        }
+      }
+
+      // Create import batch record
+      const importBatchId = generateId();
+      await MiiDB.save('cost_imports', {
+        id: importBatchId,
+        job_id: jobId,
+        job_number: jobNumber,
+        filename: 'SharePoint (All_Batches + Daily Export)',
+        file_date_start: startDate,
+        file_date_end: endDate,
+        total_rows: serverTxns.length,
+        unique_rows: unique.length,
+        duplicates_skipped: serverTxns.length - unique.length,
+        deleted_before_insert: deleted,
+        imported_at: new Date().toISOString(),
+        source: 'server',
+      });
+
+      // Insert transactions
+      const inserted = await this.importTransactions(jobId, unique, importBatchId);
+
+      // Update last_import_at
+      const jobRecord = await MiiDB.get('cost_jobs', jobId);
+      if (jobRecord) {
+        jobRecord.last_import_at = new Date().toISOString();
+        await MiiDB.save('cost_jobs', jobRecord);
+      }
+
+      return {
+        imported: inserted,
+        total_from_server: serverTxns.length,
+        already_existed: deleted,
+        all_batches_count: data.all_batches_count || 0,
+        daily_export_count: data.daily_export_count || 0,
+      };
+    },
+
+    /**
      * Ask AI to suggest reusable mapping RULES for unmapped transactions.
      * Ported from desktop ai_mapping_service.py — sends deduplicated patterns,
      * returns supplier/labour mapping rules (not per-transaction suggestions).

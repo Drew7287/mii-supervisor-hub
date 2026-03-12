@@ -533,11 +533,9 @@
 
 <!-- Action Buttons -->
 <div class="action-bar">
-    <button class="btn btn-primary" onclick="triggerImport()">Import Opera 3</button>
-    <button class="btn btn-secondary" onclick="openAddJobModal()">Add Job</button>
+    <button class="btn btn-primary" onclick="openAddJobModal()">Add Job</button>
     <button class="btn btn-secondary" onclick="window.location.href='cost_mapping_library.html'">Mapping Library</button>
     <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
-    <input type="file" id="file-input" class="hidden" accept=".xlsx,.csv" onchange="handleFileSelect(event)">
 </div>
 
 <!-- Jobs Table -->
@@ -645,21 +643,6 @@
                     </tr>
                 </tfoot>
             </table>
-        </div>
-
-        <!-- Export File (cached — like desktop's hardcoded SharePoint path) -->
-        <div class="modal-section" style="background:var(--bg-light);border-radius:8px;padding:12px 16px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-                <div>
-                    <strong style="font-size:0.85rem">Export File</strong>
-                    <div id="export-file-status" style="font-size:0.8rem;color:var(--text-light);margin-top:2px">No export file loaded</div>
-                </div>
-                <button class="btn btn-secondary" onclick="selectExportFile()" style="font-size:0.78rem;padding:5px 12px">Select MII_Daily_Export.xlsx</button>
-            </div>
-            <p style="font-size:0.75rem;color:var(--text-light);margin:6px 0 0">
-                Transactions for this job will be automatically imported and mapped on creation.
-                File is remembered across sessions.
-            </p>
         </div>
 
         <!-- Buttons -->
@@ -1154,12 +1137,6 @@ async function createJob() {
     if (!jobNumber) { alert('Job number is required.'); document.getElementById('wiz-job-number').focus(); return; }
     if (!projectName) { alert('Project name is required.'); document.getElementById('wiz-project-name').focus(); return; }
 
-    // If no export file cached, prompt to select one (required for transaction import)
-    if (!_cachedExportWorkbook) {
-        const picked = await selectExportFile();
-        if (!picked) return; // user cancelled
-    }
-
     // Check for existing job — if it's a stub from bulk import, upgrade it
     const existing = _jobs.find(function(j) { return j.job_number === jobNumber; });
     let isUpgrade = false;
@@ -1268,34 +1245,77 @@ async function createJob() {
             }
         }
 
-        // Step 3: Auto-import transactions from cached export file (desktop parity)
-        // Desktop: _process_staging_for_job reads All_Batches.csv + MII_Daily_Export.xlsx
-        // filtered to the new job number. We do the same from the cached workbook.
+        // Step 3: Auto-import transactions (desktop parity)
+        // Desktop reads All_Batches.csv + MII_Daily_Export.xlsx from SharePoint.
+        // Try server-side import first (reads from SharePoint via MS Graph).
+        // Falls back to cached local file if server not configured.
         let txnCount = 0;
         let mappedCount = 0;
         let unmappedCount = 0;
+        let importSource = '';
 
-        if (_cachedExportWorkbook) {
-            btn.textContent = 'Importing transactions for ' + jobNumber + '...';
-            try {
-                const importResult = await CostDB.processImport(
-                    _cachedExportWorkbook,
-                    _cachedExportFilename,
-                    { jobFilter: [jobNumber] }
+        btn.textContent = 'Importing transactions for ' + jobNumber + '...';
+
+        // Try 1: Server-side (SharePoint → API → client) — no file picker needed
+        try {
+            const serverResult = await CostDB.processJobFromServer(jobId, jobNumber);
+            txnCount = serverResult.imported || 0;
+            importSource = 'server';
+            if (txnCount > 0) {
+                console.log('[CreateJob] Server import:', txnCount, 'txns',
+                    '(All_Batches:', serverResult.all_batches_count,
+                    '+ Daily:', serverResult.daily_export_count + ')');
+            }
+        } catch (serverErr) {
+            console.log('[CreateJob] Server import unavailable:', serverErr.message);
+
+            // Try 2: Cached local file (user previously selected MII_Daily_Export.xlsx)
+            if (_cachedExportWorkbook) {
+                try {
+                    const localResult = await CostDB.processImport(
+                        _cachedExportWorkbook,
+                        _cachedExportFilename,
+                        { jobFilter: [jobNumber] }
+                    );
+                    txnCount = localResult.total_inserted || localResult.count || 0;
+                    importSource = 'cached_file';
+                } catch (localErr) {
+                    console.error('Local import error:', localErr);
+                }
+            }
+
+            // Try 3: Prompt user to select file (last resort)
+            if (txnCount === 0 && !_cachedExportWorkbook) {
+                const wantFile = confirm(
+                    'SharePoint integration is not yet configured on the server.\n\n' +
+                    'Would you like to select the MII_Daily_Export.xlsx file manually?\n' +
+                    '(This only needs to be done once — the file is remembered.)'
                 );
-                txnCount = importResult.total_inserted || importResult.count || 0;
-                console.log('[CreateJob] Imported', txnCount, 'transactions for', jobNumber);
-            } catch (importErr) {
-                console.error('Import error:', importErr);
-                showToast('Import failed: ' + importErr.message, 'error');
+                if (wantFile) {
+                    const picked = await selectExportFile();
+                    if (picked && _cachedExportWorkbook) {
+                        try {
+                            const manualResult = await CostDB.processImport(
+                                _cachedExportWorkbook,
+                                _cachedExportFilename,
+                                { jobFilter: [jobNumber] }
+                            );
+                            txnCount = manualResult.total_inserted || manualResult.count || 0;
+                            importSource = 'manual_file';
+                        } catch (manualErr) {
+                            console.error('Manual import error:', manualErr);
+                        }
+                    }
+                }
             }
         }
 
-        // If no transactions from import, check if any already exist (from prior import)
+        // Also check if any transactions already existed (from a prior import)
         if (txnCount === 0) {
             const allTxns = await MiiDB.getAll('cost_transactions');
             const jobTxns = allTxns.filter(function(t) { return t.job_id === jobId; });
             txnCount = jobTxns.length;
+            if (txnCount > 0) importSource = 'existing';
         }
 
         // Step 4: Apply all mapping rules (global + job-specific + copied)

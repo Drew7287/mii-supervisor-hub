@@ -624,7 +624,7 @@
             <div class="field"><label>Start Date</label><input type="date" id="est-start" onchange="onHeaderChange()"></div>
             <div class="field"><label>Pre-Stop Weeks</label><input type="number" id="est-prestop" value="3" min="0" max="12" onchange="onHeaderChange()"></div>
             <div class="field"><label>Total Weeks</label><input type="number" id="est-weeks" value="24" min="4" max="52" onchange="onHeaderChange()"></div>
-            <div class="field"><label>Shift Pattern</label>
+            <div class="field"><label>Default Shift Pattern</label>
                 <select id="est-shift" onchange="onShiftChange()">
                     <option value="38h">38H (Standard)</option>
                     <option value="5x10h">5&times;10H</option>
@@ -847,15 +847,29 @@ function getCatItems(catNum) {
     return _items.filter(i => i.section_number === catNum).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 }
 
-function getShiftHours() {
-    const p = _est ? _est.shift_pattern : '7x12h_day';
-    return SHIFT_PATTERNS[p] || SHIFT_PATTERNS['7x12h_day'];
+function getShiftHours(item) {
+    // Per-item override, falling back to estimate default
+    const key = (item && item.shift_pattern) ? item.shift_pattern : (_est ? _est.shift_pattern : '7x12h_day');
+    return SHIFT_PATTERNS[key] || SHIFT_PATTERNS['7x12h_day'];
 }
 
-function calcBlendedRate(rateA, rateB, rateC, rateD, rateE) {
-    const p = getShiftHours();
+function getShiftKey(item) {
+    return (item && item.shift_pattern) ? item.shift_pattern : (_est ? _est.shift_pattern : '7x12h_day');
+}
+
+function calcBlendedRate(rateA, rateB, rateC, rateD, rateE, shiftPattern) {
+    const key = shiftPattern || (_est ? _est.shift_pattern : '7x12h_day');
+    const p = SHIFT_PATTERNS[key] || SHIFT_PATTERNS['7x12h_day'];
     const total = (p.a * (rateA || 0)) + (p.b * (rateB || 0)) + (p.c * (rateC || 0)) + (p.d * (rateD || 0)) + (p.e * (rateE || 0));
     return p.total > 0 ? total / p.total : 0;
+}
+
+function buildShiftOptions(selected) {
+    let html = '<option value=""' + (!selected ? ' selected' : '') + '>Default</option>';
+    for (const [key, pat] of Object.entries(SHIFT_PATTERNS)) {
+        html += '<option value="' + key + '"' + (selected === key ? ' selected' : '') + '>' + pat.label + '</option>';
+    }
+    return html;
 }
 
 function ensureSchedule(item) {
@@ -1140,12 +1154,16 @@ function renderBreakdown() {
                 '</div>';
         }
 
+        // Show shift column for labour categories (2, 3, 4)
+        const showShift = [2, 3, 4].includes(cat.number);
+
         // Table
         html += '<table class="items-table"><thead><tr>' +
             '<th style="width:30px">#</th>' +
             '<th class="item-desc">Description</th>' +
             '<th class="r" style="width:80px">' + cat.unit + '</th>' +
             '<th class="r" style="width:70px">' + cat.qtyLabel + '</th>' +
+            (showShift ? '<th style="width:90px">Shift</th>' : '') +
             '<th style="width:100px">Schedule</th>' +
             '<th class="r" style="width:50px">Wks</th>' +
             '<th class="r" style="width:85px">Cost/Wk</th>' +
@@ -1158,6 +1176,7 @@ function renderBreakdown() {
             const numWeeks = sched.reduce((s, v) => s + (v ? 1 : 0), 0);
             const tw = _est.total_weeks || 24;
             const ps = _est.pre_stop_weeks || 3;
+            const itemShift = getShiftHours(item);
             // Mini gantt bar
             let firstActive = -1, lastActive = -1;
             for (let w = 0; w < tw; w++) {
@@ -1174,8 +1193,13 @@ function renderBreakdown() {
                 '<td><input type="number" step="0.01" class="item-num" value="' + (item.rate || 0) + '" ' +
                     'onchange="onItemChange(\'' + item.id + '\',\'rate\',this.value)"></td>' +
                 '<td><input type="number" step="0.1" class="item-num" value="' + (item.qty_per_week || 0) + '" ' +
-                    (isAuto ? 'disabled' : '') + ' onchange="onItemChange(\'' + item.id + '\',\'qty_per_week\',this.value)"></td>' +
-                '<td><div class="mini-gantt" onclick="switchTab(\'schedule\')" title="Click to edit schedule">' +
+                    (isAuto ? 'disabled' : '') + ' onchange="onItemChange(\'' + item.id + '\',\'qty_per_week\',this.value)"></td>';
+            if (showShift) {
+                html += '<td><select style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:0.68rem;font-family:inherit" ' +
+                    'onchange="onItemChange(\'' + item.id + '\',\'shift_pattern\',this.value)" title="' + itemShift.label + ' (' + itemShift.total + 'h/wk)">' +
+                    buildShiftOptions(item.shift_pattern || '') + '</select></td>';
+            }
+            html += '<td><div class="mini-gantt" onclick="switchTab(\'schedule\')" title="Click to edit schedule">' +
                     '<div class="mini-gantt-bar" style="left:' + barLeft + '%;width:' + barWidth + '%;background:' + cat.color + '"></div>' +
                 '</div></td>' +
                 '<td class="r">' + numWeeks + '</td>' +
@@ -1220,6 +1244,8 @@ async function onItemChange(itemId, field, value) {
     if (!item) return;
     if (field === 'rate' || field === 'qty_per_week') {
         item[field] = parseFloat(value) || 0;
+    } else if (field === 'shift_pattern') {
+        item[field] = value || null; // null = use estimate default
     } else {
         item[field] = value;
     }
@@ -1397,35 +1423,36 @@ async function clearCategory(catNum) {
 function renderTasks() {
     const panel = document.getElementById('tab-tasks');
     const tasks = _items.filter(i => i.line_type === 'task' && i.section_number === 3).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-    const shiftHrs = getShiftHours().total;
+    const defaultShift = getShiftHours();
 
     // Summary header
-    let summaryHtml = '<div style="margin-bottom:12px"><strong>Trade Summary</strong> (Shift: ' + getShiftHours().label + ' = ' + shiftHrs + 'h/wk)</div>';
+    let summaryHtml = '<div style="margin-bottom:12px"><strong>Trade Summary</strong> (Default shift: ' + defaultShift.label + ' = ' + defaultShift.total + 'h/wk &mdash; override per task below)</div>';
     summaryHtml += '<table class="tasks-table"><thead><tr>' +
-        '<th style="width:30px">#</th><th style="min-width:200px">Description</th><th style="width:50px">Dur. (wks)</th>';
+        '<th style="width:30px">#</th><th style="min-width:180px">Description</th><th style="width:80px">Shift</th><th style="width:50px">Dur. (wks)</th>';
     for (const g of TRADE_GRADES) {
         summaryHtml += '<th>' + g.name.split(' ')[0].substring(0, 6) + '</th>';
     }
     summaryHtml += '<th>Total MH</th><th style="width:30px"></th></tr></thead>';
 
-    // Summary row
+    // Summary row — uses per-task shift hours
     const totals = TRADE_GRADES.map(() => 0);
     let totalMH = 0;
     for (const t of tasks) {
         const dur = t.duration_weeks || 0;
+        const taskShiftHrs = getShiftHours(t).total;
         TRADE_GRADES.forEach((g, gi) => {
             const count = t['grade_' + g.num + '_count'] || 0;
-            totals[gi] += count * dur * shiftHrs;
+            totals[gi] += count * dur * taskShiftHrs;
         });
     }
     totalMH = totals.reduce((s, v) => s + v, 0);
 
-    summaryHtml += '<tr class="tasks-summary"><td></td><td>TOTAL MAN-HOURS</td><td></td>';
+    summaryHtml += '<tr class="tasks-summary"><td></td><td>TOTAL MAN-HOURS</td><td></td><td></td>';
     totals.forEach(t => { summaryHtml += '<td>' + fmtNum(t) + '</td>'; });
     summaryHtml += '<td>' + fmtNum(totalMH) + '</td><td></td></tr>';
 
     // Peak headcount
-    summaryHtml += '<tr class="tasks-summary"><td></td><td>PEAK HEADCOUNT</td><td></td>';
+    summaryHtml += '<tr class="tasks-summary"><td></td><td>PEAK HEADCOUNT</td><td></td><td></td>';
     TRADE_GRADES.forEach(g => {
         let peak = 0;
         for (const t of tasks) peak = Math.max(peak, t['grade_' + g.num + '_count'] || 0);
@@ -1436,13 +1463,16 @@ function renderTasks() {
     // Task rows
     summaryHtml += '<tbody>';
     tasks.forEach((t, idx) => {
+        const taskShiftHrs = getShiftHours(t).total;
         summaryHtml += '<tr><td style="color:var(--text-light);font-size:0.68rem">' + (idx + 1) + '</td>' +
             '<td><input value="' + (t.description || '').replace(/"/g, '&quot;') + '" onchange="onTaskChange(\'' + t.id + '\',\'description\',this.value)"></td>' +
+            '<td><select style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-size:0.68rem;font-family:inherit" ' +
+                'onchange="onTaskChange(\'' + t.id + '\',\'shift_pattern\',this.value)">' + buildShiftOptions(t.shift_pattern || '') + '</select></td>' +
             '<td><input type="number" value="' + (t.duration_weeks || 0) + '" onchange="onTaskChange(\'' + t.id + '\',\'duration_weeks\',this.value)"></td>';
         for (const g of TRADE_GRADES) {
             summaryHtml += '<td><input type="number" min="0" value="' + (t['grade_' + g.num + '_count'] || 0) + '" onchange="onTaskChange(\'' + t.id + '\',\'grade_' + g.num + '_count\',this.value)"></td>';
         }
-        const taskMH = TRADE_GRADES.reduce((s, g) => s + ((t['grade_' + g.num + '_count'] || 0) * (t.duration_weeks || 0) * shiftHrs), 0);
+        const taskMH = TRADE_GRADES.reduce((s, g) => s + ((t['grade_' + g.num + '_count'] || 0) * (t.duration_weeks || 0) * taskShiftHrs), 0);
         summaryHtml += '<td style="font-weight:700">' + fmtNum(taskMH) + '</td>';
         summaryHtml += '<td><button class="btn-remove" onclick="removeTask(\'' + t.id + '\')">&times;</button></td></tr>';
     });
@@ -1483,6 +1513,8 @@ async function onTaskChange(taskId, field, value) {
     if (!item) return;
     if (field === 'duration_weeks' || field.startsWith('grade_')) {
         item[field] = parseInt(value) || 0;
+    } else if (field === 'shift_pattern') {
+        item[field] = value || null;
     } else {
         item[field] = value;
     }
@@ -1492,7 +1524,6 @@ async function onTaskChange(taskId, field, value) {
 
 async function syncTasksToCat3() {
     const tasks = _items.filter(i => i.line_type === 'task' && i.section_number === 3);
-    const shiftHrs = getShiftHours().total;
 
     // Remove existing auto-generated Cat 3 items (those with task_id)
     const autoItems = _items.filter(i => i.task_id && i.line_type !== 'task');
@@ -1500,11 +1531,14 @@ async function syncTasksToCat3() {
 
     // Generate new items per task per trade
     for (const task of tasks) {
+        const taskShift = getShiftHours(task);
+        const taskShiftKey = getShiftKey(task);
+
         for (const grade of TRADE_GRADES) {
             const count = task['grade_' + grade.num + '_count'] || 0;
             if (count <= 0) continue;
 
-            // Find rate from rate card if available
+            // Find rate from rate card if available, using task's shift pattern
             let rate = 40; // default
             const rcGrade = _rateCardGrades.find(g => g.grade_number === grade.num);
             if (rcGrade) {
@@ -1514,15 +1548,17 @@ async function syncTasksToCat3() {
                     parseFloat(rcGrade.rate_c) || 0,
                     parseFloat(rcGrade.rate_d) || 0,
                     parseFloat(rcGrade.rate_e) || 0,
+                    taskShiftKey,
                 );
             }
 
             await CostDB.addEstimateItem(_estId, 3, 'labour', {
-                description: (task.description || 'Task') + ' - ' + grade.name,
+                description: (task.description || 'Task') + ' - ' + grade.name + (task.shift_pattern ? ' (' + taskShift.label + ')' : ''),
                 rate: Math.round(rate * 100) / 100,
-                qty_per_week: count * shiftHrs,
+                qty_per_week: count * taskShift.total,
                 schedule: new Array(_est.total_weeks || 24).fill(0),
                 task_id: task.id,
+                shift_pattern: task.shift_pattern || null,
             });
         }
     }
@@ -1764,6 +1800,7 @@ async function applyRateCardRates() {
                 parseFloat(match.rate_c) || 0,
                 parseFloat(match.rate_d) || 0,
                 parseFloat(match.rate_e) || 0,
+                getShiftKey(item),
             );
             item.rate = Math.round(item.rate * 100) / 100;
             calcItemTotal(item);

@@ -4011,25 +4011,56 @@ function downloadAISuggestionsJSON() {
     URL.revokeObjectURL(url);
 }
 
+// Fuzzy match: score library items against a target string using word overlap
+function fuzzyMatchLibrary(items, target, getKey) {
+    const tWords = target.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    let best = null, bestScore = 0;
+    for (const item of items) {
+        const name = getKey(item).toLowerCase();
+        // Exact match = instant win
+        if (name === target.toLowerCase()) return item;
+        // Word overlap scoring
+        let score = 0;
+        for (const w of tWords) {
+            if (name.includes(w)) score += 2;
+        }
+        const nWords = name.split(/\s+/).filter(w => w.length > 2);
+        for (const w of nWords) {
+            if (target.toLowerCase().includes(w)) score += 1;
+        }
+        if (score > bestScore) { bestScore = score; best = item; }
+    }
+    return bestScore >= 2 ? best : null;
+}
+
 function applyAISuggestion(s) {
     const type = s.type || '';
     const target = s.target || '';
     const text = s.suggested_text || '';
 
     if (type === 'add_hazard') {
-        // Try to match to library
-        const match = MII_HAZARDS.find(h => h.name.toLowerCase() === target.toLowerCase());
+        // Fuzzy match to hazard library
+        const match = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
         if (match && !currentDoc.selected_hazards.includes(match.id)) {
             currentDoc.selected_hazards.push(match.id);
         }
     } else if (type === 'add_control' || type === 'inadequate_control') {
-        // Find the hazard in risk assessments and append control text
+        // Fuzzy match hazard name in risk assessments
         const ra = (currentDoc.risk_assessments || []).find(r => {
             const h = MII_HAZARDS.find(hz => hz.id === r.hazard_id);
             return h && h.name.toLowerCase() === target.toLowerCase();
         });
         if (ra) {
             ra.controls = (ra.controls || '') + (ra.controls ? '\n\u2022 ' : '\u2022 ') + text;
+        } else {
+            // Fuzzy match
+            const fRA = (currentDoc.risk_assessments || []).find(r => {
+                const h = MII_HAZARDS.find(hz => hz.id === r.hazard_id);
+                return h && fuzzyMatchLibrary([h], target, hz => hz.name);
+            });
+            if (fRA) {
+                fRA.controls = (fRA.controls || '') + (fRA.controls ? '\n\u2022 ' : '\u2022 ') + text;
+            }
         }
     } else if (type === 'add_method_step') {
         // Parse position from target (e.g. "After step 3")
@@ -4041,22 +4072,53 @@ function applyAISuggestion(s) {
         // Renumber
         currentDoc.method_steps.forEach((s, i) => s.step_number = i + 1);
     } else if (type === 'add_equipment') {
-        const match = REQUIREMENTS_LIBRARY.equipment.find(e => e.item.toLowerCase() === target.toLowerCase());
-        if (match && !(currentDoc.requirements.equipment || []).includes(match.item)) {
+        let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.equipment, target, e => e.item);
+        if (match) {
+            if (!(currentDoc.requirements.equipment || []).includes(match.item)) {
+                currentDoc.requirements.equipment = currentDoc.requirements.equipment || [];
+                currentDoc.requirements.equipment.push(match.item);
+            }
+        } else {
+            // No library match - inject custom entry and select it
+            const customItem = { item: target, safety_precaution: text || 'Refer to method statement for usage requirements.' };
+            REQUIREMENTS_LIBRARY.equipment.push(customItem);
             currentDoc.requirements.equipment = currentDoc.requirements.equipment || [];
-            currentDoc.requirements.equipment.push(match.item);
+            currentDoc.requirements.equipment.push(target);
         }
     } else if (type === 'add_coshh') {
-        const match = REQUIREMENTS_LIBRARY.coshh_substances.find(c => c.substance.toLowerCase() === target.toLowerCase());
-        if (match && !(currentDoc.requirements.coshh || []).includes(match.substance)) {
+        let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.coshh_substances, target, c => c.substance);
+        if (match) {
+            if (!(currentDoc.requirements.coshh || []).includes(match.substance)) {
+                currentDoc.requirements.coshh = currentDoc.requirements.coshh || [];
+                currentDoc.requirements.coshh.push(match.substance);
+            }
+        } else {
+            const customItem = { substance: target, storage_requirements: text || 'Store per manufacturer instructions.' };
+            REQUIREMENTS_LIBRARY.coshh_substances.push(customItem);
             currentDoc.requirements.coshh = currentDoc.requirements.coshh || [];
-            currentDoc.requirements.coshh.push(match.substance);
+            currentDoc.requirements.coshh.push(target);
         }
     } else if (type === 'add_ppe') {
-        const match = REQUIREMENTS_LIBRARY.ppe.find(p => p.item.toLowerCase() === target.toLowerCase());
-        if (match && !(currentDoc.requirements.ppe || []).includes(match.item)) {
+        let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.ppe, target, p => p.item);
+        if (match) {
+            if (!(currentDoc.requirements.ppe || []).includes(match.item)) {
+                currentDoc.requirements.ppe = currentDoc.requirements.ppe || [];
+                currentDoc.requirements.ppe.push(match.item);
+            }
+        } else {
+            const customItem = { item: target, standard: text || 'As specified by manufacturer.' };
+            REQUIREMENTS_LIBRARY.ppe.push(customItem);
             currentDoc.requirements.ppe = currentDoc.requirements.ppe || [];
-            currentDoc.requirements.ppe.push(match.item);
+            currentDoc.requirements.ppe.push(target);
+        }
+    } else if (type === 'ra_method_gap') {
+        // Remove unjustified hazard - fuzzy match and deselect
+        const match = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
+        if (match) {
+            const idx = currentDoc.selected_hazards.indexOf(match.id);
+            if (idx !== -1) currentDoc.selected_hazards.splice(idx, 1);
+            // Also remove from risk_assessments
+            currentDoc.risk_assessments = (currentDoc.risk_assessments || []).filter(r => r.hazard_id !== match.id);
         }
     } else if (type === 'environment_flag') {
         // Set the environment question to YES
