@@ -2557,6 +2557,26 @@ function collectStepData(step) {
     }
 }
 
+// ─── Auto-Save (debounced, 500ms after last change) ──────
+let _autoSaveTimer = null;
+function scheduleAutoSave() {
+    if (!currentDoc) return;
+    clearTimeout(_autoSaveTimer);
+    _autoSaveTimer = setTimeout(async () => {
+        collectStepData(currentStep);
+        currentDoc.updated_at = new Date().toISOString();
+        await MiiDB.save('rams_documents', currentDoc);
+    }, 500);
+}
+
+// Hook auto-save to all input/change events within the wizard
+document.addEventListener('input', (e) => {
+    if (currentDoc && e.target.closest('#wizard-area')) scheduleAutoSave();
+});
+document.addEventListener('change', (e) => {
+    if (currentDoc && e.target.closest('#wizard-area')) scheduleAutoSave();
+});
+
 // ─── Method Statement ─────────────────────────────────────
 
 function renderMethodSteps() {
@@ -2781,6 +2801,7 @@ function renderHazards() {
         if (activeCategoryFilter !== 'All' && h.category !== activeCategoryFilter) return false;
         return true;
     });
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
     grid.innerHTML = filtered.map(h => {
         const sel = selected.has(h.id);
         const preview = (h.risk_description || h.default_controls || '').substring(0, 120);
@@ -2811,6 +2832,7 @@ function toggleHazard(id) {
     if (idx >= 0) sel.splice(idx, 1);
     else sel.push(id);
     renderHazards();
+    scheduleAutoSave();
 }
 
 // ─── Risk Assessment ──────────────────────────────────────
