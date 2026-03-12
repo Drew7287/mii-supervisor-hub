@@ -1339,7 +1339,7 @@ const EXPORT_API = window.location.hostname === 'localhost' || window.location.p
     : 'https://mii-hub-api.azurewebsites.net/api/export-rams';
 
 // ─── AI Proxy Configuration ──────────────────────────────
-const AI_PROXY_URL = 'https://ramsbuilder-api.azurewebsites.net';
+const AI_PROXY_URL = 'https://ramsbuilder-api-b7g8addbcabrcybd.westeurope-01.azurewebsites.net';
 const AI_PROXY_KEY = ''; // Set if proxy requires auth key
 let aiSuggestions = []; // Current AI suggestions for the document
 
@@ -3257,7 +3257,6 @@ function runRuleChecks() {
     checks.push({ name: 'All hazards have control measures', pass: ras.every(ra => ra.controls?.trim()) });
     checks.push({ name: 'No critical initial risk scores (>16)', pass: !ras.some(ra => (ra.initial_l||1)*(ra.initial_s||1) > 16) });
     checks.push({ name: 'All residual scores equal or lower than initial', pass: ras.every(ra => (ra.final_l||1)*(ra.final_s||1) <= (ra.initial_l||1)*(ra.initial_s||1)) });
-    checks.push({ name: 'No high residual risk scores (>9)', pass: !ras.some(ra => (ra.final_l||1)*(ra.final_s||1) > 9) });
     checks.push({ name: 'PPE items selected', pass: (d.requirements?.ppe || []).length > 0 });
     checks.push({ name: 'At least 2 hazards selected', pass: sel.length >= 2 });
     const jd = d.job_details || {};
