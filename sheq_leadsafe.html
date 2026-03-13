@@ -425,10 +425,6 @@
         return { 'Authorization': 'Bearer ' + localStorage.getItem('mii_token') };
     }
 
-    // ===== INIT =====
-    const token = checkAuth();
-    if (token) loadAudits();
-
     // ===== LIST =====
     window.loadAudits = function() {
         const search = document.getElementById('searchInput').value.trim();
@@ -635,6 +631,10 @@
         div.appendChild(document.createTextNode(String(str)));
         return div.innerHTML;
     }
+
+    // ===== INIT =====
+    const token = checkAuth();
+    if (token) loadAudits();
 
 })();
 </script>
