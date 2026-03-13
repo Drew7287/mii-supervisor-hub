@@ -1083,9 +1083,24 @@ async function serverDecision(reviewId, decision) {
             }),
         });
         if (res.ok) {
+            // Update local IndexedDB copy so pending list clears immediately
+            const allDocs = await MiiDB.getAll('rams_documents');
+            const localDoc = allDocs.find(d => d.review && d.review.id === reviewId);
+            if (localDoc) {
+                localDoc.status = decision === 'approve' ? 'approved' : 'rejected';
+                if (localDoc.review) {
+                    localDoc.review.status = decision === 'approve' ? 'approved' : 'rejected';
+                    localDoc.review.comments = comments || '';
+                    localDoc.review.resolved_at = new Date().toISOString();
+                    localDoc.review.decided_by_name = user.username || 'Unknown';
+                }
+                localDoc.updated_at = new Date().toISOString();
+                await MiiDB.save('rams_documents', localDoc);
+            }
             alert(decision === 'approve' ? 'Document approved.' : 'Document rejected.');
             renderPendingReviews();
             updatePendingReviewCount();
+            renderDocList();
         } else {
             const err = await res.json();
             alert('Error: ' + (err.error || 'Unknown error'));
