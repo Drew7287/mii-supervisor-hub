@@ -832,7 +832,7 @@
         let matched = false;
         const costCodeUpper = (t.cost_code || '').toUpperCase();
         const supplierUpper = (t.supplier_name || '').toUpperCase();
-        const costCodeDescUpper = (t.cost_code_desc || t.cost_code || '').toUpperCase();
+        const costCodeDescUpper = (t.cost_code || '').toUpperCase();
 
         // Try labour match first: exact cost_code match
         for (const lm of labourMappings) {
@@ -2085,6 +2085,64 @@
     },
 
     /**
+     * Pull all mapping rules from the server into IndexedDB.
+     * Merges server rules with local rules (server wins on ID conflict).
+     * Call this before applyMappings() to ensure rules are up-to-date.
+     */
+    async fetchMappingsFromServer() {
+      const token = localStorage.getItem('mii_token');
+      if (!token) return { supplier: 0, labour: 0 };
+      try {
+        const resp = await fetch(MII_API + '/cost/mappings', {
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        if (!resp.ok) {
+          console.warn('[CostSync] Failed to fetch mappings:', resp.status);
+          return { supplier: 0, labour: 0 };
+        }
+        const data = await resp.json();
+        await MiiDB.ready();
+
+        let supplierCount = 0, labourCount = 0;
+
+        // Upsert supplier mappings (import as global — desktop job_ids don't match webapp)
+        for (const sm of (data.supplier_mappings || [])) {
+          await MiiDB.save('cost_supplier_mappings', {
+            id: sm.id,
+            supplier_prefix: (sm.supplier_prefix || '').toUpperCase(),
+            cost_code_prefix: (sm.cost_code_prefix || '').toUpperCase(),
+            category_number: sm.category_number,
+            note: sm.note || '',
+            job_id: null,
+            priority: sm.priority || 50,
+            created_at: sm.created_at || new Date().toISOString(),
+          });
+          supplierCount++;
+        }
+
+        // Upsert labour mappings (import as global — desktop job_ids don't match webapp)
+        for (const lm of (data.labour_mappings || [])) {
+          await MiiDB.save('cost_labour_mappings', {
+            id: lm.id,
+            cost_code: (lm.cost_code || '').toUpperCase(),
+            category_number: lm.category_number,
+            note: lm.note || '',
+            job_id: null,
+            priority: lm.priority || 50,
+            created_at: lm.created_at || new Date().toISOString(),
+          });
+          labourCount++;
+        }
+
+        console.log('[CostSync] Fetched mappings from server:', supplierCount, 'supplier,', labourCount, 'labour');
+        return { supplier: supplierCount, labour: labourCount };
+      } catch (e) {
+        console.warn('[CostSync] Fetch mappings offline:', e.message);
+        return { supplier: 0, labour: 0 };
+      }
+    },
+
+    /**
      * Sync mapping rule updates to server.
      */
     async syncMappingToServer(mapping, type) {
@@ -2346,6 +2404,75 @@
     async fullSyncJob(jobId) {
       await this.syncJobToServer(jobId);
       await this.syncTransactionsToServer(jobId);
+    },
+
+    /**
+     * Pull transactions from server (Azure SQL) into IndexedDB.
+     * Only adds NEW transactions — preserves local category allocations.
+     * Called on job detail page load to pick up auto-synced data.
+     */
+    async syncTransactionsFromServer(jobId) {
+      const token = localStorage.getItem('mii_token');
+      if (!token) return { synced: 0 };
+
+      try {
+        const resp = await fetch(MII_API + '/cost/transactions?job_id=' + encodeURIComponent(jobId), {
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        if (!resp.ok) return { synced: 0 };
+
+        const data = await resp.json();
+        const serverTxns = data.transactions || data;
+        if (!Array.isArray(serverTxns) || serverTxns.length === 0) return { synced: 0 };
+
+        // Get existing local transaction hashes
+        const localTxns = await getByField('cost_transactions', 'job_id', jobId);
+        const localHashes = new Set(localTxns.map(t => this._computeRowHash(t)));
+
+        let newCount = 0;
+        for (const st of serverTxns) {
+          const h = this._computeRowHash(st);
+          if (localHashes.has(h)) continue;
+
+          // New transaction from server — save to IndexedDB
+          await MiiDB.save('cost_transactions', {
+            id: st.id || generateId(),
+            job_id: jobId,
+            trans_date: st.trans_date,
+            cost_code: st.cost_code,
+            cost_code_desc: st.cost_code_desc,
+            supplier_name: st.supplier_name,
+            trans_type: st.trans_type,
+            cost_type: st.cost_type,
+            cost_type_desc: st.cost_type_desc,
+            quantity: st.quantity || 0,
+            value: st.value || 0,
+            total_cost: st.total_cost || 0,
+            overhead_value: st.overhead_value || 0,
+            description: st.description,
+            jw_trtype: st.jw_trtype,
+            subcontractor: st.subcontractor,
+            surname: st.surname,
+            forename: st.forename,
+            po_number: st.po_number,
+            mapped_category: st.mapped_category || 0,
+            mapping_source: st.mapping_source || 'unmapped',
+            mapping_confidence: st.mapping_confidence || 'low',
+            is_commitment: st.is_commitment || false,
+            is_revenue: st.is_revenue || false,
+          });
+          localHashes.add(h);
+          newCount++;
+        }
+
+        if (newCount > 0) {
+          console.log(`Synced ${newCount} new transactions from server for job ${jobId}`);
+        }
+        return { synced: newCount, server_total: serverTxns.length };
+      } catch (e) {
+        console.warn('syncTransactionsFromServer failed:', e);
+        return { synced: 0 };
+      }
     },
 
     // ── Estimates ───────────────────────────────────────────────────

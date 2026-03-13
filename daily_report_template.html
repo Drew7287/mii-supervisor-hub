@@ -833,7 +833,7 @@
             </select>
         </div>
         <div class="info-cell"><label>Site / Project</label><input type="text" value="Port Talbot" /></div>
-        <div class="info-cell"><label>Zone / Area</label><input type="text" /></div>
+        <div class="info-cell"><label>Job Number <span style="color:var(--danger)">*</span></label><input type="text" id="job-number-input" placeholder="e.g. J1234" /></div>
         <div class="info-cell"><label>Shift</label>
             <select id="shift-select">
                 <option value="">—</option>
@@ -1412,7 +1412,7 @@ if ('serviceWorker' in navigator) {
         overlay.querySelector('.btn-custom').addEventListener('click', () => {
             const name = _taskModalInput.value.trim() || '';
             closeTaskModal();
-            if (_taskModalCallback) _taskModalCallback({ id: '', name: name, location: '', trade: '', zone: '', custom: true });
+            if (_taskModalCallback) _taskModalCallback({ id: '', name: name, location: '', trade: '', custom: true });
         });
 
         // Search input
@@ -1700,8 +1700,8 @@ if ('serviceWorker' in navigator) {
             tr.innerHTML = `
                 <td>${buildNameSelect(name || '')}</td>
                 <td>${buildTradeSelect(trade || '')}</td>
-                <td class="center"><input type="number" min="0" ${p !== '' ? 'value="'+p+'"' : ''} class="manning-planned" oninput="calcVariance(this)" /></td>
-                <td class="center"><input type="number" min="0" ${a !== '' ? 'value="'+a+'"' : ''} class="manning-actual" oninput="calcVariance(this)" /></td>
+                <td class="center"><input type="number" min="0" step="0.25" ${p !== '' ? 'value="'+p+'"' : ''} class="manning-planned" oninput="calcVariance(this)" /></td>
+                <td class="center"><input type="number" min="0" step="0.25" ${a !== '' ? 'value="'+a+'"' : ''} class="manning-actual" oninput="calcVariance(this)" /></td>
                 <td class="center variance-cell" style="color:${vColor}">${vText}</td>
                 <td><select class="manning-task-select">${buildTaskIdOptions(taskId || '')}</select></td>
                 <td><input type="text" value="${notes || ''}" /></td>
@@ -1752,8 +1752,8 @@ if ('serviceWorker' in navigator) {
     // Calculate variance and update totals
     function calcVariance(el) {
         const row = el.closest('tr');
-        const planned = parseInt(row.querySelector('.manning-planned')?.value) || 0;
-        const actual = parseInt(row.querySelector('.manning-actual')?.value) || 0;
+        const planned = parseFloat(row.querySelector('.manning-planned')?.value) || 0;
+        const actual = parseFloat(row.querySelector('.manning-actual')?.value) || 0;
         const variance = actual - planned;
         const cell = row.querySelector('.variance-cell');
         if (cell) {
@@ -1767,10 +1767,10 @@ if ('serviceWorker' in navigator) {
     function updateManningTotals() {
         let totalPlanned = 0, totalActual = 0;
         document.querySelectorAll('.manning-planned').forEach(inp => {
-            totalPlanned += parseInt(inp.value) || 0;
+            totalPlanned += parseFloat(inp.value) || 0;
         });
         document.querySelectorAll('.manning-actual').forEach(inp => {
-            totalActual += parseInt(inp.value) || 0;
+            totalActual += parseFloat(inp.value) || 0;
         });
         const variance = totalActual - totalPlanned;
         document.getElementById('total-planned').textContent = totalPlanned;
@@ -1786,7 +1786,7 @@ if ('serviceWorker' in navigator) {
     function getActiveCrew() {
         const names = [];
         document.querySelectorAll('#manning-body tr').forEach(row => {
-            const actual = parseInt(row.querySelector('.manning-actual')?.value) || 0;
+            const actual = parseFloat(row.querySelector('.manning-actual')?.value) || 0;
             if (actual < 1) return;
             const sel = row.querySelector('.name-select');
             let name = '';
@@ -1872,7 +1872,7 @@ if ('serviceWorker' in navigator) {
             reportDate: val(0),
             supervisorName: val(1),
             site: val(2),
-            zone: val(3),
+            jobNumber: val(3),
             shift: val(4),
             weather: val(5),
             weekCommencing: val(6),
@@ -1913,8 +1913,8 @@ if ('serviceWorker' in navigator) {
             const name = sel ? sel.value : '';
             const tradeTd = tr.querySelectorAll('td')[1];
             const trade = tradeTd ? (tradeTd.querySelector('select')?.value || tradeTd.querySelector('input')?.value || tradeTd.textContent.trim()) : '';
-            const planned = parseInt(tr.querySelector('.manning-planned')?.value) || null;
-            const actual = parseInt(tr.querySelector('.manning-actual')?.value) || null;
+            const planned = parseFloat(tr.querySelector('.manning-planned')?.value) || null;
+            const actual = parseFloat(tr.querySelector('.manning-actual')?.value) || null;
             const taskTd = tr.querySelectorAll('td')[5];
             const taskIds = taskTd ? (taskTd.querySelector('select')?.value || taskTd.querySelector('input')?.value || taskTd.textContent.trim()) : '';
             const notesTd = tr.querySelectorAll('td')[6];
@@ -2089,7 +2089,7 @@ if ('serviceWorker' in navigator) {
             }
         }
         setVal(2, data.site);
-        setVal(3, data.zone);
+        setVal(3, data.jobNumber || data.zone);
         setVal(4, data.shift);
         setVal(5, data.weather);
         setVal(6, data.weekCommencing || data.week_commencing);
@@ -2421,8 +2421,8 @@ if ('serviceWorker' in navigator) {
         const status = document.getElementById('submit-status');
         const data = collectReportData();
 
-        if (!data.reportDate || !data.supervisorName) {
-            status.textContent = 'Please fill in date and supervisor before submitting.';
+        if (!data.reportDate || !data.supervisorName || !data.jobNumber) {
+            status.textContent = 'Please fill in date, supervisor and job number before submitting.';
             status.style.color = 'var(--danger)';
             return;
         }

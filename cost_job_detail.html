@@ -210,6 +210,10 @@
             box-shadow: var(--shadow);
             margin-bottom: 16px;
         }
+        .table-wrap.scrollable {
+            overflow-y: auto;
+            max-height: calc(100vh - 220px);
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -229,6 +233,7 @@
             white-space: nowrap;
             position: sticky;
             top: 0;
+            z-index: 2;
         }
         thead th.r { text-align: right; }
         thead th.c { text-align: center; }
@@ -383,10 +388,17 @@
         .cat-assign:hover { color: var(--accent); }
         .cat-inline-select {
             font-size: 0.78rem;
-            padding: 2px 4px;
-            border: 1px solid var(--accent);
+            padding: 2px 6px;
+            border: 1px solid var(--border);
             border-radius: 4px;
             font-family: inherit;
+            width: 100%;
+            background: #fff;
+        }
+        .cat-inline-select:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0,120,212,.15);
         }
 
         /* Responsive */
@@ -595,6 +607,9 @@ async function init() {
     }
 
     try {
+        // Pull any new transactions from server (auto-synced from SharePoint)
+        await CostDB.syncTransactionsFromServer(_jobId);
+
         _data = await CostDB.getFullAnalysis(_jobId);
         if (!_data || !_data.job) {
             document.getElementById('loading-overlay').innerHTML = 'Job not found.';
@@ -1084,9 +1099,11 @@ function renderSpendAnalysis() {
 
 
 // ===== TAB 3: ALL TRANSACTIONS =====
+var _txnPendingChanges = {}; // {txnId: newCat}
+
 function renderTransactions() {
     const transactions = _data.transactions || [];
-    const cats = _data.categories || [];
+    _txnPendingChanges = {};
 
     let html = '';
 
@@ -1109,7 +1126,20 @@ function renderTransactions() {
     html += '<option value="commitment">Commitment</option>';
     html += '</select>';
 
+    // Batch assign for visible/selected
+    html += '<select id="txn-batch-cat" style="margin-left:8px;padding:4px 8px;border-radius:4px;border:1px solid var(--border);font-size:0.82rem">';
+    html += '<option value="">Batch assign...</option>';
+    for (let i = 1; i <= 8; i++) {
+        html += '<option value="' + i + '">Cat ' + i + ' - ' + catName(i) + '</option>';
+    }
+    html += '</select>';
+    html += '<button onclick="batchAssignVisible()" style="padding:4px 10px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;margin-left:4px" title="Assign selected category to all visible unallocated rows">Apply</button>';
+
     html += '<span class="filter-count" id="txn-count">' + transactions.length + ' transactions</span>';
+
+    // Pending changes indicator + save button
+    html += '<span id="txn-pending" style="display:none;color:var(--primary);font-weight:600;font-size:0.82rem;margin-left:8px"></span>';
+    html += '<button id="txn-save-btn" onclick="savePendingChanges()" style="display:none;margin-left:4px;padding:4px 12px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;font-weight:600">Save Changes</button>';
 
     // AI suggest button — count unmapped
     const unmappedCount = transactions.filter(t => !t.mapped_category && !t.is_revenue && !t.is_commitment).length;
@@ -1119,19 +1149,29 @@ function renderTransactions() {
     }
     html += '</div>';
 
-    // Table
-    html += '<div class="table-wrap"><table id="txn-table">';
+    // Table with inline dropdowns
+    html += '<div class="table-wrap scrollable"><table id="txn-table">';
     html += '<thead><tr>';
-    html += '<th>Date</th><th>Source</th><th>Trans Type</th><th>Cost Code</th>';
-    html += '<th>Description</th><th>Supplier/Employee</th><th>PO</th>';
-    html += '<th class="r">Qty/Hrs</th><th class="r">Value</th><th class="r">Overhead</th>';
-    html += '<th class="r">Total Cost</th><th>Category</th>';
+    html += '<th>Date</th><th>Trans Type</th><th>Cost Code</th>';
+    html += '<th>Description</th><th>Supplier/Employee</th>';
+    html += '<th class="r">Value</th><th class="r">Total Cost</th><th style="min-width:160px">Category</th>';
     html += '</tr></thead>';
     html += '<tbody id="txn-tbody">';
     html += renderTxnRows(transactions);
     html += '</tbody></table></div>';
 
     document.getElementById('tab-3').innerHTML = html;
+}
+
+function _catSelectHtml(txnId, currentCat, isRevenue) {
+    if (isRevenue) return '<span class="text-green">Revenue</span>';
+    var s = '<select class="cat-inline-select" data-txn="' + esc(txnId) + '" onchange="markTxnChanged(this)">';
+    s += '<option value="0"' + (!currentCat || currentCat === 0 ? ' selected' : '') + ' style="color:#9333ea">-- Unallocated --</option>';
+    for (var i = 1; i <= 8; i++) {
+        s += '<option value="' + i + '"' + (currentCat === i ? ' selected' : '') + '>Cat ' + i + ' - ' + catName(i) + '</option>';
+    }
+    s += '</select>';
+    return s;
 }
 
 function renderTxnRows(txns) {
@@ -1141,35 +1181,102 @@ function renderTxnRows(txns) {
         const isNeg = (parseFloat(t.total_cost) || 0) < 0;
         const valClass = isRevenue ? 'text-green' : (isNeg ? 'text-neg' : '');
         const catNum = t.category_number || t.mapped_category || 0;
-
-        // Category display - clickable for reassignment
-        let catDisplay;
-        if (catNum && catNum >= 1 && catNum <= 8) {
-            catDisplay = '<span class="cat-assign" onclick="startCatEdit(this, \'' + esc(t.id) + '\')">' +
-                catDot(catNum) + ' ' + esc(t.category_name || catName(catNum)) + '</span>';
-        } else if (isRevenue) {
-            catDisplay = '<span class="text-green">Revenue</span>';
-        } else {
-            catDisplay = '<span class="cat-assign text-purple" onclick="startCatEdit(this, \'' + esc(t.id) + '\')">Unallocated</span>';
-        }
-
         const typeLower = (t.trans_type || '').toLowerCase().replace(/\s+/g, '_');
-        html += '<tr data-cat="' + (isRevenue ? 'revenue' : (catNum || 'unallocated')) + '" data-type="' + esc(typeLower) + '">';
+        const rowClass = (!catNum && !isRevenue) ? ' style="background:#faf5ff"' : '';
+
+        html += '<tr data-id="' + esc(t.id) + '" data-cat="' + (isRevenue ? 'revenue' : (catNum || 'unallocated')) + '" data-type="' + esc(typeLower) + '"' + rowClass + '>';
         html += '<td>' + fmtDate(t.date) + '</td>';
-        html += '<td>' + esc(t.source || t.mapping_source || '') + '</td>';
         html += '<td>' + esc(t.trans_type || '') + '</td>';
         html += '<td class="mono">' + esc(t.cost_code || '') + '</td>';
         html += '<td>' + esc(t.description || '') + '</td>';
-        html += '<td>' + esc(t.supplier || t.employee || '') + '</td>';
-        html += '<td>' + esc(t.po_number || '') + '</td>';
-        html += '<td class="r mono">' + (t.qty || '') + '</td>';
+        html += '<td>' + esc(t.supplier || t.supplier_name || t.employee || '') + '</td>';
         html += '<td class="r mono ' + valClass + '">' + fmt(t.value) + '</td>';
-        html += '<td class="r mono ' + valClass + '">' + fmt(t.overhead) + '</td>';
         html += '<td class="r mono ' + valClass + '">' + fmt(t.total_cost) + '</td>';
-        html += '<td>' + catDisplay + '</td>';
+        html += '<td>' + _catSelectHtml(t.id, catNum, isRevenue) + '</td>';
         html += '</tr>';
     });
     return html;
+}
+
+function markTxnChanged(sel) {
+    var txnId = sel.getAttribute('data-txn');
+    var newCat = parseInt(sel.value);
+    var row = sel.closest('tr');
+
+    // Track the change
+    _txnPendingChanges[txnId] = newCat;
+
+    // Visual feedback: highlight changed row
+    row.style.background = newCat ? '#f0fdf4' : '#faf5ff';
+    row.setAttribute('data-cat', newCat || 'unallocated');
+
+    // Update pending count
+    var count = Object.keys(_txnPendingChanges).length;
+    var pendEl = document.getElementById('txn-pending');
+    var saveBtn = document.getElementById('txn-save-btn');
+    if (count > 0) {
+        pendEl.textContent = count + ' unsaved change' + (count > 1 ? 's' : '');
+        pendEl.style.display = '';
+        saveBtn.style.display = '';
+    } else {
+        pendEl.style.display = 'none';
+        saveBtn.style.display = 'none';
+    }
+}
+
+async function savePendingChanges() {
+    var ids = Object.keys(_txnPendingChanges);
+    if (!ids.length) return;
+
+    var saveBtn = document.getElementById('txn-save-btn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving ' + ids.length + '...';
+
+    try {
+        for (var i = 0; i < ids.length; i++) {
+            await CostDB.manuallyMapTransaction(ids[i], _txnPendingChanges[ids[i]]);
+        }
+        _txnPendingChanges = {};
+
+        // Reload data and refresh all tabs
+        _data = await CostDB.getFullAnalysis(_jobId);
+        _tabDirty = [true, true, true, true, true, true];
+        renderTransactions();
+        alert(ids.length + ' transaction(s) updated successfully.');
+    } catch(e) {
+        console.error('Save failed:', e);
+        alert('Failed to save: ' + e.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+    }
+}
+
+function batchAssignVisible() {
+    var catVal = document.getElementById('txn-batch-cat').value;
+    if (!catVal) { alert('Select a category first'); return; }
+    var newCat = parseInt(catVal);
+
+    var rows = document.querySelectorAll('#txn-tbody tr');
+    var changed = 0;
+    rows.forEach(function(row) {
+        if (row.style.display === 'none') return;
+        var rowCat = row.getAttribute('data-cat');
+        if (rowCat === 'revenue') return;
+        // Only batch-assign unallocated rows (or all visible if desired)
+        if (rowCat !== 'unallocated' && rowCat !== '' && rowCat !== 'null' && rowCat !== '0') return;
+
+        var sel = row.querySelector('.cat-inline-select');
+        if (sel) {
+            sel.value = newCat;
+            markTxnChanged(sel);
+            changed++;
+        }
+    });
+
+    if (changed === 0) {
+        alert('No unallocated transactions visible to assign.');
+    }
 }
 
 function applyTxnFilters() {
@@ -1185,7 +1292,7 @@ function applyTxnFilters() {
 
         if (catFilter) {
             if (catFilter === 'unallocated') {
-                show = show && (rowCat === 'unallocated' || rowCat === '' || rowCat === 'null');
+                show = show && (rowCat === 'unallocated' || rowCat === '' || rowCat === 'null' || rowCat === '0');
             } else if (catFilter === 'revenue') {
                 show = show && rowCat === 'revenue';
             } else {
@@ -1201,47 +1308,6 @@ function applyTxnFilters() {
     });
 
     document.getElementById('txn-count').textContent = visible + ' transactions';
-}
-
-async function startCatEdit(el, txnId) {
-    // Replace the clicked element with an inline dropdown
-    const select = document.createElement('select');
-    select.className = 'cat-inline-select';
-    for (let i = 1; i <= 8; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = 'Cat ' + i + ' - ' + catName(i);
-        select.appendChild(opt);
-    }
-
-    // Find current category
-    const txn = (_data.transactions || []).find(t => t.id === txnId);
-    if (txn && txn.category_number) {
-        select.value = txn.category_number;
-    }
-
-    select.addEventListener('change', async function() {
-        const newCat = parseInt(this.value);
-        try {
-            await CostDB.manuallyMapTransaction(txnId, newCat);
-            await CostDB.applyMappings(_jobId);
-            // Reload data and refresh
-            _data = await CostDB.getFullAnalysis(_jobId);
-            _tabDirty = [true, true, true, true, true, true];
-            renderTransactions();
-        } catch(e) {
-            console.error('Category reassignment failed:', e);
-            alert('Failed to reassign category.');
-        }
-    });
-
-    select.addEventListener('blur', function() {
-        // Revert if no change was made
-        renderTransactions();
-    });
-
-    el.replaceWith(select);
-    select.focus();
 }
 
 async function askAiSuggest() {
@@ -1396,7 +1462,7 @@ function renderWeeklySummary() {
         return;
     }
 
-    html += '<div class="table-wrap"><table>';
+    html += '<div class="table-wrap scrollable"><table>';
     html += '<thead><tr>';
     html += '<th>Week Commencing</th><th class="c">Txns</th>';
     activeCats.forEach(c => {

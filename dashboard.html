@@ -643,62 +643,51 @@
             date_to: dateTo,
             generated_at: new Date().toISOString(),
             safety: {
-                havs_workers_above_eav: 3,
+                havs_workers_above_eav: 0,
                 havs_workers_above_elv: 0,
-                havs_total_entries: 42,
-                near_misses_reported: 5,
-                near_misses_open: 2,
-                near_misses_by_severity: { High: 1, Medium: 2, Low: 2 },
-                defects_open: 7,
-                defects_open_by_severity: { Critical: 2, Moderate: 3, Minor: 2 },
-                defects_closed_in_range: 4
+                havs_total_entries: 0,
+                near_misses_reported: 0,
+                near_misses_open: 0,
+                near_misses_by_severity: {},
+                defects_open: 0,
+                defects_open_by_severity: {},
+                defects_closed_in_range: 0
             },
             compliance: {
-                daily_reports_submitted: 6,
-                daily_reports_expected: 7,
-                submission_rate_pct: 85.7,
-                checklist_avg_completion_pct: 92.5,
-                inspections_total: 18,
-                inspections_pass: 15,
-                inspection_pass_rate_pct: 83.3,
-                workplace_inspections_total: 2,
-                workplace_inspection_pass_pct: 88.0
+                daily_reports_submitted: 0,
+                daily_reports_expected: 0,
+                submission_rate_pct: 0,
+                checklist_avg_completion_pct: 0,
+                inspections_total: 0,
+                inspections_pass: 0,
+                inspection_pass_rate_pct: 0,
+                workplace_inspections_total: 0,
+                workplace_inspection_pass_pct: 0
             },
             operations: {
-                manning_planned: 224,
-                manning_actual: 210,
-                manning_variance_pct: -6.3,
-                hot_work_active: 3,
-                hot_work_issued: 5,
-                requisitions_by_status: { Pending: 4, Issued: 6, Rejected: 2 },
-                goods_inward_received: 3
+                manning_planned: 0,
+                manning_actual: 0,
+                manning_variance_pct: 0,
+                hot_work_active: 0,
+                hot_work_issued: 0,
+                requisitions_by_status: {},
+                goods_inward_received: 0
             },
             powra: {
-                total: 24,
-                passed: 21,
-                failed: 3,
-                pass_rate_pct: 87.5,
-                this_period: 24,
-                by_assessor: [
-                    { assessor: 'Andrew Drew', count: 8, passed: 7, failed: 1 },
-                    { assessor: 'John Smith', count: 7, passed: 7, failed: 0 },
-                    { assessor: 'Mike Jones', count: 5, passed: 4, failed: 1 },
-                    { assessor: 'Sarah Williams', count: 4, passed: 3, failed: 1 },
-                ]
+                total: 0,
+                passed: 0,
+                failed: 0,
+                pass_rate_pct: 0,
+                this_period: 0,
+                by_assessor: []
             },
             trends: {
                 dates: dates,
-                manning_planned: dates.map(function(_, i) {
-                    var day = new Date(dates[i] + 'T00:00:00').getDay();
-                    return day === 0 || day === 6 ? 0 : 30 + Math.floor(Math.random() * 6);
-                }),
-                manning_actual: dates.map(function(_, i) {
-                    var day = new Date(dates[i] + 'T00:00:00').getDay();
-                    return day === 0 || day === 6 ? 0 : 26 + Math.floor(Math.random() * 8);
-                }),
-                near_misses: dates.map(function() { return Math.floor(Math.random() * 3); }),
-                defects_raised: dates.map(function() { return Math.floor(Math.random() * 3); }),
-                havs_max_a8: dates.map(function() { return +(Math.random() * 4).toFixed(1); })
+                manning_planned: dates.map(function() { return 0; }),
+                manning_actual: dates.map(function() { return 0; }),
+                near_misses: dates.map(function() { return 0; }),
+                defects_raised: dates.map(function() { return 0; }),
+                havs_max_a8: dates.map(function() { return 0; })
             }
         };
     }

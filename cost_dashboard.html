@@ -1318,8 +1318,16 @@ async function createJob() {
             if (txnCount > 0) importSource = 'existing';
         }
 
-        // Step 4: Apply all mapping rules (global + job-specific + copied)
+        // Step 4: Sync mapping rules from server, then apply
         if (txnCount > 0) {
+            btn.textContent = 'Syncing mapping rules...';
+            var syncResult = { supplier: 0, labour: 0 };
+            try {
+                syncResult = await CostDB.fetchMappingsFromServer();
+                console.log('Mapping sync result:', syncResult);
+            } catch (syncErr) {
+                console.warn('Mapping sync error (using local rules):', syncErr);
+            }
             btn.textContent = 'Applying mapping rules...';
             try {
                 const mapResult = await CostDB.applyMappings(jobId);

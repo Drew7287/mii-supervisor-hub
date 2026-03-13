@@ -670,7 +670,7 @@ function renderActions(actions, total) {
         const preview = truncate(a.action_text, 80);
         const targetStr = a.target_date || '—';
         const assignedStr = a.assigned_to || '—';
-        const isOpen = a.status === 'open' || a.status === 'Open' || a.is_overdue;
+        const isOpen = a.status === 'open' || a.is_overdue;
         const closeBtn = isOpen
             ? `<button class="btn-header-close" onclick="event.stopPropagation(); openCloseModal('${a.id}')">Close</button>`
             : '';

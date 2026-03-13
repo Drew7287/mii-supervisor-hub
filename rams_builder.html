@@ -144,6 +144,8 @@ textarea { resize: vertical; min-height: 80px; }
 .ai-sug { padding: 12px; border: 1.5px solid var(--border); border-radius: 6px; margin-bottom: 8px; background: var(--white); }
 .ai-sug.accepted { border-color: var(--success); background: #f0faf3; opacity: 0.7; }
 .ai-sug.ignored { border-color: var(--border); background: #f8f8f8; opacity: 0.5; }
+.ai-sug textarea.ai-sug-edit { width:100%;min-height:80px;font-size:0.82rem;padding:8px;border:1.5px solid var(--accent);border-radius:4px;font-family:inherit;resize:vertical;background:#fffef5; }
+.ai-sug .ai-sug-undo { font-size:0.72rem;color:var(--accent);cursor:pointer;text-decoration:underline;margin-left:8px; }
 .ai-sug-type { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
 .ai-sug-type.add_hazard { background: #ffeaa7; color: #856404; }
 .ai-sug-type.add_control, .ai-sug-type.inadequate_control { background: #dfe6e9; color: #2d3436; }
@@ -3959,11 +3961,11 @@ function renderAISuggestions(summary) {
                                 <button class="btn btn-success btn-sm" onclick="acceptAISuggestion(${i})" style="padding:4px 10px;min-height:30px;">Accept</button>
                                 <button class="btn btn-outline btn-sm" onclick="ignoreAISuggestion(${i})" style="padding:4px 10px;min-height:30px;">Ignore</button>
                             </div>
-                        ` : `<span style="font-size:0.8rem;color:${s._status==='accepted'?'var(--success)':'var(--text-light)'};">${s._status === 'accepted' ? '\u2713 Applied' : 'Ignored'}</span>`}
+                        ` : `<span style="font-size:0.8rem;color:${s._status==='accepted'?'var(--success)':'var(--text-light)'};">${s._status === 'accepted' ? '\u2713 Applied' : 'Ignored'}<a class="ai-sug-undo" onclick="undoAISuggestion(${i})">Undo</a></span>`}
                     </div>
                     <div style="font-size:0.82rem;color:var(--text-light);">${escHtml(s.description || '')}</div>
                     ${s.target ? `<div style="font-size:0.75rem;color:var(--text-light);margin-top:3px;">Target: ${escHtml(s.target)}</div>` : ''}
-                    ${s.suggested_text ? `<div style="font-size:0.82rem;margin-top:6px;padding:8px;background:#f8f9fa;border-radius:4px;border-left:3px solid var(--accent);">${escHtml(s.suggested_text)}</div>` : ''}
+                    ${s.suggested_text ? (s._status === 'pending' ? `<textarea class="ai-sug-edit" id="ai-sug-text-${i}" onchange="updateAISugText(${i}, this.value)">${escHtml(s.suggested_text)}</textarea>` : `<div style="font-size:0.82rem;margin-top:6px;padding:8px;background:#f8f9fa;border-radius:4px;border-left:3px solid var(--accent);">${escHtml(s.suggested_text)}</div>`) : ''}
                     ${s.justification ? `<div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;font-style:italic;">${escHtml(s.justification)}</div>` : ''}
                 </div>
             `).join('')}
@@ -3973,6 +3975,9 @@ function renderAISuggestions(summary) {
 function acceptAISuggestion(idx) {
     const s = aiSuggestions[idx];
     if (!s || s._status !== 'pending') return;
+    // Grab latest text from textarea if edited
+    const ta = document.getElementById('ai-sug-text-' + idx);
+    if (ta) s.suggested_text = ta.value;
     s._status = 'accepted';
     applyAISuggestion(s);
     renderAISuggestions('');
@@ -3983,6 +3988,22 @@ function ignoreAISuggestion(idx) {
     if (!s || s._status !== 'pending') return;
     s._status = 'ignored';
     renderAISuggestions('');
+}
+
+function undoAISuggestion(idx) {
+    const s = aiSuggestions[idx];
+    if (!s) return;
+    const wasAccepted = s._status === 'accepted';
+    s._status = 'pending';
+    if (wasAccepted) {
+        alert('Set back to pending. Note: changes already applied to the document were not reversed - remove manually if needed.');
+    }
+    renderAISuggestions('');
+}
+
+function updateAISugText(idx, value) {
+    const s = aiSuggestions[idx];
+    if (s) s.suggested_text = value;
 }
 
 function downloadAISuggestionsJSON() {
