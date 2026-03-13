@@ -153,6 +153,20 @@ textarea { resize: vertical; min-height: 80px; }
 .ai-sug-type.add_equipment, .ai-sug-type.add_coshh, .ai-sug-type.add_ppe { background: #d5f5e3; color: #1e8449; }
 .ai-sug-type.environment_flag { background: #d4efdf; color: #1a5276; }
 .ai-sug-type.ssw_violation { background: #fadbd8; color: #922b21; }
+.ai-sug.clickable { cursor: pointer; }
+.ai-sug.clickable:hover { border-color: var(--accent); }
+.ra-card.ai-added { border-left: 3px solid var(--success); background: #E8F5E9; }
+.ra-card.ai-replaced { border-left: 3px solid #FF9800; background: #FFF3E0; }
+.method-step.ai-added { border-left: 3px solid var(--accent); }
+.ms-ai-badge { display: inline-block; background: var(--accent); color: var(--white); font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+/* AI Accept Preview Modal */
+.ai-accept-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.ai-accept-modal { background: var(--white); border-radius: 12px; width: 90%; max-width: 560px; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+.ai-accept-modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.ai-accept-modal-header h3 { color: var(--primary); font-size: 1rem; margin: 0; }
+.ai-accept-modal-body { padding: 20px; }
+.ai-accept-modal-body textarea { width: 100%; min-height: 150px; font-size: 0.88rem; padding: 10px; border: 1.5px solid var(--accent); border-radius: 6px; font-family: inherit; resize: vertical; background: #fffef5; }
+.ai-accept-modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
 .ai-loading { text-align: center; padding: 20px; color: var(--text-light); }
 .ai-loading .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -343,6 +357,7 @@ textarea { resize: vertical; min-height: 80px; }
 
 <!-- ════════ REVIEW DECISION MODAL ════════ -->
 <div id="review-decision-modal" style="display:none;"></div>
+<div id="ai-accept-modal" style="display:none;"></div>
 
 <!-- ════════ WIZARD VIEW ════════ -->
 <div id="wizard-view" style="display:none;">
@@ -2753,7 +2768,18 @@ async function editDocument(id) {
     currentDoc = await MiiDB.get('rams_documents', id);
     if (!currentDoc) return;
     currentStep = 0;
+    // Item 7: Restore AI suggestion state from saved document
+    if (currentDoc.ai_suggestions && currentDoc.ai_suggestions.length > 0) {
+        aiSuggestions = currentDoc.ai_suggestions;
+    } else {
+        aiSuggestions = [];
+    }
     showWizard();
+    // Render restored suggestions if any
+    if (aiSuggestions.length > 0) {
+        document.getElementById('ai-suggestions-panel').style.display = '';
+        renderAISuggestions('');
+    }
 }
 
 async function cloneDocument(id) {
@@ -2968,8 +2994,10 @@ function renderMethodSteps() {
 }
 
 function msRow(s, i, total) {
-    return `<tr id="ms-row-${i}" draggable="true" ondragstart="msDragStart(event,${i})" ondragover="msDragOver(event)" ondrop="msDrop(event,${i})">
-        <td class="ms-num">${i+1}</td>
+    const aiClass = s._ai_added ? ' ai-added' : '';
+    const aiBadge = s._ai_added ? '<span class="ms-ai-badge">AI</span>' : '';
+    return `<tr id="ms-row-${i}" class="method-step${aiClass}" draggable="true" ondragstart="msDragStart(event,${i})" ondragover="msDragOver(event)" ondrop="msDrop(event,${i})">
+        <td class="ms-num">${i+1}${aiBadge}</td>
         <td class="ms-desc"><textarea id="ms-desc-${i}" placeholder="Describe this step..." onkeydown="msKeyDown(event,${i})" oninput="autoResizeTextarea(this)">${escHtml(s.description||'')}</textarea></td>
         <td class="ms-actions">
             <button title="Move up" onclick="moveStep(${i},-1)" ${i===0?'disabled':''}>&#9650;</button>
@@ -3228,7 +3256,8 @@ function renderRiskAssessment() {
         const h = MII_HAZARDS.find(hz => hz.id === ra.hazard_id);
         const iScore = (ra.initial_l||1) * (ra.initial_s||1);
         const fScore = (ra.final_l||1) * (ra.final_s||1);
-        return `<div class="ra-card">
+        const aiClass = ra._ai_replaced ? ' ai-replaced' : (ra._ai_added ? ' ai-added' : '');
+        return `<div class="ra-card${aiClass}">
             <h4>${escHtml(h ? h.name : 'Unknown Hazard')}</h4>
             <div class="form-row" style="margin-bottom:12px;">
                 <div><label>Risk to Individual</label><input type="text" id="ra-risk-${i}" value="${escHtml(ra.risk_description||'')}" placeholder="Describe the risk..." style="margin-bottom:0;"></div>
@@ -3334,10 +3363,13 @@ function renderReqGrid(type, library, selected, getName, getDetail) {
         const name = getName(item);
         const detail = getDetail(item);
         const checked = selected.includes(name);
+        // Item 6: Show robot emoji on AI-suggested items (display only)
+        const isAI = item._ai_suggested === true;
+        const displayName = (isAI && checked) ? '\ud83e\udd16 ' + name : name;
         return `<label class="req-item ${checked?'checked':''}" onclick="this.classList.toggle('checked')">
             <input type="checkbox" value="${escHtml(name)}" ${checked?'checked':''} onchange="this.parentElement.classList.toggle('checked',this.checked);updateReqCounts()">
             <div class="req-item-info">
-                <div class="req-item-name">${escHtml(name)}</div>
+                <div class="req-item-name">${escHtml(displayName)}</div>
                 ${detail ? `<div class="req-item-detail">${escHtml(detail)}</div>` : ''}
             </div>
         </label>`;
@@ -3937,6 +3969,8 @@ If document passes all checks:
         }
 
         aiSuggestions = (parsed.suggestions || []).map((s, i) => ({ ...s, _idx: i, _status: 'pending' }));
+        // Item 7: Persist new suggestions to document
+        persistAISuggestions();
         renderAISuggestions(parsed.summary);
 
     } catch (e) {
@@ -3948,23 +3982,165 @@ If document passes all checks:
     }
 }
 
+// ─── AI Suggestion Utilities ──────────────────────────────
+
+function fixEscapedUnicode(text) {
+    if (!text) return text;
+    // Strip wrapping double quotes
+    if (text.length >= 2 && text[0] === '"' && text[text.length - 1] === '"') {
+        text = text.slice(1, -1);
+    }
+    // Replace literal \\uXXXX sequences with actual characters
+    text = text.replace(/\\u([0-9a-fA-F]{4})/g, (m, hex) => String.fromCharCode(parseInt(hex, 16)));
+    // Replace literal \\n and \\t
+    text = text.replace(/\\n/g, '\n');
+    text = text.replace(/\\t/g, '\t');
+    return text;
+}
+
+function stripSuggestionPrefix(text) {
+    if (!text) return text;
+    text = text.replace(/^(?:Add\s+(?:to\s+|new\s+)?(?:Equipment|COSHH|PPE|step|method|hazard|control)[^:]*:\s*)/i, '');
+    // Strip surrounding quotes after prefix strip
+    text = text.trim();
+    if (text.length >= 2 && ((text[0] === '"' && text[text.length - 1] === '"') || (text[0] === "'" && text[text.length - 1] === "'"))) {
+        text = text.slice(1, -1).trim();
+    }
+    return text.trim();
+}
+
+function parseCustomHazardControls(text) {
+    if (!text) return null;
+    const parts = text.split(/(?:Controls?|Control\s+Measures)\s*:/i);
+    if (parts.length < 2) return null;
+    const controlsRaw = parts[1].trim();
+    const lines = controlsRaw.split('\n').map(l => l.trim())
+        .map(l => l.replace(/^[\u2022\-\*]\s*/, '').replace(/^\d+[\.\)]\s*/, '').trim())
+        .filter(l => l.length > 0);
+    if (lines.length === 0) return null;
+    return '\u2022 ' + lines.join('\n\u2022 ');
+}
+
+// ─── AI Audit Trail ───────────────────────────────────────
+
+function recordAIAudit(action, s, edited) {
+    currentDoc.ai_audit_trail = currentDoc.ai_audit_trail || [];
+    currentDoc.ai_audit_trail.push({
+        action: action,
+        suggestion_type: s.type || '',
+        suggestion_title: s.title || '',
+        target: s.target || '',
+        timestamp: new Date().toISOString(),
+        edited: !!edited,
+    });
+}
+
+// ─── AI Suggestion State Persistence ──────────────────────
+
+function persistAISuggestions() {
+    if (currentDoc) {
+        currentDoc.ai_suggestions = aiSuggestions;
+        saveDraftSilent();
+    }
+}
+
+// ─── AI Accept Preview Modal ──────────────────────────────
+
+function openAcceptPreview(idx) {
+    const s = aiSuggestions[idx];
+    if (!s || s._status !== 'pending') return;
+    const modal = document.getElementById('ai-accept-modal');
+    const typeLabel = (s.type || '').replace(/_/g, ' ').toUpperCase();
+    modal.style.display = 'block';
+    modal.innerHTML = `<div class="ai-accept-modal-overlay" onclick="if(event.target===this)closeAcceptPreview()">
+        <div class="ai-accept-modal">
+            <div class="ai-accept-modal-header">
+                <h3>Review Before Applying</h3>
+            </div>
+            <div class="ai-accept-modal-body">
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+                    <span class="ai-sug-type ${s.type || ''}">${typeLabel}</span>
+                    <strong style="font-size:0.92rem;">${escHtml(s.title || '')}</strong>
+                </div>
+                ${s.target ? `<div style="font-size:0.82rem;color:var(--text-light);margin-bottom:10px;">Target: ${escHtml(s.target)}</div>` : ''}
+                <label style="font-size:0.82rem;font-weight:600;margin-bottom:4px;display:block;">Suggested text (editable):</label>
+                <textarea id="ai-accept-modal-text">${escHtml(s.suggested_text || '')}</textarea>
+            </div>
+            <div class="ai-accept-modal-footer">
+                <button class="btn btn-outline" onclick="closeAcceptPreview()">Cancel</button>
+                <button class="btn btn-success" onclick="confirmAcceptPreview(${idx})">Apply Change</button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function closeAcceptPreview() {
+    document.getElementById('ai-accept-modal').style.display = 'none';
+}
+
+function confirmAcceptPreview(idx) {
+    const s = aiSuggestions[idx];
+    if (!s) return;
+    const ta = document.getElementById('ai-accept-modal-text');
+    const originalText = s.suggested_text;
+    if (ta) s.suggested_text = ta.value;
+    closeAcceptPreview();
+    const applied = applyAISuggestion(s);
+    if (applied === false) {
+        alert('Already present in the document. Suggestion marked as accepted (no change made).');
+    }
+    s._status = 'accepted';
+    recordAIAudit('accepted', s, originalText !== s.suggested_text);
+    persistAISuggestions();
+    renderAISuggestions('');
+}
+
+// ─── AI Suggestion Navigation ─────────────────────────────
+
+function navigateToSuggestion(idx) {
+    const s = aiSuggestions[idx];
+    if (!s) return;
+    const type = s.type || '';
+    const target = (s.target || '').toLowerCase();
+    let stepIdx = -1;
+    if (type === 'add_hazard' || type === 'add_control' || type === 'inadequate_control') {
+        stepIdx = 4; // Risk Assessment
+    } else if (type === 'add_method_step' || type === 'method_sequence') {
+        stepIdx = 1; // Method
+    } else if (type === 'add_equipment' || type === 'add_coshh' || type === 'add_ppe') {
+        stepIdx = 5; // Requirements
+    } else if (type === 'environment_flag') {
+        stepIdx = 6; // Environment
+    } else if (type === 'ra_method_gap') {
+        if (target.includes('equipment') || target.includes('coshh') || target.includes('ppe')) {
+            stepIdx = 5;
+        } else {
+            stepIdx = 4;
+        }
+    }
+    if (stepIdx >= 0) goToStep(stepIdx);
+}
+
+// ─── Render AI Suggestions ────────────────────────────────
+
 function renderAISuggestions(summary) {
     const panel = document.getElementById('ai-suggestions-panel');
     const pending = aiSuggestions.filter(s => s._status === 'pending').length;
     const accepted = aiSuggestions.filter(s => s._status === 'accepted').length;
+    const ignored = aiSuggestions.filter(s => s._status === 'ignored').length;
 
     panel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
             <h4 style="color:var(--primary);">AI Suggestions (${aiSuggestions.length})</h4>
             <div style="display:flex;gap:8px;align-items:center;">
-                <div style="font-size:0.8rem;color:var(--text-light);">${accepted} accepted, ${pending} pending</div>
+                <div style="font-size:0.8rem;color:var(--text-light);">${accepted} accepted, ${ignored} ignored, ${pending} pending</div>
                 ${aiSuggestions.length > 0 ? '<button class="btn btn-outline btn-sm" onclick="downloadAISuggestionsJSON()" style="padding:2px 8px;font-size:0.75rem;">Save JSON</button>' : ''}
             </div>
         </div>
         ${summary ? `<p style="font-size:0.85rem;color:var(--text-light);margin-bottom:14px;padding:10px;background:#f8f9fa;border-radius:6px;">${escHtml(summary)}</p>` : ''}
         ${aiSuggestions.length === 0 ? '<p style="color:var(--success);">No issues found - document looks good!</p>' :
             aiSuggestions.map((s, i) => `
-                <div class="ai-sug ${s._status}" id="ai-sug-${i}">
+                <div class="ai-sug ${s._status} clickable" id="ai-sug-${i}" onclick="navigateToSuggestion(${i})">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
                         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                             <span class="ai-sug-type ${s.type || ''}">${(s.type||'').replace(/_/g,' ')}</span>
@@ -3972,36 +4148,27 @@ function renderAISuggestions(summary) {
                             <span style="font-size:0.72rem;color:var(--text-light);">${Math.round((s.confidence||0)*100)}%</span>
                         </div>
                         ${s._status === 'pending' ? `
-                            <div style="display:flex;gap:4px;flex-shrink:0;">
-                                <button class="btn btn-success btn-sm" onclick="acceptAISuggestion(${i})" style="padding:4px 10px;min-height:30px;">Accept</button>
-                                <button class="btn btn-outline btn-sm" onclick="ignoreAISuggestion(${i})" style="padding:4px 10px;min-height:30px;">Ignore</button>
+                            <div style="display:flex;gap:4px;flex-shrink:0;" onclick="event.stopPropagation()">
+                                <button class="btn btn-success btn-sm" onclick="event.stopPropagation();openAcceptPreview(${i})" style="padding:4px 10px;min-height:30px;">Accept</button>
+                                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();ignoreAISuggestion(${i})" style="padding:4px 10px;min-height:30px;">Ignore</button>
                             </div>
-                        ` : `<span style="font-size:0.8rem;color:${s._status==='accepted'?'var(--success)':'var(--text-light)'};">${s._status === 'accepted' ? '\u2713 Applied' : 'Ignored'}<a class="ai-sug-undo" onclick="undoAISuggestion(${i})">Undo</a></span>`}
+                        ` : `<span style="font-size:0.8rem;color:${s._status==='accepted'?'var(--success)':'var(--text-light)'};" onclick="event.stopPropagation()">${s._status === 'accepted' ? '\u2713 Applied' : 'Ignored'}<a class="ai-sug-undo" onclick="event.stopPropagation();undoAISuggestion(${i})">Undo</a></span>`}
                     </div>
                     <div style="font-size:0.82rem;color:var(--text-light);">${escHtml(s.description || '')}</div>
                     ${s.target ? `<div style="font-size:0.75rem;color:var(--text-light);margin-top:3px;">Target: ${escHtml(s.target)}</div>` : ''}
-                    ${s.suggested_text ? (s._status === 'pending' ? `<textarea class="ai-sug-edit" id="ai-sug-text-${i}" onchange="updateAISugText(${i}, this.value)">${escHtml(s.suggested_text)}</textarea>` : `<div style="font-size:0.82rem;margin-top:6px;padding:8px;background:#f8f9fa;border-radius:4px;border-left:3px solid var(--accent);">${escHtml(s.suggested_text)}</div>`) : ''}
+                    ${s.suggested_text ? `<div style="font-size:0.82rem;margin-top:6px;padding:8px;background:#f8f9fa;border-radius:4px;border-left:3px solid var(--accent);white-space:pre-line;">${escHtml(s.suggested_text)}</div>` : ''}
                     ${s.justification ? `<div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;font-style:italic;">${escHtml(s.justification)}</div>` : ''}
                 </div>
             `).join('')}
     `;
 }
 
-function acceptAISuggestion(idx) {
-    const s = aiSuggestions[idx];
-    if (!s || s._status !== 'pending') return;
-    // Grab latest text from textarea if edited
-    const ta = document.getElementById('ai-sug-text-' + idx);
-    if (ta) s.suggested_text = ta.value;
-    s._status = 'accepted';
-    applyAISuggestion(s);
-    renderAISuggestions('');
-}
-
 function ignoreAISuggestion(idx) {
     const s = aiSuggestions[idx];
     if (!s || s._status !== 'pending') return;
     s._status = 'ignored';
+    recordAIAudit('ignored', s, false);
+    persistAISuggestions();
     renderAISuggestions('');
 }
 
@@ -4009,17 +4176,85 @@ function undoAISuggestion(idx) {
     const s = aiSuggestions[idx];
     if (!s) return;
     const wasAccepted = s._status === 'accepted';
-    s._status = 'pending';
-    if (wasAccepted) {
-        alert('Set back to pending. Note: changes already applied to the document were not reversed - remove manually if needed.');
+    if (wasAccepted && s._revert) {
+        revertAISuggestion(s);
     }
+    s._status = 'pending';
+    delete s._revert;
+    recordAIAudit('reverted', s, false);
+    persistAISuggestions();
     renderAISuggestions('');
 }
 
-function updateAISugText(idx, value) {
-    const s = aiSuggestions[idx];
-    if (s) s.suggested_text = value;
+function revertAISuggestion(s) {
+    const type = s.type || '';
+    const rv = s._revert;
+    if (!rv) return;
+
+    if (type === 'add_hazard') {
+        // Remove from selected_hazards
+        const hIdx = currentDoc.selected_hazards.indexOf(rv.hazard_id);
+        if (hIdx !== -1) currentDoc.selected_hazards.splice(hIdx, 1);
+        // Remove from risk_assessments
+        currentDoc.risk_assessments = (currentDoc.risk_assessments || []).filter(r => r.hazard_id !== rv.hazard_id);
+        // If custom, remove from MII_HAZARDS
+        if (rv.was_custom) {
+            const libIdx = MII_HAZARDS.findIndex(h => h.id === rv.hazard_id);
+            if (libIdx !== -1) MII_HAZARDS.splice(libIdx, 1);
+        }
+    } else if (type === 'add_control' || type === 'inadequate_control') {
+        const ra = (currentDoc.risk_assessments || []).find(r => r.hazard_id === rv.hazard_id);
+        if (ra) ra.controls = rv.original_controls;
+    } else if (type === 'add_method_step') {
+        if (rv.insert_index !== undefined && rv.insert_index < (currentDoc.method_steps || []).length) {
+            currentDoc.method_steps.splice(rv.insert_index, 1);
+            currentDoc.method_steps.forEach((ms, i) => ms.step_number = i + 1);
+        }
+    } else if (type === 'add_equipment') {
+        const eqArr = currentDoc.requirements.equipment || [];
+        const eIdx = eqArr.indexOf(rv.item_name);
+        if (eIdx !== -1) eqArr.splice(eIdx, 1);
+        if (rv.was_custom) {
+            const libIdx = REQUIREMENTS_LIBRARY.equipment.findIndex(e => e.item === rv.item_name);
+            if (libIdx !== -1) REQUIREMENTS_LIBRARY.equipment.splice(libIdx, 1);
+        }
+    } else if (type === 'add_coshh') {
+        const cArr = currentDoc.requirements.coshh || [];
+        const cIdx = cArr.indexOf(rv.substance_name);
+        if (cIdx !== -1) cArr.splice(cIdx, 1);
+        if (rv.was_custom) {
+            const libIdx = REQUIREMENTS_LIBRARY.coshh_substances.findIndex(c => c.substance === rv.substance_name);
+            if (libIdx !== -1) REQUIREMENTS_LIBRARY.coshh_substances.splice(libIdx, 1);
+        }
+    } else if (type === 'add_ppe') {
+        const pArr = currentDoc.requirements.ppe || [];
+        const pIdx = pArr.indexOf(rv.item_name);
+        if (pIdx !== -1) pArr.splice(pIdx, 1);
+        if (rv.was_custom) {
+            const libIdx = REQUIREMENTS_LIBRARY.ppe.findIndex(p => p.item === rv.item_name);
+            if (libIdx !== -1) REQUIREMENTS_LIBRARY.ppe.splice(libIdx, 1);
+        }
+    } else if (type === 'ra_method_gap') {
+        // Restore removed hazard
+        if (rv.hazard_id) {
+            if (!currentDoc.selected_hazards.includes(rv.hazard_id)) {
+                currentDoc.selected_hazards.push(rv.hazard_id);
+            }
+            if (rv.ra_entry) {
+                currentDoc.risk_assessments = currentDoc.risk_assessments || [];
+                currentDoc.risk_assessments.push(rv.ra_entry);
+            }
+        }
+    } else if (type === 'environment_flag') {
+        const envQ = (currentDoc.environment.questions || []).find(q => q.id === rv.question_id);
+        if (envQ) {
+            envQ.answer = rv.original_answer || 'NO';
+            envQ.mechanism = rv.original_mechanism || '';
+        }
+    }
+    saveDraftSilent();
 }
+
 
 function downloadAISuggestionsJSON() {
     if (!aiSuggestions || aiSuggestions.length === 0) return;
@@ -4072,49 +4307,68 @@ function fuzzyMatchLibrary(items, target, getKey) {
 function applyAISuggestion(s) {
     const type = s.type || '';
     const target = s.target || '';
-    const text = s.suggested_text || '';
+    // Item 1: fix escaped unicode, Item 2: strip prefix
+    let text = fixEscapedUnicode(s.suggested_text || '');
+    text = stripSuggestionPrefix(text);
+    s.suggested_text = text; // update for display
 
     if (type === 'add_hazard') {
+        // Item 4: duplicate check for custom hazards by name
+        const existingCustom = currentDoc.selected_hazards.some(hid => {
+            const h = MII_HAZARDS.find(hz => hz.id === hid);
+            return h && h.name.toLowerCase() === target.toLowerCase();
+        });
+        if (existingCustom) {
+            console.log('[AI] Skipped duplicate: add_hazard -', target); return false;
+            return;
+        }
         // Fuzzy match to hazard library
         const match = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
         if (match && !currentDoc.selected_hazards.includes(match.id)) {
             currentDoc.selected_hazards.push(match.id);
+            // Item 5: revert snapshot
+            s._revert = { hazard_id: match.id, was_custom: false };
+        } else if (match && currentDoc.selected_hazards.includes(match.id)) {
+            console.log('[AI] Skipped duplicate: add_hazard -', target); return false;
+            return;
         } else if (!match) {
-            // No library match - create custom hazard and add it
+            // No library match - create custom hazard
             const customId = 'custom_' + Date.now();
+            // Item 3: parse controls from text
+            const parsedControls = parseCustomHazardControls(text);
+            const controlsText = parsedControls || text || 'Refer to method statement for controls.';
             const customHazard = {
                 id: customId,
                 name: target,
                 category: 'Site Specific',
                 risk_description: s.description || 'Refer to method statement',
                 who_harmed: 'Working party and others',
-                default_controls: text || 'Refer to method statement for controls.',
+                default_controls: controlsText,
                 initial_likelihood: 4, initial_severity: 5,
                 final_likelihood: 1, final_severity: 5,
             };
             MII_HAZARDS.push(customHazard);
             currentDoc.selected_hazards.push(customId);
-            // Also create the RA entry so controls are populated
             currentDoc.risk_assessments = currentDoc.risk_assessments || [];
             currentDoc.risk_assessments.push({
                 hazard_id: customId,
-                controls: text || customHazard.default_controls,
+                controls: controlsText,
                 initial_likelihood: customHazard.initial_likelihood,
                 initial_severity: customHazard.initial_severity,
                 final_likelihood: customHazard.final_likelihood,
                 final_severity: customHazard.final_severity,
+                _ai_added: true,
             });
+            // Item 5: revert snapshot
+            s._revert = { hazard_id: customId, was_custom: true };
         }
     } else if (type === 'add_control' || type === 'inadequate_control') {
-        // Find the hazard in library first
         let hazard = MII_HAZARDS.find(h => h.name.toLowerCase() === target.toLowerCase());
         if (!hazard) hazard = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
         if (hazard) {
-            // Ensure hazard is selected
             if (!currentDoc.selected_hazards.includes(hazard.id)) {
                 currentDoc.selected_hazards.push(hazard.id);
             }
-            // Find or create RA entry
             currentDoc.risk_assessments = currentDoc.risk_assessments || [];
             let ra = currentDoc.risk_assessments.find(r => r.hazard_id === hazard.id);
             if (!ra) {
@@ -4128,82 +4382,115 @@ function applyAISuggestion(s) {
                 };
                 currentDoc.risk_assessments.push(ra);
             }
-            // For inadequate_control: replace controls. For add_control: append.
-            if (type === 'inadequate_control') {
-                ra.controls = text;
-            } else {
-                ra.controls = (ra.controls || '') + (ra.controls ? '\n\u2022 ' : '\u2022 ') + text;
+            // Item 5: store original controls for revert
+            const originalControls = ra.controls || '';
+            // Item 4: duplicate check for add_control
+            if (type === 'add_control' && originalControls.includes(text)) {
+                console.log('[AI] Skipped duplicate: add_control -', target); return false;
+                return;
             }
+            // Item 6: visual marker (robot emoji in stored controls)
+            if (type === 'inadequate_control') {
+                ra.controls = '\ud83e\udd16 ' + text;
+                ra._ai_replaced = true;
+            } else {
+                ra.controls = (ra.controls || '') + (ra.controls ? '\n\u2022 \ud83e\udd16 ' : '\u2022 \ud83e\udd16 ') + text;
+                ra._ai_added = true;
+            }
+            s._revert = { hazard_id: hazard.id, original_controls: originalControls };
         }
     } else if (type === 'add_method_step') {
-        // Parse position from target (e.g. "After step 3")
         const posMatch = target.match(/(?:after|before)\s+step\s+(\d+)/i);
         const pos = posMatch ? parseInt(posMatch[1]) : currentDoc.method_steps.length;
         const isAfter = !target.toLowerCase().includes('before');
         const insertAt = isAfter ? pos : Math.max(0, pos - 1);
-        currentDoc.method_steps.splice(insertAt, 0, { step_number: insertAt + 1, description: text, responsible_person: '', section: '' });
-        // Renumber
-        currentDoc.method_steps.forEach((s, i) => s.step_number = i + 1);
+        // Item 6: mark step as AI-added
+        currentDoc.method_steps.splice(insertAt, 0, { step_number: insertAt + 1, description: text, responsible_person: '', section: '', _ai_added: true });
+        currentDoc.method_steps.forEach((ms, i) => ms.step_number = i + 1);
+        // Item 5: revert snapshot
+        s._revert = { insert_index: insertAt };
     } else if (type === 'add_equipment') {
+        // Item 4: duplicate check (case-insensitive)
+        const eqArr = currentDoc.requirements.equipment || [];
+        if (eqArr.some(n => n.toLowerCase() === target.toLowerCase())) {
+            console.log('[AI] Skipped duplicate: add_equipment -', target); return false;
+            return;
+        }
         let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.equipment, target, e => e.item);
         if (match) {
-            if (!(currentDoc.requirements.equipment || []).includes(match.item)) {
+            if (!eqArr.includes(match.item)) {
                 currentDoc.requirements.equipment = currentDoc.requirements.equipment || [];
                 currentDoc.requirements.equipment.push(match.item);
+                s._revert = { item_name: match.item, was_custom: false };
             }
         } else {
-            // No library match - inject custom entry and select it
-            const customItem = { item: target, safety_precaution: text || 'Refer to method statement for usage requirements.' };
+            const customItem = { item: target, safety_precaution: text || 'Refer to method statement for usage requirements.', _ai_suggested: true };
             REQUIREMENTS_LIBRARY.equipment.push(customItem);
             currentDoc.requirements.equipment = currentDoc.requirements.equipment || [];
             currentDoc.requirements.equipment.push(target);
+            s._revert = { item_name: target, was_custom: true };
         }
     } else if (type === 'add_coshh') {
+        // Item 4: duplicate check
+        const cArr = currentDoc.requirements.coshh || [];
+        if (cArr.some(n => n.toLowerCase() === target.toLowerCase())) {
+            console.log('[AI] Skipped duplicate: add_coshh -', target); return false;
+            return;
+        }
         let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.coshh_substances, target, c => c.substance);
         if (match) {
-            if (!(currentDoc.requirements.coshh || []).includes(match.substance)) {
+            if (!cArr.includes(match.substance)) {
                 currentDoc.requirements.coshh = currentDoc.requirements.coshh || [];
                 currentDoc.requirements.coshh.push(match.substance);
+                s._revert = { substance_name: match.substance, was_custom: false };
             }
         } else {
-            const customItem = { substance: target, storage_requirements: text || 'Store per manufacturer instructions.' };
+            const customItem = { substance: target, storage_requirements: text || 'Store per manufacturer instructions.', _ai_suggested: true };
             REQUIREMENTS_LIBRARY.coshh_substances.push(customItem);
             currentDoc.requirements.coshh = currentDoc.requirements.coshh || [];
             currentDoc.requirements.coshh.push(target);
+            s._revert = { substance_name: target, was_custom: true };
         }
     } else if (type === 'add_ppe') {
+        // Item 4: duplicate check
+        const pArr = currentDoc.requirements.ppe || [];
+        if (pArr.some(n => n.toLowerCase() === target.toLowerCase())) {
+            console.log('[AI] Skipped duplicate: add_ppe -', target); return false;
+            return;
+        }
         let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.ppe, target, p => p.item);
         if (match) {
-            if (!(currentDoc.requirements.ppe || []).includes(match.item)) {
+            if (!pArr.includes(match.item)) {
                 currentDoc.requirements.ppe = currentDoc.requirements.ppe || [];
                 currentDoc.requirements.ppe.push(match.item);
+                s._revert = { item_name: match.item, was_custom: false };
             }
         } else {
-            const customItem = { item: target, standard: text || 'As specified by manufacturer.' };
+            const customItem = { item: target, standard: text || 'As specified by manufacturer.', _ai_suggested: true };
             REQUIREMENTS_LIBRARY.ppe.push(customItem);
             currentDoc.requirements.ppe = currentDoc.requirements.ppe || [];
             currentDoc.requirements.ppe.push(target);
+            s._revert = { item_name: target, was_custom: true };
         }
     } else if (type === 'ra_method_gap') {
-        // Check if this is about removing an unjustified hazard or an informational gap
         const targetLower = target.toLowerCase();
         if (targetLower.includes('equipment') || targetLower.includes('coshh') || targetLower.includes('ppe') || targetLower.includes('no ') || targetLower.includes('empty') || targetLower.includes('missing')) {
-            // Informational gap - nothing to apply automatically, user should review
+            // Informational gap - nothing to auto-apply
             console.log('[AI] ra_method_gap is informational:', target);
         } else {
-            // Remove unjustified hazard - fuzzy match and deselect
+            // Hazard removal - store revert data before removing
             const match = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
             if (match) {
+                const raEntry = (currentDoc.risk_assessments || []).find(r => r.hazard_id === match.id);
+                s._revert = { hazard_id: match.id, ra_entry: raEntry ? JSON.parse(JSON.stringify(raEntry)) : null };
                 const idx = currentDoc.selected_hazards.indexOf(match.id);
                 if (idx !== -1) currentDoc.selected_hazards.splice(idx, 1);
                 currentDoc.risk_assessments = (currentDoc.risk_assessments || []).filter(r => r.hazard_id !== match.id);
             }
         }
     } else if (type === 'environment_flag') {
-        // Set the environment question to YES - try exact ID, then fuzzy match on question text
         let envQ = (currentDoc.environment.questions || []).find(q => q.id === target);
         if (!envQ) {
-            // Fuzzy match: target words against question text
             const tWords = target.toLowerCase().replace(/_/g, ' ').split(/\s+/).filter(w => w.length > 2);
             envQ = (currentDoc.environment.questions || []).find(q => {
                 const qText = (q.question || '').toLowerCase();
@@ -4211,10 +4498,16 @@ function applyAISuggestion(s) {
             });
         }
         if (envQ) {
+            // Item 4: duplicate check
+            if (envQ.answer === 'YES') {
+                console.log('[AI] Skipped duplicate: environment_flag -', target); return false;
+                return;
+            }
+            // Item 5: store original for revert
+            s._revert = { question_id: envQ.id, original_answer: envQ.answer || 'NO', original_mechanism: envQ.mechanism || '' };
             envQ.answer = 'YES';
             if (!envQ.mechanism && text) envQ.mechanism = text;
         } else {
-            // Not in doc yet - find in library by ID or fuzzy match
             let libQ = ENVIRONMENT_LIBRARY.questions.find(q => q.id === target);
             if (!libQ) {
                 const tWords = target.toLowerCase().replace(/_/g, ' ').split(/\s+/).filter(w => w.length > 2);
@@ -4230,11 +4523,13 @@ function applyAISuggestion(s) {
                     mechanism: text || libQ.default_mechanisms.map(m => '\u2022 ' + m).join('\n'),
                     control: libQ.default_controls.map(c => '\u2022 ' + c).join('\n'),
                 });
+                s._revert = { question_id: libQ.id, original_answer: 'NO', original_mechanism: '' };
             }
         }
     }
     // Save after applying
     saveDraftSilent();
+    return true;
 }
 
 async function saveDraftSilent() {
