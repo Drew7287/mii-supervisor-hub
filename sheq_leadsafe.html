@@ -611,7 +611,7 @@
     function isYes(val) {
         if (!val) return false;
         var s = String(val).toLowerCase().trim();
-        return s === 'yes' || s === 'true' || s === '1' || s === 'y';
+        return s === 'yes' || s.indexOf('yes') === 0 || s === 'true' || s === '1' || s === 'y';
     }
 
     function formatDate(d) {
