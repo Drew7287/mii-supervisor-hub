@@ -1,0 +1,17 @@
+{
+  "routes": [
+    {
+      "route": "/sw.js",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    }
+  ],
+  "globalHeaders": {
+    "Cache-Control": "no-cache, must-revalidate, max-age=0"
+  },
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/*.{js,json,css,png,jpg,svg,ico}"]
+  }
+}
