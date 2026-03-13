@@ -4079,23 +4079,60 @@ function applyAISuggestion(s) {
         const match = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
         if (match && !currentDoc.selected_hazards.includes(match.id)) {
             currentDoc.selected_hazards.push(match.id);
+        } else if (!match) {
+            // No library match - create custom hazard and add it
+            const customId = 'custom_' + Date.now();
+            const customHazard = {
+                id: customId,
+                name: target,
+                category: 'Site Specific',
+                risk_description: s.description || 'Refer to method statement',
+                who_harmed: 'Working party and others',
+                default_controls: text || 'Refer to method statement for controls.',
+                initial_likelihood: 4, initial_severity: 5,
+                final_likelihood: 1, final_severity: 5,
+            };
+            MII_HAZARDS.push(customHazard);
+            currentDoc.selected_hazards.push(customId);
+            // Also create the RA entry so controls are populated
+            currentDoc.risk_assessments = currentDoc.risk_assessments || [];
+            currentDoc.risk_assessments.push({
+                hazard_id: customId,
+                controls: text || customHazard.default_controls,
+                initial_likelihood: customHazard.initial_likelihood,
+                initial_severity: customHazard.initial_severity,
+                final_likelihood: customHazard.final_likelihood,
+                final_severity: customHazard.final_severity,
+            });
         }
     } else if (type === 'add_control' || type === 'inadequate_control') {
-        // Fuzzy match hazard name in risk assessments
-        const ra = (currentDoc.risk_assessments || []).find(r => {
-            const h = MII_HAZARDS.find(hz => hz.id === r.hazard_id);
-            return h && h.name.toLowerCase() === target.toLowerCase();
-        });
-        if (ra) {
-            ra.controls = (ra.controls || '') + (ra.controls ? '\n\u2022 ' : '\u2022 ') + text;
-        } else {
-            // Fuzzy match
-            const fRA = (currentDoc.risk_assessments || []).find(r => {
-                const h = MII_HAZARDS.find(hz => hz.id === r.hazard_id);
-                return h && fuzzyMatchLibrary([h], target, hz => hz.name);
-            });
-            if (fRA) {
-                fRA.controls = (fRA.controls || '') + (fRA.controls ? '\n\u2022 ' : '\u2022 ') + text;
+        // Find the hazard in library first
+        let hazard = MII_HAZARDS.find(h => h.name.toLowerCase() === target.toLowerCase());
+        if (!hazard) hazard = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
+        if (hazard) {
+            // Ensure hazard is selected
+            if (!currentDoc.selected_hazards.includes(hazard.id)) {
+                currentDoc.selected_hazards.push(hazard.id);
+            }
+            // Find or create RA entry
+            currentDoc.risk_assessments = currentDoc.risk_assessments || [];
+            let ra = currentDoc.risk_assessments.find(r => r.hazard_id === hazard.id);
+            if (!ra) {
+                ra = {
+                    hazard_id: hazard.id,
+                    controls: hazard.default_controls || '',
+                    initial_likelihood: hazard.initial_likelihood || 3,
+                    initial_severity: hazard.initial_severity || 3,
+                    final_likelihood: hazard.final_likelihood || 1,
+                    final_severity: hazard.final_severity || 3,
+                };
+                currentDoc.risk_assessments.push(ra);
+            }
+            // For inadequate_control: replace controls. For add_control: append.
+            if (type === 'inadequate_control') {
+                ra.controls = text;
+            } else {
+                ra.controls = (ra.controls || '') + (ra.controls ? '\n\u2022 ' : '\u2022 ') + text;
             }
         }
     } else if (type === 'add_method_step') {
@@ -4148,27 +4185,48 @@ function applyAISuggestion(s) {
             currentDoc.requirements.ppe.push(target);
         }
     } else if (type === 'ra_method_gap') {
-        // Remove unjustified hazard - fuzzy match and deselect
-        const match = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
-        if (match) {
-            const idx = currentDoc.selected_hazards.indexOf(match.id);
-            if (idx !== -1) currentDoc.selected_hazards.splice(idx, 1);
-            // Also remove from risk_assessments
-            currentDoc.risk_assessments = (currentDoc.risk_assessments || []).filter(r => r.hazard_id !== match.id);
+        // Check if this is about removing an unjustified hazard or an informational gap
+        const targetLower = target.toLowerCase();
+        if (targetLower.includes('equipment') || targetLower.includes('coshh') || targetLower.includes('ppe') || targetLower.includes('no ') || targetLower.includes('empty') || targetLower.includes('missing')) {
+            // Informational gap - nothing to apply automatically, user should review
+            console.log('[AI] ra_method_gap is informational:', target);
+        } else {
+            // Remove unjustified hazard - fuzzy match and deselect
+            const match = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
+            if (match) {
+                const idx = currentDoc.selected_hazards.indexOf(match.id);
+                if (idx !== -1) currentDoc.selected_hazards.splice(idx, 1);
+                currentDoc.risk_assessments = (currentDoc.risk_assessments || []).filter(r => r.hazard_id !== match.id);
+            }
         }
     } else if (type === 'environment_flag') {
-        // Set the environment question to YES
-        const envQ = (currentDoc.environment.questions || []).find(q => q.id === target);
+        // Set the environment question to YES - try exact ID, then fuzzy match on question text
+        let envQ = (currentDoc.environment.questions || []).find(q => q.id === target);
+        if (!envQ) {
+            // Fuzzy match: target words against question text
+            const tWords = target.toLowerCase().replace(/_/g, ' ').split(/\s+/).filter(w => w.length > 2);
+            envQ = (currentDoc.environment.questions || []).find(q => {
+                const qText = (q.question || '').toLowerCase();
+                return tWords.filter(w => qText.includes(w)).length >= Math.ceil(tWords.length * 0.5);
+            });
+        }
         if (envQ) {
             envQ.answer = 'YES';
             if (!envQ.mechanism && text) envQ.mechanism = text;
         } else {
-            // Add new question entry
-            const libQ = ENVIRONMENT_LIBRARY.questions.find(q => q.id === target);
+            // Not in doc yet - find in library by ID or fuzzy match
+            let libQ = ENVIRONMENT_LIBRARY.questions.find(q => q.id === target);
+            if (!libQ) {
+                const tWords = target.toLowerCase().replace(/_/g, ' ').split(/\s+/).filter(w => w.length > 2);
+                libQ = ENVIRONMENT_LIBRARY.questions.find(q => {
+                    const qText = (q.question || '').toLowerCase();
+                    return tWords.filter(w => qText.includes(w)).length >= Math.ceil(tWords.length * 0.5);
+                });
+            }
             if (libQ) {
                 currentDoc.environment.questions = currentDoc.environment.questions || [];
                 currentDoc.environment.questions.push({
-                    id: target, question: libQ.question, answer: 'YES',
+                    id: libQ.id, question: libQ.question, answer: 'YES',
                     mechanism: text || libQ.default_mechanisms.map(m => '\u2022 ' + m).join('\n'),
                     control: libQ.default_controls.map(c => '\u2022 ' + c).join('\n'),
                 });

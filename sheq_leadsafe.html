@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lead Safe Audits — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px 24px;
+        }
+
+        /* ===== SEARCH / FILTER BAR ===== */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .filter-bar input {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-bar input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+        .filter-bar .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--accent);
+            color: var(--white);
+            transition: opacity 0.15s;
+        }
+        .filter-bar .btn:hover { opacity: 0.9; }
+
+        /* ===== LIST TABLE ===== */
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .audit-table thead th {
+            background: var(--primary);
+            color: var(--white);
+            padding: 12px 16px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            text-align: left;
+        }
+        .audit-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .audit-table tbody tr:hover { background: #f5f8fc; }
+        .audit-table tbody tr:last-child { border-bottom: none; }
+        .audit-table td {
+            padding: 12px 16px;
+            font-size: 0.88rem;
+        }
+        .audit-table .arrow-cell {
+            text-align: center;
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        /* ===== PAGINATION ===== */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            font-size: 0.82rem;
+            color: var(--text-light);
+        }
+        .pagination .page-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .pagination button {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--white);
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+
+        /* ===== EMPTY / LOADING / ERROR ===== */
+        .status-msg {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-light);
+            font-size: 0.92rem;
+        }
+        .status-msg.error { color: var(--danger); }
+
+        /* ===== DETAIL VIEW ===== */
+        .detail-view { display: none; }
+        .detail-view.active { display: block; }
+        .list-view.active { display: block; }
+        .list-view { display: none; }
+
+        .detail-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-decoration: none;
+            cursor: pointer;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        .detail-back:hover { text-decoration: underline; }
+
+        /* Report header */
+        .report-header {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 28px 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-top: 4px solid var(--primary);
+        }
+        .report-header .company { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); margin-bottom: 4px; }
+        .report-header h2 { font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-bottom: 2px; }
+        .report-header .form-ref { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent); }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 20px 24px;
+            margin-bottom: 20px;
+        }
+        .meta-item label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-light);
+            margin-bottom: 2px;
+        }
+        .meta-item span {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* Observation cards */
+        .obs-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+        .obs-card-header {
+            background: var(--primary);
+            color: var(--white);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .obs-card-header .obs-num {
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        .obs-card-header .obs-category {
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: rgba(255,255,255,0.15);
+            padding: 3px 10px;
+            border-radius: 4px;
+        }
+        .obs-card-body {
+            padding: 16px;
+        }
+        .obs-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 4px 12px;
+            margin-bottom: 10px;
+            font-size: 0.88rem;
+        }
+        .obs-row:last-child { margin-bottom: 0; }
+        .obs-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-light);
+            padding-top: 2px;
+        }
+        .obs-value {
+            color: var(--text);
+            line-height: 1.5;
+        }
+        .obs-value a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .obs-value a:hover { text-decoration: underline; }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 3px 10px;
+            border-radius: 4px;
+        }
+        .badge.yes { background: #e6f7ec; color: var(--success); }
+        .badge.no { background: #fde8ea; color: var(--danger); }
+        .badge.na { background: #f0f2f5; color: var(--text-light); }
+
+        /* Summary bar */
+        .summary-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .summary-card {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 18px 16px;
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        .summary-value.blue { color: var(--accent); }
+        .summary-value.amber { color: var(--warning); }
+        .summary-value.green { color: var(--success); }
+        .summary-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+
+        /* Print button */
+        .print-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--white);
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            color: var(--text);
+            transition: all 0.15s;
+            margin-left: 8px;
+        }
+        .print-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            .topbar, .filter-bar, .pagination, .detail-back, .print-btn { display: none !important; }
+            body { background: #fff; padding: 0; }
+            .container { max-width: 100%; padding: 0; }
+            .report-header { box-shadow: none; border: 1px solid #ccc; border-top: 4px solid var(--primary); }
+            .meta-grid, .obs-card, .summary-card { box-shadow: none; border: 1px solid #ddd; }
+            .obs-card { break-inside: avoid; }
+            .obs-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .report-header .company, .report-header .form-ref { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .summary-bar { break-inside: avoid; }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 12px 14px; }
+            .meta-grid { grid-template-columns: 1fr; }
+            .obs-row { grid-template-columns: 1fr; }
+            .obs-label { margin-bottom: 0; }
+            .summary-bar { grid-template-columns: 1fr; }
+            .audit-table thead th, .audit-table td { padding: 10px 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Lead Safe Audits &mdash; SF 042</h1>
+    <a href="sheq_hub.html">&larr; SHEQ Hub</a>
+</div>
+
+<!-- ===== LIST VIEW ===== -->
+<div id="listView" class="list-view active">
+    <div class="container">
+        <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="Search by auditor, location..." oninput="debounceSearch()">
+            <button class="btn" onclick="loadAudits()">Search</button>
+        </div>
+
+        <div id="listContent">
+            <div class="status-msg">Loading audits...</div>
+        </div>
+
+        <div id="paginationBar" class="pagination" style="display:none;">
+            <span id="pageInfo"></span>
+            <div class="page-btns">
+                <button id="btnPrev" onclick="changePage(-1)">Prev</button>
+                <button id="btnNext" onclick="changePage(1)">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== DETAIL VIEW ===== -->
+<div id="detailView" class="detail-view">
+    <div class="container">
+        <a class="detail-back" onclick="showList()">&larr; Back to list</a>
+        <button class="print-btn" onclick="window.print()">Print / PDF</button>
+
+        <div id="detailContent">
+            <div class="status-msg">Loading audit...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    const LIMIT = 50;
+
+    let currentOffset = 0;
+    let totalAudits = 0;
+    let searchTimeout = null;
+
+    // ===== AUTH =====
+    function checkAuth() {
+        const token = localStorage.getItem('mii_token');
+        if (!token) {
+            window.location.href = 'hub.html';
+            return null;
+        }
+        return token;
+    }
+
+    function authHeaders() {
+        return { 'Authorization': 'Bearer ' + localStorage.getItem('mii_token') };
+    }
+
+    // ===== INIT =====
+    const token = checkAuth();
+    if (token) loadAudits();
+
+    // ===== LIST =====
+    window.loadAudits = function() {
+        const search = document.getElementById('searchInput').value.trim();
+        const url = MII_API + '/sheq/audits?type=leadsafe&search=' + encodeURIComponent(search) + '&limit=' + LIMIT + '&offset=' + currentOffset;
+
+        document.getElementById('listContent').innerHTML = '<div class="status-msg">Loading audits...</div>';
+        document.getElementById('paginationBar').style.display = 'none';
+
+        fetch(url, { headers: authHeaders() })
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function(data) {
+                totalAudits = data.total || 0;
+                renderList(data.audits || []);
+            })
+            .catch(function(err) {
+                document.getElementById('listContent').innerHTML = '<div class="status-msg error">Failed to load audits: ' + escapeHtml(err.message) + '</div>';
+            });
+    };
+
+    function renderList(audits) {
+        var el = document.getElementById('listContent');
+        if (audits.length === 0) {
+            el.innerHTML = '<div class="status-msg">No audits found.</div>';
+            return;
+        }
+
+        var html = '<table class="audit-table"><thead><tr><th>Date</th><th>Auditor</th><th>Location</th><th></th></tr></thead><tbody>';
+        for (var i = 0; i < audits.length; i++) {
+            var a = audits[i];
+            html += '<tr onclick="viewAudit(' + a.row + ')">';
+            html += '<td>' + escapeHtml(formatDate(a.date)) + '</td>';
+            html += '<td>' + escapeHtml(a.auditor || '') + '</td>';
+            html += '<td>' + escapeHtml(a.area || '') + '</td>';
+            html += '<td class="arrow-cell">&rarr;</td>';
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        el.innerHTML = html;
+
+        // Pagination
+        var pagBar = document.getElementById('paginationBar');
+        if (totalAudits > LIMIT) {
+            pagBar.style.display = 'flex';
+            var start = currentOffset + 1;
+            var end = Math.min(currentOffset + LIMIT, totalAudits);
+            document.getElementById('pageInfo').textContent = 'Showing ' + start + '–' + end + ' of ' + totalAudits;
+            document.getElementById('btnPrev').disabled = currentOffset === 0;
+            document.getElementById('btnNext').disabled = (currentOffset + LIMIT) >= totalAudits;
+        } else {
+            pagBar.style.display = totalAudits > 0 ? 'flex' : 'none';
+            document.getElementById('pageInfo').textContent = totalAudits + ' audit' + (totalAudits !== 1 ? 's' : '');
+            document.getElementById('btnPrev').disabled = true;
+            document.getElementById('btnNext').disabled = true;
+        }
+    }
+
+    window.changePage = function(dir) {
+        currentOffset = Math.max(0, currentOffset + dir * LIMIT);
+        loadAudits();
+    };
+
+    window.debounceSearch = function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            currentOffset = 0;
+            loadAudits();
+        }, 350);
+    };
+
+    // ===== DETAIL =====
+    window.viewAudit = function(row) {
+        document.getElementById('listView').classList.remove('active');
+        document.getElementById('detailView').classList.add('active');
+        document.getElementById('detailContent').innerHTML = '<div class="status-msg">Loading audit...</div>';
+
+        fetch(MII_API + '/sheq/audit/leadsafe/' + row, { headers: authHeaders() })
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function(data) {
+                renderDetail(data);
+            })
+            .catch(function(err) {
+                document.getElementById('detailContent').innerHTML = '<div class="status-msg error">Failed to load audit: ' + escapeHtml(err.message) + '</div>';
+            });
+    };
+
+    function renderDetail(d) {
+        var blocks = (d.blocks || []).filter(function(b) { return b.category && b.category.trim() !== ''; });
+        var actionsRaised = blocks.filter(function(b) { return b.action && b.action.trim() !== ''; }).length;
+        var actionsComplete = blocks.filter(function(b) { return isYes(b.complete); }).length;
+
+        var html = '';
+
+        // Report header
+        html += '<div class="report-header">';
+        html += '<div class="company">MII Engineering</div>';
+        html += '<h2>Lead Safe Audit Report</h2>';
+        html += '<div class="form-ref">SF 042</div>';
+        html += '</div>';
+
+        // Metadata
+        html += '<div class="meta-grid">';
+        html += metaItem('Auditor', d.auditor);
+        html += metaItem('Date', formatDate(d.date));
+        html += metaItem('Location / Area', d.area);
+        html += metaItem('Start Time', d.start_time || '—');
+        html += metaItem('Completion Time', d.completion_time || '—');
+        html += '</div>';
+
+        // Observation cards
+        for (var i = 0; i < blocks.length; i++) {
+            var b = blocks[i];
+            html += '<div class="obs-card">';
+            html += '<div class="obs-card-header">';
+            html += '<span class="obs-num">Observation ' + (b.number || (i + 1)) + '</span>';
+            html += '<span class="obs-category">' + escapeHtml(b.category) + '</span>';
+            html += '</div>';
+            html += '<div class="obs-card-body">';
+
+            if (b.detail) {
+                html += obsRow('Observation Detail', escapeHtml(b.detail));
+            }
+            if (b.photo) {
+                html += obsRow('Photo', '<a href="' + escapeHtml(b.photo) + '" target="_blank" rel="noopener">View Photo</a>');
+            }
+            if (b.action) {
+                html += obsRow('Action Required', escapeHtml(b.action));
+            }
+            if (b.who) {
+                html += obsRow('Who', escapeHtml(b.who));
+            }
+            if (b.target_date) {
+                html += obsRow('Target Date', escapeHtml(formatDate(b.target_date)));
+            }
+
+            // Complete badge
+            var compClass = isYes(b.complete) ? 'yes' : 'no';
+            var compText = isYes(b.complete) ? 'Yes' : 'No';
+            if (b.complete === null || b.complete === undefined || b.complete === '') {
+                compClass = 'na';
+                compText = '—';
+            }
+            html += obsRow('Complete', '<span class="badge ' + compClass + '">' + compText + '</span>');
+
+            // Further observations
+            if (b.further !== null && b.further !== undefined && b.further !== '') {
+                var fClass = isYes(b.further) ? 'yes' : 'no';
+                var fText = isYes(b.further) ? 'Yes' : 'No';
+                html += obsRow('Further Observations', '<span class="badge ' + fClass + '">' + fText + '</span>');
+            }
+
+            html += '</div></div>';
+        }
+
+        // Summary
+        html += '<div class="summary-bar">';
+        html += '<div class="summary-card"><div class="summary-value blue">' + blocks.length + '</div><div class="summary-label">Total Observations</div></div>';
+        html += '<div class="summary-card"><div class="summary-value amber">' + actionsRaised + '</div><div class="summary-label">Actions Raised</div></div>';
+        html += '<div class="summary-card"><div class="summary-value green">' + actionsComplete + '</div><div class="summary-label">Actions Complete</div></div>';
+        html += '</div>';
+
+        document.getElementById('detailContent').innerHTML = html;
+    }
+
+    window.showList = function() {
+        document.getElementById('detailView').classList.remove('active');
+        document.getElementById('listView').classList.add('active');
+    };
+
+    // ===== HELPERS =====
+    function metaItem(label, value) {
+        return '<div class="meta-item"><label>' + escapeHtml(label) + '</label><span>' + escapeHtml(value || '—') + '</span></div>';
+    }
+
+    function obsRow(label, valueHtml) {
+        return '<div class="obs-row"><div class="obs-label">' + escapeHtml(label) + '</div><div class="obs-value">' + valueHtml + '</div></div>';
+    }
+
+    function isYes(val) {
+        if (!val) return false;
+        var s = String(val).toLowerCase().trim();
+        return s === 'yes' || s === 'true' || s === '1' || s === 'y';
+    }
+
+    function formatDate(d) {
+        if (!d) return '—';
+        try {
+            var dt = new Date(d);
+            if (isNaN(dt.getTime())) return d;
+            return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch (e) {
+            return d;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(String(str)));
+        return div.innerHTML;
+    }
+
+})();
+</script>
+</body>
+</html>

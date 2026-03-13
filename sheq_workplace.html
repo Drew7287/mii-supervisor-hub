@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workplace Inspections — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+        /* ===== TOP BAR ===== */
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 1.1rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; transition: opacity 0.15s; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== CONTAINER ===== */
+        .container { max-width: 960px; margin: 0 auto; padding: 20px 24px; }
+
+        /* ===== SEARCH BAR ===== */
+        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-bar input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
+        .search-bar input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+        .search-bar button { padding: 10px 20px; border: none; border-radius: 6px; background: var(--accent); color: var(--white); font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: opacity 0.15s; }
+        .search-bar button:hover { opacity: 0.9; }
+
+        /* ===== LIST TABLE ===== */
+        .list-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+        .list-table th { background: var(--primary); color: var(--white); padding: 12px 16px; text-align: left; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+        .list-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .list-table tbody tr { cursor: pointer; transition: background 0.1s; }
+        .list-table tbody tr:hover { background: #f0f6ff; }
+        .list-table tbody tr:last-child td { border-bottom: none; }
+        .row-arrow { color: var(--text-light); font-size: 1.1rem; }
+
+        /* ===== PAGINATION ===== */
+        .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+        .pagination button { padding: 8px 18px; border: 1px solid var(--border); border-radius: 6px; background: var(--white); font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; }
+        .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination .page-info { font-size: 0.85rem; color: var(--text-light); }
+
+        /* ===== EMPTY / LOADING ===== */
+        .status-msg { text-align: center; padding: 48px 20px; color: var(--text-light); font-size: 0.95rem; }
+        .status-msg .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== DETAIL VIEW ===== */
+        .detail-view { display: none; }
+        .detail-view.active { display: block; }
+        .list-view.hidden { display: none; }
+
+        .back-to-list { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); text-decoration: none; font-size: 0.88rem; font-weight: 600; cursor: pointer; margin-bottom: 20px; border: none; background: none; font-family: inherit; }
+        .back-to-list:hover { text-decoration: underline; }
+
+        /* ===== REPORT HEADER ===== */
+        .report-header { background: var(--white); border-radius: 8px; padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; border-top: 4px solid var(--primary); }
+        .report-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .report-logo { font-size: 1.3rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
+        .report-logo span { font-weight: 400; color: var(--text-light); font-size: 0.9rem; display: block; }
+        .report-ref { text-align: right; }
+        .report-ref .ref-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); font-weight: 600; }
+        .report-ref .ref-value { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
+        .report-title { font-size: 1.2rem; font-weight: 700; color: var(--primary); text-align: center; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+        /* ===== METADATA BAR ===== */
+        .meta-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; background: var(--white); border-radius: 8px; padding: 16px 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .meta-item { }
+        .meta-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 2px; }
+        .meta-value { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+
+        /* ===== CHECKLIST TABLE ===== */
+        .checklist-wrap { background: var(--white); border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
+        .checklist-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .checklist-table th { background: var(--primary); color: var(--white); padding: 10px 12px; text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+        .checklist-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        .checklist-table tbody tr:last-child td { border-bottom: none; }
+        .checklist-table .col-num { width: 40px; text-align: center; font-weight: 700; color: var(--primary); }
+        .checklist-table .col-topic { min-width: 160px; }
+        .checklist-table .col-response { width: 80px; text-align: center; font-weight: 700; border-radius: 4px; }
+        .response-yes { background: #e6f7ec; color: var(--success); }
+        .response-no { background: #fde8ea; color: var(--danger); }
+        .response-na { background: #f0f2f5; color: var(--text-light); }
+        .has-action { border-left: 3px solid var(--warning); }
+
+        /* ===== SUMMARY ===== */
+        .summary-bar { display: flex; gap: 16px; flex-wrap: wrap; background: var(--white); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); }
+        .summary-item { flex: 1; min-width: 120px; text-align: center; padding: 12px; border-radius: 8px; }
+        .summary-item .sum-count { font-size: 1.8rem; font-weight: 800; }
+        .summary-item .sum-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+        .sum-yes { background: #e6f7ec; color: var(--success); }
+        .sum-no { background: #fde8ea; color: var(--danger); }
+        .sum-na { background: #f0f2f5; color: var(--text-light); }
+        .sum-actions { background: #fff6e0; color: #b38600; }
+        .sum-closed { background: #e8f2fc; color: var(--accent); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 700px) {
+            .container { padding: 12px 14px; }
+            .checklist-table { font-size: 0.78rem; }
+            .checklist-table th, .checklist-table td { padding: 8px 8px; }
+            .meta-bar { grid-template-columns: 1fr 1fr; }
+            .summary-bar { gap: 8px; }
+            .summary-item { min-width: 80px; padding: 8px; }
+            .summary-item .sum-count { font-size: 1.3rem; }
+            .report-header-top { flex-direction: column; gap: 8px; }
+            .report-ref { text-align: left; }
+            /* Horizontal scroll for checklist on mobile */
+            .checklist-wrap { overflow-x: auto; }
+            .checklist-table { min-width: 700px; }
+        }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .topbar, .search-bar, .back-to-list, .pagination, .list-view { display: none !important; }
+            .container { max-width: 100%; padding: 0; margin: 0; }
+            .detail-view { display: block !important; }
+
+            .report-header, .meta-bar, .checklist-wrap, .summary-bar { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+            .checklist-table { font-size: 0.75rem; }
+            .checklist-table th { background: var(--primary) !important; color: #fff !important; }
+            .response-yes { background: #e6f7ec !important; }
+            .response-no { background: #fde8ea !important; }
+            .response-na { background: #f0f2f5 !important; }
+
+            .summary-item { border: 1px solid #ccc; }
+            .sum-yes { background: #e6f7ec !important; }
+            .sum-no { background: #fde8ea !important; }
+            .sum-actions { background: #fff6e0 !important; }
+            .sum-closed { background: #e8f2fc !important; }
+
+            @page {
+                margin: 15mm;
+                @top-center { content: "MII Engineering Ltd \2014 Workplace Inspection Checklist \2014 SF 046E"; font-size: 9pt; color: #667085; }
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Workplace Inspections &mdash; SF 046E</h1>
+    <a href="sheq_hub.html">&larr; SHEQ Hub</a>
+</div>
+
+<div class="container">
+
+    <!-- ===== LIST VIEW ===== -->
+    <div class="list-view" id="listView">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search by auditor, area or date...">
+            <button onclick="doSearch()">Search</button>
+        </div>
+
+        <div id="listContent">
+            <div class="status-msg"><div class="spinner"></div><br>Loading inspections...</div>
+        </div>
+
+        <div class="pagination" id="paginationBar" style="display:none;">
+            <button id="btnPrev" onclick="prevPage()" disabled>&larr; Previous</button>
+            <span class="page-info" id="pageInfo"></span>
+            <button id="btnNext" onclick="nextPage()">Next &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ===== DETAIL VIEW ===== -->
+    <div class="detail-view" id="detailView">
+        <button class="back-to-list" onclick="showList()">&larr; Back to list</button>
+
+        <div class="report-header">
+            <div class="report-header-top">
+                <div class="report-logo">MII Engineering<span>Workplace Inspection</span></div>
+                <div class="report-ref">
+                    <div class="ref-label">Form Reference</div>
+                    <div class="ref-value">SF 046E</div>
+                </div>
+            </div>
+            <div class="report-title">Workplace Inspection Checklist</div>
+        </div>
+
+        <div class="meta-bar" id="detailMeta"></div>
+
+        <div class="checklist-wrap">
+            <table class="checklist-table">
+                <thead>
+                    <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-topic">Topic</th>
+                        <th>Response</th>
+                        <th>Comments</th>
+                        <th>Action Required</th>
+                        <th>By Who</th>
+                        <th>Target Date</th>
+                        <th>Closed By</th>
+                    </tr>
+                </thead>
+                <tbody id="checklistBody"></tbody>
+            </table>
+        </div>
+
+        <div class="summary-bar" id="summaryBar"></div>
+    </div>
+</div>
+
+<script>
+const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+
+// ===== AUTH CHECK =====
+(function checkAccess() {
+    var token = localStorage.getItem('mii_token');
+    if (!token) { location.href = 'hub.html'; return; }
+    try {
+        var parts = token.split('.');
+        if (parts.length === 3) {
+            var payload = JSON.parse(atob(parts[1]));
+            if (payload.exp && payload.exp * 1000 < Date.now()) {
+                localStorage.removeItem('mii_token');
+                location.href = 'hub.html';
+                return;
+            }
+        }
+    } catch(e) {}
+})();
+
+// ===== STATE =====
+var currentOffset = 0;
+var pageLimit = 50;
+var totalRecords = 0;
+var currentSearch = '';
+
+// ===== LIST =====
+function getAuthHeaders() {
+    return { 'Authorization': 'Bearer ' + localStorage.getItem('mii_token') };
+}
+
+function doSearch() {
+    currentSearch = document.getElementById('searchInput').value.trim();
+    currentOffset = 0;
+    loadList();
+}
+
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doSearch();
+});
+
+function loadList() {
+    var url = MII_API + '/sheq/audits?type=workplace&limit=' + pageLimit + '&offset=' + currentOffset;
+    if (currentSearch) url += '&search=' + encodeURIComponent(currentSearch);
+
+    var content = document.getElementById('listContent');
+    content.innerHTML = '<div class="status-msg"><div class="spinner"></div><br>Loading inspections...</div>';
+    document.getElementById('paginationBar').style.display = 'none';
+
+    fetch(url, { headers: getAuthHeaders() })
+        .then(function(r) {
+            if (!r.ok) throw new Error('API error ' + r.status);
+            return r.json();
+        })
+        .then(function(data) {
+            totalRecords = data.total || 0;
+            renderList(data.audits || []);
+        })
+        .catch(function(err) {
+            content.innerHTML = '<div class="status-msg">Failed to load inspections.<br><small style="color:var(--danger)">' + escapeHtml(err.message) + '</small></div>';
+        });
+}
+
+function renderList(audits) {
+    var content = document.getElementById('listContent');
+
+    if (audits.length === 0) {
+        content.innerHTML = '<div class="status-msg">No inspections found.</div>';
+        document.getElementById('paginationBar').style.display = 'none';
+        return;
+    }
+
+    var html = '<table class="list-table"><thead><tr>';
+    html += '<th>Date</th><th>Auditor</th><th>Area</th><th></th>';
+    html += '</tr></thead><tbody>';
+
+    audits.forEach(function(a) {
+        html += '<tr onclick="loadDetail(' + a.row + ')">';
+        html += '<td>' + escapeHtml(formatDate(a.date)) + '</td>';
+        html += '<td>' + escapeHtml(a.auditor || '') + '</td>';
+        html += '<td>' + escapeHtml(a.area || '') + '</td>';
+        html += '<td class="row-arrow">&rsaquo;</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    content.innerHTML = html;
+
+    // Pagination
+    var pagBar = document.getElementById('paginationBar');
+    if (totalRecords > pageLimit) {
+        pagBar.style.display = 'flex';
+        var page = Math.floor(currentOffset / pageLimit) + 1;
+        var totalPages = Math.ceil(totalRecords / pageLimit);
+        document.getElementById('pageInfo').textContent = 'Page ' + page + ' of ' + totalPages + ' (' + totalRecords + ' records)';
+        document.getElementById('btnPrev').disabled = currentOffset === 0;
+        document.getElementById('btnNext').disabled = currentOffset + pageLimit >= totalRecords;
+    } else {
+        pagBar.style.display = totalRecords > 0 ? 'flex' : 'none';
+        document.getElementById('pageInfo').textContent = totalRecords + ' record' + (totalRecords !== 1 ? 's' : '');
+        document.getElementById('btnPrev').disabled = true;
+        document.getElementById('btnNext').disabled = true;
+    }
+}
+
+function prevPage() {
+    currentOffset = Math.max(0, currentOffset - pageLimit);
+    loadList();
+}
+
+function nextPage() {
+    currentOffset += pageLimit;
+    loadList();
+}
+
+// ===== DETAIL =====
+function loadDetail(row) {
+    document.getElementById('listView').classList.add('hidden');
+    var dv = document.getElementById('detailView');
+    dv.classList.add('active');
+    dv.innerHTML = '<button class="back-to-list" onclick="showList()">&larr; Back to list</button><div class="status-msg"><div class="spinner"></div><br>Loading inspection...</div>';
+
+    fetch(MII_API + '/sheq/audit/workplace/' + row, { headers: getAuthHeaders() })
+        .then(function(r) {
+            if (!r.ok) throw new Error('API error ' + r.status);
+            return r.json();
+        })
+        .then(function(data) { renderDetail(data); })
+        .catch(function(err) {
+            dv.innerHTML = '<button class="back-to-list" onclick="showList()">&larr; Back to list</button>' +
+                '<div class="status-msg">Failed to load inspection.<br><small style="color:var(--danger)">' + escapeHtml(err.message) + '</small></div>';
+        });
+}
+
+function renderDetail(d) {
+    var dv = document.getElementById('detailView');
+
+    var html = '<button class="back-to-list" onclick="showList()">&larr; Back to list</button>';
+
+    // Report header
+    html += '<div class="report-header">';
+    html += '<div class="report-header-top">';
+    html += '<div class="report-logo">MII Engineering<span>Workplace Inspection</span></div>';
+    html += '<div class="report-ref"><div class="ref-label">Form Reference</div><div class="ref-value">SF 046E</div></div>';
+    html += '</div>';
+    html += '<div class="report-title">Workplace Inspection Checklist</div>';
+    html += '</div>';
+
+    // Meta bar
+    html += '<div class="meta-bar">';
+    html += metaItem('Auditor', d.auditor);
+    html += metaItem('Date', formatDate(d.date));
+    html += metaItem('Area', d.area);
+    html += metaItem('Start Time', d.start_time || '--');
+    html += metaItem('Completion Time', d.completion_time || '--');
+    html += '</div>';
+
+    // Checklist table
+    var blocks = d.blocks || [];
+    var yesCount = 0, noCount = 0, naCount = 0, actionsRaised = 0, actionsClosed = 0;
+
+    html += '<div class="checklist-wrap"><table class="checklist-table"><thead><tr>';
+    html += '<th class="col-num">#</th><th class="col-topic">Topic</th><th>Response</th><th>Comments</th><th>Action Required</th><th>By Who</th><th>Target Date</th><th>Closed By</th>';
+    html += '</tr></thead><tbody>';
+
+    blocks.forEach(function(b) {
+        var resp = (b.response || '').trim();
+        var respUpper = resp.toUpperCase();
+        var respClass = '';
+        if (respUpper === 'YES') { respClass = 'response-yes'; yesCount++; }
+        else if (respUpper === 'NO') { respClass = 'response-no'; noCount++; }
+        else if (respUpper === 'N/A' || respUpper === 'NA') { respClass = 'response-na'; naCount++; }
+
+        var hasAction = b.action && b.action.trim().length > 0;
+        if (hasAction) actionsRaised++;
+        if (b.closed_by && b.closed_by.trim().length > 0) actionsClosed++;
+
+        var rowClass = hasAction ? ' class="has-action"' : '';
+
+        html += '<tr>';
+        html += '<td class="col-num"' + rowClass + '>' + escapeHtml(String(b.number || '')) + '</td>';
+        html += '<td class="col-topic">' + escapeHtml(b.topic || '') + '</td>';
+        html += '<td class="col-response ' + respClass + '">' + escapeHtml(resp) + '</td>';
+        html += '<td>' + escapeHtml(b.comments || '') + '</td>';
+        html += '<td>' + escapeHtml(b.action || '') + '</td>';
+        html += '<td>' + escapeHtml(b.by_who || '') + '</td>';
+        html += '<td>' + escapeHtml(b.target_date ? formatDate(b.target_date) : '') + '</td>';
+        html += '<td>' + escapeHtml(b.closed_by || '') + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    // Summary bar
+    html += '<div class="summary-bar">';
+    html += summaryItem(yesCount, 'Yes', 'sum-yes');
+    html += summaryItem(noCount, 'No', 'sum-no');
+    html += summaryItem(naCount, 'N/A', 'sum-na');
+    html += summaryItem(actionsRaised, 'Actions Raised', 'sum-actions');
+    html += summaryItem(actionsClosed, 'Actions Closed', 'sum-closed');
+    html += '</div>';
+
+    dv.innerHTML = html;
+}
+
+function showList() {
+    document.getElementById('detailView').classList.remove('active');
+    document.getElementById('detailView').innerHTML = '';
+    document.getElementById('listView').classList.remove('hidden');
+}
+
+// ===== HELPERS =====
+function metaItem(label, value) {
+    return '<div class="meta-item"><div class="meta-label">' + escapeHtml(label) + '</div><div class="meta-value">' + escapeHtml(value || '--') + '</div></div>';
+}
+
+function summaryItem(count, label, cls) {
+    return '<div class="summary-item ' + cls + '"><div class="sum-count">' + count + '</div><div class="sum-label">' + escapeHtml(label) + '</div></div>';
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '--';
+    try {
+        var d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        var dd = String(d.getDate()).padStart(2, '0');
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var yy = d.getFullYear();
+        return dd + '/' + mm + '/' + yy;
+    } catch(e) { return dateStr; }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+// ===== INIT =====
+loadList();
+</script>
+</body>
+</html>

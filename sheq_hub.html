@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MII Engineering — SHEQ Admin Hub</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .topbar .back-link {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 0.9rem;
+            opacity: 0.85;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.15s;
+        }
+        .topbar .back-link:hover { opacity: 1; }
+
+        /* ===== GREETING ===== */
+        .greeting {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 24px 8px;
+        }
+        .greeting h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .greeting p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        /* ===== CARD GRID ===== */
+        .card-grid {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+        .card:active {
+            transform: translateY(-1px);
+        }
+
+        .card-accent {
+            height: 6px;
+            width: 100%;
+        }
+        .card-accent.blue { background: var(--accent); }
+        .card-accent.green { background: var(--success); }
+        .card-accent.amber { background: var(--warning); }
+        .card-accent.red { background: var(--danger); }
+
+        .card-body {
+            padding: 20px 22px 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 14px;
+        }
+        .card-icon.blue { background: #e8f2fc; color: var(--accent); }
+        .card-icon.green { background: #e6f7ec; color: var(--success); }
+        .card-icon.amber { background: #fff6e0; color: var(--warning); }
+        .card-icon.red { background: #fde8ea; color: var(--danger); }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+        .card-desc {
+            font-size: 0.88rem;
+            color: var(--text-light);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .card-tag {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .card-tag.live { background: #e6f7ec; color: var(--success); }
+
+        .card-arrow {
+            font-size: 1.1rem;
+            color: var(--border);
+            transition: color 0.15s ease, transform 0.15s ease;
+        }
+        .card:hover .card-arrow {
+            color: var(--accent);
+            transform: translateX(3px);
+        }
+
+        /* ===== LOGIN OVERLAY ===== */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-overlay.hidden { display: none; }
+        .login-box {
+            background: var(--white);
+            max-width: 400px;
+            width: 90%;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            padding: 40px 32px;
+        }
+        .login-box h2 {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        .login-box .login-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 24px;
+        }
+        .login-box label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .login-box input:focus {
+            border-color: var(--accent);
+        }
+        .login-box button {
+            width: 100%;
+            padding: 11px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .login-box button:hover { background: var(--primary-light); }
+        .login-box button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .login-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            min-height: 1.2em;
+        }
+        .login-view { display: block; }
+        .login-view.hidden { display: none; }
+
+        /* ===== FOOTER ===== */
+        .hub-footer {
+            text-align: center;
+            padding: 32px 24px;
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN OVERLAY -->
+    <div class="login-overlay" id="login-overlay">
+        <div class="login-box">
+            <div id="login-view" class="login-view">
+                <h2>SHEQ Admin Hub</h2>
+                <p class="login-subtitle">Sign in with your employee number and PIN</p>
+                <div id="login-error" class="login-error"></div>
+                <label for="login-emp">Employee Number</label>
+                <input type="text" id="login-emp" placeholder="e.g. MII001" autocomplete="username" autofocus>
+                <label for="login-pin">PIN</label>
+                <input type="password" id="login-pin" placeholder="4-6 digit PIN" inputmode="numeric" maxlength="6" autocomplete="current-password">
+                <button id="btn-login" onclick="doLogin()">Sign In</button>
+            </div>
+            <div id="pin-setup-view" class="login-view hidden">
+                <h2>Set Your PIN</h2>
+                <p class="login-subtitle" id="pin-setup-welcome">Welcome! Create a PIN to secure your account.</p>
+                <div id="pin-setup-error" class="login-error"></div>
+                <label for="setup-pin">New PIN (4-6 digits)</label>
+                <input type="password" id="setup-pin" placeholder="Enter PIN" inputmode="numeric" maxlength="6">
+                <label for="setup-pin-confirm">Confirm PIN</label>
+                <input type="password" id="setup-pin-confirm" placeholder="Confirm PIN" inputmode="numeric" maxlength="6">
+                <button id="btn-set-pin" onclick="doSetPin()">Set PIN &amp; Sign In</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <h1>SHEQ Admin Hub</h1>
+        <a class="back-link" href="index.html">&#8592; Back to Hub</a>
+    </div>
+
+    <!-- GREETING -->
+    <div class="greeting">
+        <h2>SHEQ Administration</h2>
+        <p>External audit actions, workplace inspections, lead safe audits and safety observations</p>
+    </div>
+
+    <!-- CARD GRID -->
+    <div class="card-grid">
+
+        <!-- ACTION TRACKER -->
+        <a class="card" href="action_tracker.html">
+            <div class="card-accent red"></div>
+            <div class="card-body">
+                <div class="card-icon red">&#128203;</div>
+                <div class="card-title">Action Tracker</div>
+                <div class="card-desc">
+                    Open audit actions, close-out tracking and compliance status.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag live">Live</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- WORKPLACE INSPECTIONS -->
+        <a class="card" href="sheq_workplace.html">
+            <div class="card-accent amber"></div>
+            <div class="card-body">
+                <div class="card-icon amber">&#128269;</div>
+                <div class="card-title">Workplace Inspections</div>
+                <div class="card-desc">
+                    SF 046E formal workplace inspection checklists. 21-point assessment with corrective actions.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag live">Live</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- LEAD SAFE AUDITS -->
+        <a class="card" href="sheq_leadsafe.html">
+            <div class="card-accent green"></div>
+            <div class="card-body">
+                <div class="card-icon green">&#9989;</div>
+                <div class="card-title">Lead Safe Audits</div>
+                <div class="card-desc">
+                    SF 042 Lead Safe audit reports. Observation categories, actions and close-out status.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag live">Live</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- SHEQ OBSERVATIONS -->
+        <a class="card" href="sheq_observations_view.html">
+            <div class="card-accent blue"></div>
+            <div class="card-body">
+                <div class="card-icon blue">&#128065;</div>
+                <div class="card-title">SHEQ Observations</div>
+                <div class="card-desc">
+                    SF 013c safety observations. Near misses, hazards, positive observations and actions.
+                </div>
+                <div class="card-footer">
+                    <span class="card-tag live">Live</span>
+                    <span class="card-arrow">&#8594;</span>
+                </div>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="hub-footer">
+        MII Engineering Ltd &mdash; SHEQ Admin Hub &mdash; Prototype v0.1
+    </div>
+
+<script>
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+
+    // ───── Auth helpers ─────
+
+    let _pendingSetupUserId = null;
+
+    function decodeJwtPayload(token) {
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+            const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            return JSON.parse(atob(payload));
+        } catch { return null; }
+    }
+
+    function isTokenValid(token) {
+        if (!token) return false;
+        const payload = decodeJwtPayload(token);
+        if (!payload || !payload.exp) return false;
+        return payload.exp * 1000 > Date.now();
+    }
+
+    function showLoginOverlay() {
+        document.getElementById('login-overlay').classList.remove('hidden');
+        document.getElementById('login-view').classList.remove('hidden');
+        document.getElementById('pin-setup-view').classList.add('hidden');
+        document.getElementById('login-error').textContent = '';
+        document.getElementById('login-emp').value = '';
+        document.getElementById('login-pin').value = '';
+    }
+
+    function hideLoginOverlay() {
+        document.getElementById('login-overlay').classList.add('hidden');
+    }
+
+    function checkAuth() {
+        const token = localStorage.getItem('mii_token');
+        if (!token || !isTokenValid(token)) {
+            localStorage.removeItem('mii_token');
+            localStorage.removeItem('mii_user');
+            showLoginOverlay();
+            return;
+        }
+        hideLoginOverlay();
+    }
+
+    async function doLogin() {
+        const emp = document.getElementById('login-emp').value.trim();
+        const pin = document.getElementById('login-pin').value.trim();
+        const errEl = document.getElementById('login-error');
+        const btn = document.getElementById('btn-login');
+
+        errEl.textContent = '';
+        if (!emp || !pin) { errEl.textContent = 'Enter employee number and PIN.'; return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Signing in\u2026';
+        try {
+            const res = await fetch(MII_API + '/auth/pin-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employee_number: emp, pin: pin }),
+            });
+            const data = await res.json();
+
+            if (data.needs_pin_setup) {
+                _pendingSetupUserId = data.user_id;
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('pin-setup-view').classList.remove('hidden');
+                document.getElementById('pin-setup-welcome').textContent =
+                    'Welcome, ' + (data.username || '') + '! Create a PIN to secure your account.';
+                document.getElementById('setup-pin').value = '';
+                document.getElementById('setup-pin-confirm').value = '';
+                document.getElementById('pin-setup-error').textContent = '';
+                return;
+            }
+
+            if (!res.ok) {
+                errEl.textContent = data.error || 'Login failed.';
+                return;
+            }
+
+            localStorage.setItem('mii_token', data.token);
+            localStorage.setItem('mii_user', JSON.stringify(data.user));
+            hideLoginOverlay();
+        } catch (e) {
+            errEl.textContent = 'Network error. Check your connection.';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+        }
+    }
+
+    async function doSetPin() {
+        const pin = document.getElementById('setup-pin').value.trim();
+        const confirm = document.getElementById('setup-pin-confirm').value.trim();
+        const errEl = document.getElementById('pin-setup-error');
+        const btn = document.getElementById('btn-set-pin');
+
+        errEl.textContent = '';
+        if (!pin || !confirm) { errEl.textContent = 'Enter and confirm your PIN.'; return; }
+        if (pin !== confirm) { errEl.textContent = 'PINs do not match.'; return; }
+        if (!/^\d{4,6}$/.test(pin)) { errEl.textContent = 'PIN must be 4-6 digits.'; return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Setting PIN\u2026';
+        try {
+            const res = await fetch(MII_API + '/auth/set-pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: _pendingSetupUserId, pin: pin }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                errEl.textContent = data.error || 'Failed to set PIN.';
+                return;
+            }
+
+            localStorage.setItem('mii_token', data.token);
+            localStorage.setItem('mii_user', JSON.stringify(data.user));
+            hideLoginOverlay();
+        } catch (e) {
+            errEl.textContent = 'Network error. Check your connection.';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Set PIN & Sign In';
+        }
+    }
+
+    // Allow Enter key to submit login / PIN setup
+    document.getElementById('login-pin').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doLogin();
+    });
+    document.getElementById('setup-pin-confirm').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doSetPin();
+    });
+
+    // ───── Auth check on load ─────
+    checkAuth();
+</script>
+
+</body>
+</html>
