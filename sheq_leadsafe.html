@@ -574,6 +574,11 @@
             }
             html += obsRow('Complete', '<span class="badge ' + compClass + '">' + compText + '</span>');
 
+            // Closure notes from action tracker
+            if (b.closure_notes) {
+                html += obsRow('Closeout Comments', '<span style="font-style:italic;color:#555">' + escapeHtml(b.closure_notes) + '</span>');
+            }
+
             // Further observations
             if (b.further !== null && b.further !== undefined && b.further !== '') {
                 var fClass = isYes(b.further) ? 'yes' : 'no';
