@@ -32,7 +32,6 @@
         .field input, .field select { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
         .field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
         .checklist { max-width: 700px; margin: 12px auto 0; padding: 0 20px; }
-        .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); padding: 14px 0 8px; border-bottom: 2px solid var(--primary); margin-bottom: 8px; }
         .check-item { background: var(--white); border: 1.5px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; transition: border-color 0.2s; }
         .check-item.pass { border-color: var(--success); }
         .check-item.fail { border-color: var(--danger); }
@@ -57,6 +56,11 @@
         .action-row input { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; font-family: inherit; }
         .action-row input:focus { outline: none; border-color: var(--accent); }
         .action-row label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: var(--text-light); margin-bottom: 2px; display: block; }
+        .comment-panel { border-top: 1px solid #f0f0f0; padding: 8px 12px; background: #fafbfc; }
+        .comment-panel textarea { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; font-family: inherit; resize: vertical; min-height: 36px; background: var(--white); }
+        .comment-panel textarea:focus { outline: none; border-color: var(--accent); }
+        .comment-toggle { font-size: 0.72rem; color: var(--accent); cursor: pointer; border: none; background: none; font-family: inherit; padding: 4px 12px; font-weight: 600; }
+        .comment-toggle:hover { text-decoration: underline; }
         .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
         .submit-status { font-size: 0.82rem; color: var(--text-light); }
         .submit-status strong { color: var(--primary); }
@@ -117,7 +121,7 @@
 <div class="checklist" id="checklist"></div>
 
 <div class="submit-bar">
-    <div class="submit-status" id="submit-status">0 of 20 checked</div>
+    <div class="submit-status" id="submit-status">0 of 21 checked</div>
     <button class="btn-submit grey" id="btn-submit" disabled onclick="submitInspection()">Submit</button>
 </div>
 
@@ -142,27 +146,29 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// 21 items matching the Excel Workplace Checklist exactly
 const ITEMS = [
-    { id: 'wi01', section: 'Welfare & Facilities', label: 'Welfare Facilities', detail: 'Enough welfare facilities for working party? Hand-washing (hot water, soap), food storage/heating, toilets maintained?' },
-    { id: 'wi02', section: 'Permits & Documentation', label: 'Permit System', detail: 'All necessary permits, certificates and isolations in place?' },
-    { id: 'wi03', section: 'Permits & Documentation', label: 'RAMS & Acknowledgement', detail: 'RAMS/JMS available at point of work, signed by all working party?' },
-    { id: 'wi04', section: 'Permits & Documentation', label: 'Supervisor Conversation', detail: 'SHEQ concerns identified and discussed with team?' },
-    { id: 'wi05', section: 'Permits & Documentation', label: 'Point of Work Risk Assessment', detail: 'POWRA completed correctly and regularly updated?' },
-    { id: 'wi06', section: 'Working Environment', label: 'Access & Egress', detail: 'Scaffold access erected, safe working platforms, clear walkways?' },
-    { id: 'wi07', section: 'Working Environment', label: 'Lighting', detail: 'Suitable and sufficient for the work? Switched off when not required?' },
-    { id: 'wi08', section: 'Working Environment', label: 'Housekeeping', detail: 'Trailing leads eliminated or protected? Equipment and materials removed as required?' },
-    { id: 'wi09', section: 'Working Environment', label: 'Dust, Fumes & Noise', detail: 'Forced ventilation or extraction required? Noise levels acceptable?' },
-    { id: 'wi10', section: 'People & PPE', label: 'PPE Compliance', detail: 'All mandatory PPE being worn? RPE worn when required (welding, burning etc.)?' },
-    { id: 'wi11', section: 'People & PPE', label: 'Manual Handling', detail: 'Weights of items being handled known and safe? Mechanical aids used where needed?' },
-    { id: 'wi12', section: 'People & PPE', label: 'Competency of Team', detail: 'Supervisor qualifications current? Mobile plant operators certified? Team competent for the task?' },
-    { id: 'wi13', section: 'High-Risk Activities', label: 'Lift Operations', detail: 'Lift Plan or POWLP available? Banksman in place? Access to area controlled?' },
-    { id: 'wi14', section: 'High-Risk Activities', label: 'Working at Height', detail: 'Adequate edge protection at open edges, around pits and openings? Objects secured from falling?' },
-    { id: 'wi15', section: 'High-Risk Activities', label: 'Hot Work Controls', detail: 'Combustible materials removed? Fire watchers with extinguishers correctly positioned?' },
-    { id: 'wi16', section: 'High-Risk Activities', label: 'Confined Space / Gas Hazard', detail: 'Top Man in place? Entry register maintained? Atmosphere monitored?' },
-    { id: 'wi17', section: 'Substances & Equipment', label: 'COSHH', detail: 'Hazardous substance containers clearly marked? Suitable PPE/RPE worn when working with hazardous substances?' },
-    { id: 'wi18', section: 'Substances & Equipment', label: 'Equipment Condition', detail: 'Hand tools, lifting accessories, portable electrical equipment, mobile plant — fit for purpose, compliant, tagged, pre-use inspections done?' },
-    { id: 'wi19', section: 'Environment & Emergency', label: 'Environmental', detail: 'Waste/scrap segregated and disposed of correctly? Drip trays provided and in use?' },
-    { id: 'wi20', section: 'Environment & Emergency', label: 'Emergency Preparedness', detail: 'Rescue plans in place? Fire exits and routes clear of obstacles?' },
+    { id: 'wpi01', block: 1,  label: 'Welfare', detail: 'Enough welfare facilities for working party? Hand-washing (hot water, soap), food storage/heating, toilets maintained?' },
+    { id: 'wpi02', block: 2,  label: 'RAMS & Acknowledgement', detail: 'RAMS/JMS available at point of work, signed by all working party?' },
+    { id: 'wpi03', block: 3,  label: 'Conversation with Supervisor/Chargehand', detail: 'SHEQ concerns identified and discussed with team?' },
+    { id: 'wpi04', block: 4,  label: 'Access & Egress', detail: 'Scaffold access erected, safe working platforms, clear walkways?' },
+    { id: 'wpi05', block: 5,  label: 'Point of Work Risk Assessments', detail: 'POWRA completed correctly and regularly updated?' },
+    { id: 'wpi06', block: 6,  label: 'Lighting', detail: 'Suitable and sufficient for the work? Switched off when not required?' },
+    { id: 'wpi07', block: 7,  label: 'Housekeeping', detail: 'Trailing leads eliminated or protected? Equipment and materials removed as required?' },
+    { id: 'wpi08', block: 8,  label: 'PPE Compliance', detail: 'All mandatory PPE being worn? RPE worn when required (welding, burning etc.)?' },
+    { id: 'wpi09', block: 9,  label: 'Confined Space / Gas Hazard', detail: 'Top Man in place? Entry register maintained? Atmosphere monitored?' },
+    { id: 'wpi10', block: 10, label: 'Control of Hot Work', detail: 'Combustible materials removed? Fire watchers with extinguishers correctly positioned?' },
+    { id: 'wpi11', block: 11, label: 'Working Environment (Dust, Fumes, Noise)', detail: 'Forced ventilation or extraction required? Noise levels acceptable?' },
+    { id: 'wpi12', block: 12, label: 'Manual Handling', detail: 'Weights of items being handled known and safe? Mechanical aids used where needed?' },
+    { id: 'wpi13', block: 13, label: 'Lift Operations', detail: 'Lift Plan or POWLP available? Banksman in place? Access to area controlled?' },
+    { id: 'wpi14', block: 14, label: 'Working at Height', detail: 'Adequate edge protection at open edges, around pits and openings? Objects secured from falling?' },
+    { id: 'wpi15', block: 15, label: 'Equipment', detail: 'Hand tools, lifting accessories, portable electrical equipment, mobile plant — fit for purpose, compliant, tagged, pre-use inspections done?' },
+    { id: 'wpi16', block: 16, label: 'Environmental', detail: 'Waste/scrap segregated and disposed of correctly? Drip trays provided and in use?' },
+    { id: 'wpi17', block: 17, label: 'Emergency Preparedness', detail: 'Rescue plans in place? Fire exits and routes clear of obstacles?' },
+    { id: 'wpi18', block: 18, label: 'Training & Competence', detail: 'Supervisor qualifications current? Mobile plant operators certified? Team competent for the task?' },
+    { id: 'wpi19', block: 19, label: 'Other Observations', detail: 'Any other observations not covered above?' },
+    { id: 'wpi20', block: 20, label: 'Other Observations 2', detail: 'Additional observation (if applicable).' },
+    { id: 'wpi21', block: 21, label: 'Other Observations 3', detail: 'Additional observation (if applicable).' },
 ];
 
 const itemState = {};
@@ -170,16 +176,9 @@ const totalItems = ITEMS.length;
 
 document.getElementById('f-date').valueAsDate = new Date();
 
-// Build checklist
+// Build checklist — flat numbered list (no section grouping)
 const container = document.getElementById('checklist');
-let currentSection = '';
 ITEMS.forEach((item, idx) => {
-    if (item.section !== currentSection) {
-        currentSection = item.section;
-        const div = document.createElement('div');
-        div.innerHTML = '<div class="section-title">' + currentSection + '</div>';
-        container.appendChild(div);
-    }
     const el = document.createElement('div');
     el.className = 'check-item';
     el.id = 'item-' + item.id;
@@ -204,9 +203,18 @@ ITEMS.forEach((item, idx) => {
                 <div><label>Target Date</label><input type="date" data-field="target"></div>
             </div>
         </div>
+        <button class="comment-toggle" onclick="toggleComment('${item.id}')">+ Add comment</button>
+        <div class="comment-panel" id="comment-${item.id}" style="display:none">
+            <textarea placeholder="Optional comment..." data-field="comment"></textarea>
+        </div>
     `;
     container.appendChild(el);
 });
+
+function toggleComment(id) {
+    var panel = document.getElementById('comment-' + id);
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
 
 function setCheck(id, status) {
     if (itemState[id] === status) { delete itemState[id]; updateItem(id, null); }
@@ -249,11 +257,39 @@ function submitInspection() {
         }
     }
 
+    // Build items array with all 21 block responses
+    const items = ITEMS.map(item => {
+        const el = document.getElementById('item-' + item.id);
+        const state = itemState[item.id];
+        const response = state === 'pass' ? 'Yes' : state === 'fail' ? 'No' : state === 'na' ? 'N/A' : '';
+        const commentEl = el.querySelector('[data-field="comment"]');
+        const comments = commentEl ? commentEl.value.trim() : '';
+
+        const result = {
+            block: item.block,
+            topic: item.label,
+            response: response,
+            comments: comments,
+            action: '',
+            assignedTo: '',
+            targetDate: ''
+        };
+
+        if (state === 'fail') {
+            result.action = el.querySelector('.action-panel textarea').value.trim();
+            result.assignedTo = el.querySelector('[data-field="who"]').value.trim();
+            result.targetDate = el.querySelector('[data-field="target"]').value;
+        }
+
+        return result;
+    });
+
+    // Build legacy actions array for backwards compat with sync
     const actions = fails.map(([id]) => {
         const el = document.getElementById('item-' + id);
         return {
             item: ITEMS.find(i => i.id === id).label,
-            action: el.querySelector('textarea').value.trim(),
+            action: el.querySelector('.action-panel textarea').value.trim(),
             assignedTo: el.querySelector('[data-field="who"]').value.trim(),
             targetDate: el.querySelector('[data-field="target"]').value
         };
@@ -270,7 +306,8 @@ function submitInspection() {
         passCount: Object.values(itemState).filter(s => s === 'pass').length,
         failCount: fails.length,
         naCount: Object.values(itemState).filter(s => s === 'na').length,
-        actions
+        actions,
+        items
     };
 
     const records = JSON.parse(localStorage.getItem('mii_workplace_inspections') || '[]');

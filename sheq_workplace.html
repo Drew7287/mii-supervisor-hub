@@ -46,6 +46,11 @@
         .list-table tbody tr:hover { background: #f0f6ff; }
         .list-table tbody tr:last-child td { border-bottom: none; }
         .row-arrow { color: var(--text-light); font-size: 1.1rem; }
+        .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+        .badge-excel { background: #e8f2fc; color: #1a73e8; }
+        .badge-webapp { background: #e6f7ec; color: var(--success); }
+        .result-pass { color: var(--success); font-weight: 600; }
+        .result-fail { color: var(--danger); font-weight: 600; }
 
         /* ===== PAGINATION ===== */
         .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
@@ -79,7 +84,6 @@
 
         /* ===== METADATA BAR ===== */
         .meta-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; background: var(--white); border-radius: 8px; padding: 16px 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
-        .meta-item { }
         .meta-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 2px; }
         .meta-value { font-size: 0.95rem; font-weight: 600; color: var(--text); }
 
@@ -119,7 +123,6 @@
             .summary-item .sum-count { font-size: 1.3rem; }
             .report-header-top { flex-direction: column; gap: 8px; }
             .report-ref { text-align: left; }
-            /* Horizontal scroll for checklist on mobile */
             .checklist-wrap { overflow-x: auto; }
             .checklist-table { min-width: 700px; }
         }
@@ -179,46 +182,11 @@
     </div>
 
     <!-- ===== DETAIL VIEW ===== -->
-    <div class="detail-view" id="detailView">
-        <button class="back-to-list" onclick="showList()">&larr; Back to list</button>
-
-        <div class="report-header">
-            <div class="report-header-top">
-                <div class="report-logo">MII Engineering<span>Workplace Inspection</span></div>
-                <div class="report-ref">
-                    <div class="ref-label">Form Reference</div>
-                    <div class="ref-value">SF 046E</div>
-                </div>
-            </div>
-            <div class="report-title">Workplace Inspection Checklist</div>
-        </div>
-
-        <div class="meta-bar" id="detailMeta"></div>
-
-        <div class="checklist-wrap">
-            <table class="checklist-table">
-                <thead>
-                    <tr>
-                        <th class="col-num">#</th>
-                        <th class="col-topic">Topic</th>
-                        <th>Response</th>
-                        <th>Comments</th>
-                        <th>Action Required</th>
-                        <th>By Who</th>
-                        <th>Target Date</th>
-                        <th>Closed By</th>
-                    </tr>
-                </thead>
-                <tbody id="checklistBody"></tbody>
-            </table>
-        </div>
-
-        <div class="summary-bar" id="summaryBar"></div>
-    </div>
+    <div class="detail-view" id="detailView"></div>
 </div>
 
 <script>
-const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+var MII_API = 'https://mii-hub-api.azurewebsites.net/api';
 
 // ===== AUTH CHECK =====
 (function checkAccess() {
@@ -259,7 +227,7 @@ document.getElementById('searchInput').addEventListener('keydown', function(e) {
 });
 
 function loadList() {
-    var url = MII_API + '/sheq/audits?type=workplace&limit=' + pageLimit + '&offset=' + currentOffset;
+    var url = MII_API + '/sheq/inspections?limit=' + pageLimit + '&offset=' + currentOffset;
     if (currentSearch) url += '&search=' + encodeURIComponent(currentSearch);
 
     var content = document.getElementById('listContent');
@@ -273,31 +241,37 @@ function loadList() {
         })
         .then(function(data) {
             totalRecords = data.total || 0;
-            renderList(data.audits || []);
+            renderList(data.inspections || []);
         })
         .catch(function(err) {
             content.innerHTML = '<div class="status-msg">Failed to load inspections.<br><small style="color:var(--danger)">' + escapeHtml(err.message) + '</small></div>';
         });
 }
 
-function renderList(audits) {
+function renderList(inspections) {
     var content = document.getElementById('listContent');
 
-    if (audits.length === 0) {
+    if (inspections.length === 0) {
         content.innerHTML = '<div class="status-msg">No inspections found.</div>';
         document.getElementById('paginationBar').style.display = 'none';
         return;
     }
 
     var html = '<table class="list-table"><thead><tr>';
-    html += '<th>Date</th><th>Auditor</th><th>Area</th><th></th>';
+    html += '<th>Date</th><th>Auditor</th><th>Area</th><th>Result</th><th>Source</th><th></th>';
     html += '</tr></thead><tbody>';
 
-    audits.forEach(function(a) {
-        html += '<tr onclick="loadDetail(' + a.row + ')">';
+    inspections.forEach(function(a) {
+        var resultClass = a.fail_count > 0 ? 'result-fail' : 'result-pass';
+        var resultText = a.fail_count > 0 ? a.fail_count + ' action' + (a.fail_count > 1 ? 's' : '') : 'Pass';
+        var badgeClass = a.source === 'excel' ? 'badge-excel' : 'badge-webapp';
+
+        html += '<tr onclick="loadDetail(\'' + escapeHtml(a.id) + '\')">';
         html += '<td>' + escapeHtml(formatDate(a.date)) + '</td>';
-        html += '<td>' + escapeHtml(a.auditor || '') + '</td>';
-        html += '<td>' + escapeHtml(a.area || '') + '</td>';
+        html += '<td>' + escapeHtml(a.inspector || '') + '</td>';
+        html += '<td>' + escapeHtml(a.location || '') + '</td>';
+        html += '<td class="' + resultClass + '">' + resultText + '</td>';
+        html += '<td><span class="badge ' + badgeClass + '">' + escapeHtml(a.source || 'webapp') + '</span></td>';
         html += '<td class="row-arrow">&rsaquo;</td>';
         html += '</tr>';
     });
@@ -333,13 +307,13 @@ function nextPage() {
 }
 
 // ===== DETAIL =====
-function loadDetail(row) {
+function loadDetail(id) {
     document.getElementById('listView').classList.add('hidden');
     var dv = document.getElementById('detailView');
     dv.classList.add('active');
     dv.innerHTML = '<button class="back-to-list" onclick="showList()">&larr; Back to list</button><div class="status-msg"><div class="spinner"></div><br>Loading inspection...</div>';
 
-    fetch(MII_API + '/sheq/audit/workplace/' + row, { headers: getAuthHeaders() })
+    fetch(MII_API + '/sheq/inspection/' + encodeURIComponent(id), { headers: getAuthHeaders() })
         .then(function(r) {
             if (!r.ok) throw new Error('API error ' + r.status);
             return r.json();
@@ -366,23 +340,23 @@ function renderDetail(d) {
     html += '</div>';
 
     // Meta bar
+    var badgeClass = d.source === 'excel' ? 'badge-excel' : 'badge-webapp';
     html += '<div class="meta-bar">';
-    html += metaItem('Auditor', d.auditor);
+    html += metaItem('Auditor', d.inspector);
     html += metaItem('Date', formatDate(d.date));
-    html += metaItem('Area', d.area);
-    html += metaItem('Start Time', d.start_time || '--');
-    html += metaItem('Completion Time', d.completion_time || '--');
+    html += metaItem('Area', d.location);
+    html += '<div class="meta-item"><div class="meta-label">Source</div><div class="meta-value"><span class="badge ' + badgeClass + '">' + escapeHtml(d.source || 'webapp') + '</span></div></div>';
     html += '</div>';
 
     // Checklist table
-    var blocks = d.blocks || [];
+    var items = d.items || [];
     var yesCount = 0, noCount = 0, naCount = 0, actionsRaised = 0, actionsClosed = 0;
 
     html += '<div class="checklist-wrap"><table class="checklist-table"><thead><tr>';
     html += '<th class="col-num">#</th><th class="col-topic">Topic</th><th>Response</th><th>Comments</th><th>Action Required</th><th>By Who</th><th>Target Date</th><th>Closed By</th>';
     html += '</tr></thead><tbody>';
 
-    blocks.forEach(function(b) {
+    items.forEach(function(b) {
         var resp = (b.response || '').trim();
         var respUpper = resp.toUpperCase();
         var respClass = '';
@@ -397,7 +371,7 @@ function renderDetail(d) {
         var rowClass = hasAction ? ' class="has-action"' : '';
 
         html += '<tr>';
-        html += '<td class="col-num"' + rowClass + '>' + escapeHtml(String(b.number || '')) + '</td>';
+        html += '<td class="col-num"' + rowClass + '>' + escapeHtml(String(b.block || '')) + '</td>';
         html += '<td class="col-topic">' + escapeHtml(b.topic || '') + '</td>';
         html += '<td class="col-response ' + respClass + '">' + escapeHtml(resp) + '</td>';
         html += '<td>' + escapeHtml(b.comments || '') + '</td>';
