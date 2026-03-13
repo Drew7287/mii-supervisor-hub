@@ -111,6 +111,31 @@
             background: var(--mii-blue);
             color: var(--white);
         }
+        /* ===== FILTERS ===== */
+        .filter-bar {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar input, .filter-bar select {
+            padding: 7px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-bar input { flex: 1; min-width: 180px; max-width: 300px; }
+        .filter-bar select { min-width: 120px; }
+        .filter-bar .filter-count {
+            font-size: 0.78rem;
+            color: #888;
+            margin-left: auto;
+        }
         .btn-secondary {
             background: var(--white);
             color: var(--text);
@@ -183,6 +208,9 @@
         .status-badge.on_hold { background: var(--bg-amber); color: var(--cost-caution); }
         .status-badge.dormant { background: #fce4d6; color: #D35400; }
         .status-badge.archived { background: #e8e8e8; color: #9E9E9E; }
+        .status-badge.needs_review { background: #fce4d6; color: #D35400; }
+        td.negative { color: var(--cost-negative); font-weight: 600; }
+        td.positive { color: var(--cost-positive); }
 
         /* Markup input */
         .markup-input {
@@ -538,6 +566,29 @@
     <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
 </div>
 
+<!-- Filters -->
+<div class="filter-bar">
+    <input type="text" id="filter-search" placeholder="Search job no, name, client..." oninput="applyFilters()">
+    <select id="filter-division" onchange="applyFilters()">
+        <option value="">All Divisions</option>
+        <option value="SW">SW - Small Works</option>
+        <option value="ELJ">ELJ - Electrical</option>
+        <option value="JP">JP - Port Talbot</option>
+        <option value="JT">JT - Trostre</option>
+        <option value="JV">JV - Vale</option>
+        <option value="SS">SS - Site Services</option>
+        <option value="WS">WS - Workshop</option>
+    </select>
+    <select id="filter-status" onchange="applyFilters()">
+        <option value="">All Statuses</option>
+        <option value="active">Active</option>
+        <option value="needs_review">Needs Review</option>
+        <option value="complete">Complete</option>
+        <option value="on_hold">On Hold</option>
+    </select>
+    <span class="filter-count" id="filter-count"></span>
+</div>
+
 <!-- Jobs Table -->
 <div class="table-wrap">
     <div class="table-scroll" id="table-container">
@@ -717,48 +768,113 @@ function showToast(message, type) {
     }, 4000);
 }
 
+// ===== FILTERING =====
+function getDivision(jobNo) {
+    if (!jobNo) return '';
+    const jn = jobNo.toUpperCase();
+    if (jn.startsWith('ELJ')) return 'ELJ';
+    if (jn.startsWith('SW')) return 'SW';
+    if (jn.startsWith('JP')) return 'JP';
+    if (jn.startsWith('JT')) return 'JT';
+    if (jn.startsWith('JV')) return 'JV';
+    if (jn.startsWith('SS')) return 'SS';
+    if (jn.startsWith('WS')) return 'WS';
+    return '';
+}
+
+function getFilteredJobs() {
+    const search = (document.getElementById('filter-search').value || '').toLowerCase();
+    const division = document.getElementById('filter-division').value;
+    const status = document.getElementById('filter-status').value;
+
+    return _jobs.filter(function(j) {
+        if (division && getDivision(j.job_number) !== division) return false;
+        if (status && (j.status || 'active') !== status) return false;
+        if (search) {
+            const hay = ((j.job_number || '') + ' ' + (j.job_name || '') + ' ' + (j.client || '')).toLowerCase();
+            if (hay.indexOf(search) === -1) return false;
+        }
+        return true;
+    });
+}
+
+function applyFilters() {
+    renderStats();
+    renderTable();
+}
+
 // ===== DATA =====
-let _jobs = [];  // enriched jobs from CostDB.getAllJobs()
+let _jobs = [];  // all jobs from server
 
 async function loadAllData() {
     try {
-        _jobs = await CostDB.getAllJobs();
+        const token = localStorage.getItem('mii_token');
+        if (!token) {
+            _jobs = await CostDB.getAllJobs();
+        } else {
+            // Load directly from server — includes spend totals
+            const resp = await fetch(MII_API + '/cost/jobs', {
+                headers: { 'Authorization': 'Bearer ' + token },
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                _jobs = (data.jobs || []).filter(j => !j.group_id);
+            } else {
+                const errData = await resp.json().catch(() => ({}));
+                console.warn('API returned', resp.status, errData.error || resp.statusText);
+                showToast('API error: ' + (errData.error || resp.statusText), 'error');
+                _jobs = await CostDB.getAllJobs();
+            }
+        }
         renderStats();
         renderTable();
     } catch (err) {
         console.error('Failed to load data:', err);
-        document.getElementById('table-container').innerHTML =
-            '<div class="empty-state"><div class="info-box">Failed to load data. Check console for details.</div></div>';
+        // Fallback to local on network error
+        try { _jobs = await CostDB.getAllJobs(); renderStats(); renderTable(); } catch(e) {}
+        if (!_jobs.length) {
+            document.getElementById('table-container').innerHTML =
+                '<div class="empty-state"><div class="info-box">Failed to load data. Check console for details.</div></div>';
+        }
     }
 }
 
 // ===== RENDER STATS =====
 function renderStats() {
-    const activeCount = _jobs.filter(function(j) { return j.status === 'active'; }).length;
+    const filtered = getFilteredJobs();
+    const activeCount = filtered.filter(function(j) { return j.status === 'active'; }).length;
     let totalBudget = 0;
+    let totalSpend = 0;
+    let totalRevenue = 0;
     let totalTxns = 0;
-    let latestImport = null;
 
-    _jobs.forEach(function(j) {
-        totalBudget += j.total_at_cost || 0;
+    filtered.forEach(function(j) {
+        totalBudget += parseFloat(j.budget_at_cost || j.total_at_cost || 0);
+        totalSpend += parseFloat(j.total_actual || j.total_exposure || 0);
+        totalRevenue += parseFloat(j.total_revenue || 0);
         totalTxns += j.transaction_count || 0;
-        const imp = j.last_import_at;
-        if (imp && (!latestImport || imp > latestImport)) latestImport = imp;
     });
 
     document.getElementById('stats-bar').innerHTML =
         '<div class="stat-card"><div class="stat-value" style="color:var(--mii-blue)">' + activeCount + '</div><div class="stat-label">Active Jobs</div></div>' +
         '<div class="stat-card"><div class="stat-value" style="color:var(--cost-positive)">' + formatGBPShort(totalBudget) + '</div><div class="stat-label">Total Budget</div></div>' +
-        '<div class="stat-card"><div class="stat-value" style="color:var(--cost-caution)">' + totalTxns.toLocaleString() + '</div><div class="stat-label">Total Transactions</div></div>' +
-        '<div class="stat-card"><div class="stat-value" style="color:var(--mii-red)">' + (latestImport ? formatDate(latestImport) : 'Never') + '</div><div class="stat-label">Last Import</div></div>';
+        '<div class="stat-card"><div class="stat-value" style="color:var(--cost-caution)">' + formatGBPShort(totalSpend) + '</div><div class="stat-label">Total Spend</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + formatGBPShort(totalRevenue) + '</div><div class="stat-label">Total Revenue</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + totalTxns.toLocaleString() + '</div><div class="stat-label">Transactions</div></div>';
 }
 
 // ===== RENDER TABLE =====
 function renderTable() {
     const container = document.getElementById('table-container');
+    const filtered = getFilteredJobs();
 
-    if (_jobs.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="info-box">No jobs configured yet. Click \'Add Job\' to set up a new cost tracking job, or \'Import Opera 3\' to import transaction data.</div></div>';
+    document.getElementById('filter-count').textContent =
+        filtered.length === _jobs.length ? filtered.length + ' jobs' : filtered.length + ' of ' + _jobs.length + ' jobs';
+
+    if (filtered.length === 0) {
+        container.innerHTML = _jobs.length === 0
+            ? '<div class="empty-state"><div class="info-box">No jobs configured yet. Click \'Add Job\' to set up a new cost tracking job, or \'Import Opera 3\' to import transaction data.</div></div>'
+            : '<div class="empty-state"><div class="info-box">No jobs match the current filters.</div></div>';
         return;
     }
 
@@ -767,29 +883,35 @@ function renderTable() {
         '<th>Project Name</th>' +
         '<th>Client</th>' +
         '<th>Status</th>' +
-        '<th class="center">Markup %</th>' +
         '<th class="right">Contract Value</th>' +
         '<th class="right">Budget (At Cost)</th>' +
-        '<th class="right">Transactions</th>' +
-        '<th class="center">Last Import</th>' +
+        '<th class="right">Spend</th>' +
+        '<th class="right">Revenue</th>' +
+        '<th class="right">Variance</th>' +
+        '<th class="right">Txns</th>' +
         '</tr></thead><tbody>';
 
-    _jobs.forEach(function(job) {
+    filtered.forEach(function(job) {
         const isGroup = job.is_group;
         const statusClass = (job.status || 'active').replace(/\s+/g, '_').toLowerCase();
         const statusLabel = (job.status || 'active').replace(/_/g, ' ');
-        const markup = job.markup_pct != null ? job.markup_pct : 14;
+        const budget = parseFloat(job.budget_at_cost || job.total_at_cost || 0);
+        const spend = parseFloat(job.total_actual || job.total_exposure || 0);
+        const revenue = parseFloat(job.total_revenue || 0);
+        const variance = budget - spend;
+        const varianceClass = variance < 0 ? 'negative' : (variance > 0 ? 'positive' : '');
 
         html += '<tr data-job-id="' + esc(job.id) + '" ondblclick="openJobDetail(\'' + esc(job.id) + '\')" oncontextmenu="showContextMenu(event, \'' + esc(job.id) + '\')">' +
             '<td class="job-no' + (isGroup ? ' group' : '') + '">' + esc(job.job_number) + '</td>' +
             '<td class="project-name">' + esc(job.job_name) + '</td>' +
             '<td>' + esc(job.client || '') + '</td>' +
             '<td><span class="status-badge ' + statusClass + '">' + esc(statusLabel) + '</span></td>' +
-            '<td class="center"><input type="number" class="markup-input" value="' + markup + '" min="0" max="50" data-job-id="' + esc(job.id) + '" onchange="handleMarkupChange(this)" onclick="event.stopPropagation()"></td>' +
-            '<td class="right">' + formatGBP(job.total_contract || 0) + '</td>' +
-            '<td class="right">' + formatGBP(job.total_at_cost || 0) + '</td>' +
+            '<td class="right">' + formatGBP(job.contract_value_total || job.total_contract || 0) + '</td>' +
+            '<td class="right">' + formatGBP(budget) + '</td>' +
+            '<td class="right">' + formatGBP(spend) + '</td>' +
+            '<td class="right">' + formatGBP(revenue) + '</td>' +
+            '<td class="right ' + varianceClass + '">' + formatGBP(variance) + '</td>' +
             '<td class="right">' + (job.transaction_count || 0).toLocaleString() + '</td>' +
-            '<td class="center">' + formatDate(job.last_import_at) + '</td>' +
             '</tr>';
     });
 

@@ -416,9 +416,11 @@
           };
         });
 
-      // Job-level totals
-      job.total_contract = categories.reduce((s, c) => s + (parseFloat(c.contract_value) || 0), 0);
-      job.total_at_cost = categories.reduce((s, c) => s + (parseFloat(c.at_cost) || 0), 0);
+      // Job-level totals — use category sums if available, else fall back to job record
+      const catContract = categories.reduce((s, c) => s + (parseFloat(c.contract_value) || 0), 0);
+      const catAtCost = categories.reduce((s, c) => s + (parseFloat(c.at_cost) || 0), 0);
+      job.total_contract = catContract || parseFloat(job.contract_value_total) || 0;
+      job.total_at_cost = catAtCost || parseFloat(job.budget_at_cost) || 0;
       job.total_actual = job.categories.reduce((s, c) => s + c.actual, 0);
       job.total_committed = job.categories.reduce((s, c) => s + c.committed, 0);
       job.total_exposure = job.categories.reduce((s, c) => s + c.exposure, 0);
@@ -2407,6 +2409,206 @@
     },
 
     /**
+     * Pull a single job's metadata from the server and update IndexedDB.
+     * Creates the job + default categories locally if they don't exist.
+     */
+    async syncJobFromServer(jobId) {
+      const token = localStorage.getItem('mii_token');
+      if (!token) return;
+      try {
+        const resp = await fetch(MII_API + '/cost/jobs/' + encodeURIComponent(jobId), {
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        if (!resp.ok) return;
+        const sj = await resp.json();
+        if (!sj || !sj.id) return;
+
+        await MiiDB.ready();
+        const now = new Date().toISOString();
+        const existing = await MiiDB.get('cost_jobs', jobId);
+
+        if (existing) {
+          existing.contract_value_total = sj.contract_value_total || existing.contract_value_total || 0;
+          existing.budget_at_cost = sj.budget_at_cost || existing.budget_at_cost || 0;
+          existing.job_name = sj.job_name || existing.job_name;
+          existing.client = sj.client || existing.client;
+          existing.status = sj.status || existing.status;
+          existing.markup_pct = sj.markup_pct || existing.markup_pct || 14;
+          existing.last_import_at = sj.last_import_at || existing.last_import_at;
+          existing.updated_at = now;
+          await MiiDB.save('cost_jobs', existing);
+        } else {
+          // Create job locally
+          await MiiDB.save('cost_jobs', {
+            id: sj.id,
+            job_number: sj.job_number || '',
+            job_name: sj.job_name || '',
+            client: sj.client || '',
+            markup_pct: sj.markup_pct || 14,
+            notes: sj.notes || '',
+            estimate_ref: sj.estimate_ref || '',
+            ai_notes: sj.ai_notes || '',
+            status: sj.status || 'active',
+            is_group: sj.is_group || false,
+            group_id: sj.group_id || null,
+            contract_value_total: sj.contract_value_total || 0,
+            budget_at_cost: sj.budget_at_cost || 0,
+            last_import_at: sj.last_import_at || null,
+            created_at: sj.created_at || now,
+            updated_at: now,
+          });
+        }
+
+        // Ensure 8 default categories exist
+        const localCats = await getByField('cost_categories', 'job_id', jobId);
+        if (localCats.length === 0) {
+          const CAT_NAMES = [
+            '', 'Design/Management', 'Labour', 'Plant & Equipment',
+            'Hired Equipment', 'Materials', 'Off Site/Subcontract',
+            'Consumables', 'Travel & Accommodation'
+          ];
+          for (let cn = 1; cn <= 8; cn++) {
+            await MiiDB.save('cost_categories', {
+              id: generateId(),
+              job_id: jobId,
+              category_number: cn,
+              category_name: CAT_NAMES[cn],
+              contract_value: 0,
+              at_cost: 0,
+              zero_budget: false,
+              sort_order: cn,
+              created_at: now,
+            });
+          }
+        }
+
+        console.log('[CostSync] Job synced:', sj.job_number);
+      } catch (e) {
+        console.warn('[CostSync] syncJobFromServer failed:', e);
+      }
+    },
+
+    /**
+     * Pull all jobs from server into IndexedDB.
+     * Merges: creates new jobs locally, updates server-only fields on existing ones.
+     * Does NOT overwrite local edits (notes, ai_notes, group_id).
+     * Called on dashboard load.
+     */
+    async syncJobsFromServer() {
+      const token = localStorage.getItem('mii_token');
+      if (!token) return { synced: 0, updated: 0 };
+
+      try {
+        const resp = await fetch(MII_API + '/cost/jobs', {
+          headers: { 'Authorization': 'Bearer ' + token },
+        });
+        if (!resp.ok) return { synced: 0, updated: 0 };
+
+        const data = await resp.json();
+        const serverJobs = data.jobs || [];
+        if (!Array.isArray(serverJobs) || serverJobs.length === 0) return { synced: 0, updated: 0 };
+
+        await MiiDB.ready();
+        const localJobs = await MiiDB.getAll('cost_jobs');
+        const localById = {};
+        const localByNumber = {};
+        for (const lj of localJobs) {
+          localById[lj.id] = lj;
+          if (lj.job_number) localByNumber[lj.job_number.toUpperCase()] = lj;
+        }
+
+        let created = 0, updated = 0;
+        for (const sj of serverJobs) {
+          const existing = localById[sj.id] || localByNumber[(sj.job_number || '').toUpperCase()];
+
+          if (!existing) {
+            // New job from server — create locally
+            const now = new Date().toISOString();
+            const markupPct = sj.markup_pct || 14;
+            const markupMul = 1 + markupPct / 100;
+            const cvt = sj.contract_value_total || 0;
+            const job = {
+              id: sj.id,
+              job_number: sj.job_number || '',
+              job_name: sj.job_name || '',
+              client: sj.client || '',
+              markup_pct: markupPct,
+              notes: sj.notes || '',
+              estimate_ref: sj.estimate_ref || '',
+              ai_notes: sj.ai_notes || '',
+              expected_start: sj.expected_start || null,
+              expected_end: sj.expected_end || null,
+              rate_card_id: sj.rate_card_id || null,
+              status: sj.status || 'active',
+              is_group: sj.is_group || false,
+              group_id: sj.group_id || null,
+              last_import_at: sj.last_import_at || null,
+              created_at: sj.created_at || now,
+              updated_at: sj.updated_at || now,
+              contract_value_total: cvt,
+              budget_at_cost: sj.budget_at_cost || (cvt > 0 ? Math.round(cvt / markupMul * 100) / 100 : 0),
+            };
+            await MiiDB.save('cost_jobs', job);
+
+            // Create default 8 categories locally (no per-job API call)
+            const CAT_NAMES = [
+              '', 'Design/Management', 'Labour', 'Plant & Equipment',
+              'Hired Equipment', 'Materials', 'Off Site/Subcontract',
+              'Consumables', 'Travel & Accommodation'
+            ];
+            for (let cn = 1; cn <= 8; cn++) {
+              await MiiDB.save('cost_categories', {
+                id: generateId(),
+                job_id: sj.id,
+                category_number: cn,
+                category_name: CAT_NAMES[cn],
+                contract_value: 0,
+                at_cost: 0,
+                zero_budget: false,
+                sort_order: cn,
+                created_at: now,
+              });
+            }
+
+            created++;
+          } else {
+            // Existing job — update transaction count and server-managed fields
+            let changed = false;
+            if (sj.contract_value_total && !existing.contract_value_total) {
+              existing.contract_value_total = sj.contract_value_total;
+              changed = true;
+            }
+            if (sj.budget_at_cost && !existing.budget_at_cost) {
+              existing.budget_at_cost = sj.budget_at_cost;
+              changed = true;
+            }
+            if (sj.last_import_at && sj.last_import_at > (existing.last_import_at || '')) {
+              existing.last_import_at = sj.last_import_at;
+              changed = true;
+            }
+            if (sj.status && sj.status !== existing.status) {
+              existing.status = sj.status;
+              changed = true;
+            }
+            if (changed) {
+              existing.updated_at = new Date().toISOString();
+              await MiiDB.save('cost_jobs', existing);
+              updated++;
+            }
+          }
+        }
+
+        if (created > 0 || updated > 0) {
+          console.log(`[CostSync] Jobs from server: ${created} created, ${updated} updated`);
+        }
+        return { synced: created, updated: updated };
+      } catch (e) {
+        console.warn('[CostSync] syncJobsFromServer failed:', e);
+        return { synced: 0, updated: 0 };
+      }
+    },
+
+    /**
      * Pull transactions from server (Azure SQL) into IndexedDB.
      * Only adds NEW transactions — preserves local category allocations.
      * Called on job detail page load to pick up auto-synced data.
@@ -2930,5 +3132,6 @@
 
   // Expose globally
   global.CostDB = CostDB;
+  global.MII_API = MII_API;
 
 })(typeof self !== 'undefined' ? self : this);

@@ -607,7 +607,8 @@ async function init() {
     }
 
     try {
-        // Pull any new transactions from server (auto-synced from SharePoint)
+        // Pull fresh job metadata + transactions from server
+        await CostDB.syncJobFromServer(_jobId);
         await CostDB.syncTransactionsFromServer(_jobId);
 
         _data = await CostDB.getFullAnalysis(_jobId);
