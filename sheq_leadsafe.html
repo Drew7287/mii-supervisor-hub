@@ -432,7 +432,7 @@
     // ===== LIST =====
     window.loadAudits = function() {
         const search = document.getElementById('searchInput').value.trim();
-        const url = MII_API + '/sheq/audits?type=leadsafe&search=' + encodeURIComponent(search) + '&limit=' + LIMIT + '&offset=' + currentOffset;
+        const url = MII_API + '/sheq/leadsafe?search=' + encodeURIComponent(search) + '&limit=' + LIMIT + '&offset=' + currentOffset;
 
         document.getElementById('listContent').innerHTML = '<div class="status-msg">Loading audits...</div>';
         document.getElementById('paginationBar').style.display = 'none';
@@ -461,7 +461,7 @@
         var html = '<table class="audit-table"><thead><tr><th>Date</th><th>Auditor</th><th>Location</th><th></th></tr></thead><tbody>';
         for (var i = 0; i < audits.length; i++) {
             var a = audits[i];
-            html += '<tr onclick="viewAudit(' + a.row + ')">';
+            html += '<tr onclick="viewAudit(\'' + a.id + '\')">';
             html += '<td>' + escapeHtml(formatDate(a.date)) + '</td>';
             html += '<td>' + escapeHtml(a.auditor || '') + '</td>';
             html += '<td>' + escapeHtml(a.area || '') + '</td>';
@@ -502,12 +502,12 @@
     };
 
     // ===== DETAIL =====
-    window.viewAudit = function(row) {
+    window.viewAudit = function(id) {
         document.getElementById('listView').classList.remove('active');
         document.getElementById('detailView').classList.add('active');
         document.getElementById('detailContent').innerHTML = '<div class="status-msg">Loading audit...</div>';
 
-        fetch(MII_API + '/sheq/audit/leadsafe/' + row, { headers: authHeaders() })
+        fetch(MII_API + '/sheq/leadsafe/' + id, { headers: authHeaders() })
             .then(function(r) {
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 return r.json();

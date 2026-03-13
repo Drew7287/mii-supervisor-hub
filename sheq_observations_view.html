@@ -197,7 +197,7 @@
         loadingIndicator.style.display = 'block';
         pagination.style.display = 'none';
 
-        var url = MII_API + '/sheq/audits?type=sheq&search=' + encodeURIComponent(currentSearch) + '&limit=' + limit + '&offset=' + currentOffset;
+        var url = MII_API + '/sheq/observations?search=' + encodeURIComponent(currentSearch) + '&limit=' + limit + '&offset=' + currentOffset;
 
         fetch(url, { headers: authHeaders })
             .then(function(r) {
@@ -230,7 +230,7 @@
 
         audits.forEach(function(a) {
             var dateStr = a.date ? formatDate(a.date) : '-';
-            html += '<tr onclick="window._viewDetail(' + a.row + ')">'
+            html += '<tr onclick="window._viewDetail(\'' + a.id + '\')">'
                 + '<td>' + escapeHtml(dateStr) + '</td>'
                 + '<td>' + escapeHtml(a.auditor || '-') + '</td>'
                 + '<td>' + escapeHtml(a.area || '-') + '</td>'
@@ -264,12 +264,12 @@
     };
 
     // Detail view
-    window._viewDetail = function(row) {
+    window._viewDetail = function(id) {
         reportContent.innerHTML = '<div class="loading">Loading observation...</div>';
         listView.classList.add('hidden');
         detailView.classList.add('active');
 
-        var url = MII_API + '/sheq/audit/sheq/' + row;
+        var url = MII_API + '/sheq/observation/' + id;
 
         fetch(url, { headers: authHeaders })
             .then(function(r) {
