@@ -560,7 +560,14 @@
         .btn-view:hover { background: var(--primary-light); }
         .cert-viewer-content img { max-width: 100%; max-height: 75vh; display: block; margin: 0 auto; border-radius: 6px; }
         .cert-viewer-content iframe { width: 100%; height: 75vh; border: none; border-radius: 6px; }
-        .btn-extract { padding: 8px 16px; background: #6c757d; color: var(--white); border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: not-allowed; opacity: 0.6; }
+        .btn-extract { padding: 8px 16px; background: var(--accent); color: var(--white); border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; opacity: 1; transition: background 0.2s; }
+        .btn-extract:hover { background: var(--primary-light); }
+        .btn-extract:disabled { background: #6c757d; cursor: not-allowed; opacity: 0.6; }
+        .btn-extract.extracting { background: var(--warning); cursor: wait; }
+        .confidence-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; }
+        .confidence-badge.high { background: #d4edda; color: #155724; }
+        .confidence-badge.medium { background: #fff3cd; color: #856404; }
+        .confidence-badge.low { background: #f8d7da; color: #721c24; }
         @media (max-width: 600px) {
             .stats-bar { grid-template-columns: repeat(2, 1fr); }
             .filter-bar { flex-direction: column; }
@@ -664,7 +671,7 @@
         <div class="cert-extract-bar">
             <button class="btn-secondary" onclick="document.getElementById('cert-file-input').click()" style="min-height:40px;padding:8px 16px;">Select File...</button>
             <span class="file-label" id="cert-file-label">No file selected</span>
-            <button class="btn-extract" id="cert-extract-btn" disabled title="AI extraction coming soon - enter details manually">Extract</button>
+            <button class="btn-extract" id="cert-extract-btn" disabled onclick="extractSingleCert()" title="Extract certificate details using AI">Extract</button>
             <input type="file" id="cert-file-input" accept="image/*,application/pdf" capture="environment">
         </div>
 
@@ -735,7 +742,7 @@
         <div class="cert-extract-bar">
             <button class="btn-secondary" onclick="document.getElementById('cert-batch-input').click()" style="min-height:40px;padding:8px 16px;">Select Files...</button>
             <span class="file-label" id="cert-batch-label">No files selected</span>
-            <button class="btn-extract" id="cert-batch-extract-btn" disabled title="AI extraction coming soon - enter details manually">Extract All</button>
+            <button class="btn-extract" id="cert-batch-extract-btn" disabled onclick="extractAllBatch()" title="Extract all certificate details using AI">Extract All</button>
             <input type="file" id="cert-batch-input" multiple accept="image/*,application/pdf">
         </div>
 
@@ -966,6 +973,7 @@
    ================================================================ */
 
 const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+const RAMS_API = 'https://ramsbuilder-api-b7g8addbcabrcybd.westeurope-01.azurewebsites.net/api';
 
 function authHeaders() {
     const t = localStorage.getItem('mii_token');
@@ -1738,6 +1746,7 @@ function handleCertFile(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
         _certFileData = e.target.result;
+        document.getElementById('cert-extract-btn').disabled = false;
         showCertFormPanel();
     };
     reader.readAsDataURL(file);
@@ -1759,6 +1768,9 @@ function showCertFormPanel() {
 function cancelCertUpload() {
     _certFileData = null; _certFileName = null; _certFileType = null;
     _certDupeRecord = null;
+    document.getElementById('cert-extract-btn').disabled = true;
+    document.getElementById('cert-extract-btn').classList.remove('extracting');
+    document.getElementById('cert-extract-btn').textContent = 'Extract';
     document.getElementById('cert-form-panel').classList.remove('visible');
     document.getElementById('cert-preview-content').innerHTML = '';
     document.getElementById('cert-upload-zone').style.display = '';
@@ -2283,6 +2295,7 @@ function handleBatchFiles(files) {
     document.getElementById('cert-batch-label').textContent = validFiles.length + ' file(s) selected';
     document.getElementById('cert-batch-zone').style.display = 'none';
     document.getElementById('cert-batch-results').style.display = '';
+    document.getElementById('cert-batch-extract-btn').disabled = false;
 
     var loaded = 0;
     validFiles.forEach(function(file, idx) {
@@ -2347,6 +2360,9 @@ function clearBatchFiles() {
     document.getElementById('cert-batch-zone').style.display = '';
     document.getElementById('cert-batch-results').style.display = 'none';
     document.getElementById('cert-batch-edit').classList.remove('visible');
+    document.getElementById('cert-batch-extract-btn').disabled = true;
+    document.getElementById('cert-batch-extract-btn').classList.remove('extracting');
+    document.getElementById('cert-batch-extract-btn').textContent = 'Extract All';
 }
 
 function selectBatchRow(idx) {
@@ -2468,6 +2484,244 @@ async function saveAllBatchValid() {
     toast(savedCount + ' certificate(s) saved', 'success');
     loadCertificates();
     loadFilingQueue();
+}
+
+// ---- AI Certificate Extraction ----
+
+function getRamsApiKey() {
+    return localStorage.getItem('rams_api_key') || 'KrfeQw30hcRDuL0II_0jMcQgKMfJ6Xf6dYpdsDOARmk';
+}
+
+async function callExtractCertificate(imageDataUri, mediaType) {
+    var apiKey = getRamsApiKey();
+    var headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['x-functions-key'] = apiKey;
+
+    var res = await fetch(RAMS_API + '/extract-certificate', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            image_data: imageDataUri,
+            media_type: mediaType
+        })
+    });
+
+    if (!res.ok) {
+        var errBody = await res.text();
+        throw new Error('Extraction failed (' + res.status + '): ' + errBody);
+    }
+
+    var data = await res.json();
+    return data.extracted;
+}
+
+function getMediaTypeFromFileType(fileType) {
+    var map = {
+        'image/jpeg': 'image/jpeg',
+        'image/jpg': 'image/jpeg',
+        'image/png': 'image/png',
+        'application/pdf': 'image/png'  // PDFs rendered client-side to canvas
+    };
+    return map[fileType] || 'image/png';
+}
+
+async function renderPdfPageToBase64(dataUri) {
+    // Use pdf.js if available, otherwise return null
+    if (typeof pdfjsLib === 'undefined') {
+        // Dynamically load pdf.js from CDN
+        await new Promise(function(resolve, reject) {
+            var script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    var pdfData = atob(dataUri.split(',')[1]);
+    var pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+    var page = await pdf.getPage(1);
+    var scale = 2.0;  // 200 DPI equivalent
+    var viewport = page.getViewport({ scale: scale });
+    var canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    var ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    return canvas.toDataURL('image/png');
+}
+
+async function extractSingleCert() {
+    if (!_certFileData) { toast('No file selected', 'error'); return; }
+
+    var btn = document.getElementById('cert-extract-btn');
+    btn.disabled = true;
+    btn.classList.add('extracting');
+    btn.textContent = 'Extracting...';
+
+    try {
+        var imageData = _certFileData;
+        var mediaType = getMediaTypeFromFileType(_certFileType);
+
+        // If PDF, render first page to PNG
+        if (_certFileType === 'application/pdf') {
+            toast('Rendering PDF...', 'info');
+            imageData = await renderPdfPageToBase64(_certFileData);
+            mediaType = 'image/png';
+        }
+
+        toast('Sending to AI for extraction...', 'info');
+        var result = await callExtractCertificate(imageData, mediaType);
+
+        // Populate form fields with extracted data
+        applyExtractionToSingleForm(result);
+
+        var conf = result.confidence || 'low';
+        toast('Extraction complete — confidence: ' + conf, conf === 'high' ? 'success' : (conf === 'medium' ? 'info' : 'error'));
+
+    } catch(e) {
+        console.error('Extraction error:', e);
+        toast('Extraction failed: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('extracting');
+        btn.textContent = 'Extract';
+    }
+}
+
+async function applyExtractionToSingleForm(result) {
+    // Match employee name
+    if (result.holder_name) {
+        var emps = await getEmployeesForCert();
+        var matches = fuzzyMatchEmployees(result.holder_name, emps, 0.5);
+        if (matches.length && matches[0].score >= 0.7) {
+            document.getElementById('cert-emp-search').value = matches[0].name;
+            document.getElementById('cert-emp-value').value = matches[0].employee_number;
+            document.getElementById('cert-emp-name-value').value = matches[0].name;
+        } else {
+            // Put the extracted name in the search field for manual selection
+            document.getElementById('cert-emp-search').value = result.holder_name;
+            document.getElementById('cert-emp-value').value = '';
+            document.getElementById('cert-emp-name-value').value = '';
+            // Trigger dropdown to show matches
+            populateDropdown('cert-emp-search', 'cert-emp-list', 'employee');
+        }
+    }
+
+    // Match training type
+    if (result.certificate_type) {
+        await loadTypesCache();
+        var typeMatches = fuzzyMatchTrainingTypes(result.certificate_type, _typesCache || [], 0.4);
+        if (typeMatches.length && typeMatches[0].score >= 0.6) {
+            document.getElementById('cert-type-search').value = typeMatches[0].name;
+            document.getElementById('cert-type-value').value = typeMatches[0].code;
+            document.getElementById('cert-type-name-value').value = typeMatches[0].name;
+        } else {
+            document.getElementById('cert-type-search').value = result.certificate_type;
+            document.getElementById('cert-type-value').value = '';
+            document.getElementById('cert-type-name-value').value = '';
+            populateDropdown('cert-type-search', 'cert-type-list', 'training_type');
+        }
+    }
+
+    // Dates
+    if (result.achieved_date) {
+        document.getElementById('cert-achieved-date').value = result.achieved_date;
+    }
+    if (result.expiry_date) {
+        document.getElementById('cert-has-expiry').checked = true;
+        document.getElementById('cert-expiry-group').style.display = '';
+        document.getElementById('cert-expiry-date').value = result.expiry_date;
+    } else {
+        document.getElementById('cert-has-expiry').checked = false;
+        document.getElementById('cert-expiry-group').style.display = 'none';
+    }
+
+    // Certificate number
+    if (result.certificate_number) {
+        document.getElementById('cert-cert-number').value = result.certificate_number;
+    }
+
+    // Issuing body into notes
+    if (result.issuing_body) {
+        var notes = document.getElementById('cert-notes');
+        notes.value = (notes.value ? notes.value + '\n' : '') + 'Issuing body: ' + result.issuing_body;
+    }
+
+    updateSaveButtonState();
+    checkDuplicateCert();
+}
+
+async function extractAllBatch() {
+    if (!_batchEntries.length) { toast('No files to extract', 'error'); return; }
+
+    var btn = document.getElementById('cert-batch-extract-btn');
+    btn.disabled = true;
+    btn.classList.add('extracting');
+    var total = _batchEntries.length;
+
+    var emps = await getEmployeesForCert();
+    await loadTypesCache();
+
+    for (var i = 0; i < _batchEntries.length; i++) {
+        btn.textContent = 'Extracting ' + (i + 1) + '/' + total + '...';
+        var entry = _batchEntries[i];
+
+        try {
+            var imageData = entry.file_data;
+            var mediaType = getMediaTypeFromFileType(entry.file_type);
+
+            if (entry.file_type === 'application/pdf') {
+                imageData = await renderPdfPageToBase64(entry.file_data);
+                mediaType = 'image/png';
+            }
+
+            var result = await callExtractCertificate(imageData, mediaType);
+
+            // Match employee
+            if (result.holder_name) {
+                var empMatches = fuzzyMatchEmployees(result.holder_name, emps, 0.5);
+                if (empMatches.length && empMatches[0].score >= 0.7) {
+                    entry.employee_number = empMatches[0].employee_number;
+                    entry.employee_name = empMatches[0].name;
+                }
+            }
+
+            // Match training type
+            if (result.certificate_type) {
+                var typeMatches = fuzzyMatchTrainingTypes(result.certificate_type, _typesCache || [], 0.4);
+                if (typeMatches.length && typeMatches[0].score >= 0.6) {
+                    entry.training_type_code = typeMatches[0].code;
+                    entry.training_type_name = typeMatches[0].name;
+                }
+            }
+
+            // Dates
+            if (result.achieved_date) entry.achieved_date = result.achieved_date;
+            if (result.expiry_date) entry.expiry_date = result.expiry_date;
+
+            // Store raw extraction for reference
+            entry._extraction = result;
+
+            // Update status
+            entry.status = (entry.employee_number && entry.training_type_code) ? 'ready' : 'review';
+
+        } catch(e) {
+            console.error('Batch extraction error for ' + entry.file_name + ':', e);
+            entry.status = 'review';
+            entry._extractionError = e.message;
+        }
+
+        renderBatchTable();
+    }
+
+    btn.disabled = false;
+    btn.classList.remove('extracting');
+    btn.textContent = 'Extract All';
+
+    var readyCount = _batchEntries.filter(function(e) { return e.status === 'ready'; }).length;
+    toast('Extraction complete: ' + readyCount + '/' + total + ' ready to save', readyCount > 0 ? 'success' : 'info');
 }
 
 </script>
