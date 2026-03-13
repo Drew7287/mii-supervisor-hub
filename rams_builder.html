@@ -4021,6 +4021,13 @@ function parseCustomHazardControls(text) {
     return '\u2022 ' + lines.join('\n\u2022 ');
 }
 
+function parseEnvMechanism(text) {
+    if (!text) return '';
+    let s = text.replace(/^Change\s+['"][^'"]*['"]\s+to\s+YES[.,]?\s*/i, '');
+    s = s.replace(/^.*Justification:\s*/i, '');
+    return s.trim();
+}
+
 // ─── AI Audit Trail ───────────────────────────────────────
 
 function recordAIAudit(action, s, edited) {
@@ -4212,7 +4219,7 @@ function revertAISuggestion(s) {
         }
     } else if (type === 'add_equipment') {
         const eqArr = currentDoc.requirements.equipment || [];
-        const eIdx = eqArr.indexOf(rv.item_name);
+        const eIdx = eqArr.findIndex(e => (e.item || e) === rv.item_name);
         if (eIdx !== -1) eqArr.splice(eIdx, 1);
         if (rv.was_custom) {
             const libIdx = REQUIREMENTS_LIBRARY.equipment.findIndex(e => e.item === rv.item_name);
@@ -4220,7 +4227,7 @@ function revertAISuggestion(s) {
         }
     } else if (type === 'add_coshh') {
         const cArr = currentDoc.requirements.coshh || [];
-        const cIdx = cArr.indexOf(rv.substance_name);
+        const cIdx = cArr.findIndex(c => (c.substance || c) === rv.substance_name);
         if (cIdx !== -1) cArr.splice(cIdx, 1);
         if (rv.was_custom) {
             const libIdx = REQUIREMENTS_LIBRARY.coshh_substances.findIndex(c => c.substance === rv.substance_name);
@@ -4228,7 +4235,7 @@ function revertAISuggestion(s) {
         }
     } else if (type === 'add_ppe') {
         const pArr = currentDoc.requirements.ppe || [];
-        const pIdx = pArr.indexOf(rv.item_name);
+        const pIdx = pArr.findIndex(p => (p.item || p) === rv.item_name);
         if (pIdx !== -1) pArr.splice(pIdx, 1);
         if (rv.was_custom) {
             const libIdx = REQUIREMENTS_LIBRARY.ppe.findIndex(p => p.item === rv.item_name);
@@ -4326,6 +4333,20 @@ function applyAISuggestion(s) {
         const match = fuzzyMatchLibrary(MII_HAZARDS, target, h => h.name);
         if (match && !currentDoc.selected_hazards.includes(match.id)) {
             currentDoc.selected_hazards.push(match.id);
+            // Create RA entry with library defaults
+            currentDoc.risk_assessments = currentDoc.risk_assessments || [];
+            if (!currentDoc.risk_assessments.find(r => r.hazard_id === match.id)) {
+                currentDoc.risk_assessments.push({
+                    hazard_id: match.id,
+                    hazard_name: match.name,
+                    controls: match.default_controls || '',
+                    initial_likelihood: match.initial_likelihood || 3,
+                    initial_severity: match.initial_severity || 3,
+                    final_likelihood: match.final_likelihood || 1,
+                    final_severity: match.final_severity || 3,
+                    _ai_added: true,
+                });
+            }
             // Item 5: revert snapshot
             s._revert = { hazard_id: match.id, was_custom: false };
         } else if (match && currentDoc.selected_hazards.includes(match.id)) {
@@ -4352,6 +4373,7 @@ function applyAISuggestion(s) {
             currentDoc.risk_assessments = currentDoc.risk_assessments || [];
             currentDoc.risk_assessments.push({
                 hazard_id: customId,
+                hazard_name: target,
                 controls: controlsText,
                 initial_likelihood: customHazard.initial_likelihood,
                 initial_severity: customHazard.initial_severity,
@@ -4412,64 +4434,76 @@ function applyAISuggestion(s) {
     } else if (type === 'add_equipment') {
         // Item 4: duplicate check (case-insensitive)
         const eqArr = currentDoc.requirements.equipment || [];
-        if (eqArr.some(n => n.toLowerCase() === target.toLowerCase())) {
+        if (eqArr.some(e => (e.item || e).toLowerCase() === target.toLowerCase())) {
             console.log('[AI] Skipped duplicate: add_equipment -', target); return false;
             return;
         }
         let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.equipment, target, e => e.item);
         if (match) {
-            if (!eqArr.includes(match.item)) {
+            if (!eqArr.some(e => (e.item || e) === match.item)) {
                 currentDoc.requirements.equipment = currentDoc.requirements.equipment || [];
-                currentDoc.requirements.equipment.push(match.item);
+                currentDoc.requirements.equipment.push({
+                    item: match.item,
+                    safety_precaution: text || match.safety_precaution || '',
+                    _ai_suggested: true
+                });
                 s._revert = { item_name: match.item, was_custom: false };
             }
         } else {
             const customItem = { item: target, safety_precaution: text || 'Refer to method statement for usage requirements.', _ai_suggested: true };
             REQUIREMENTS_LIBRARY.equipment.push(customItem);
             currentDoc.requirements.equipment = currentDoc.requirements.equipment || [];
-            currentDoc.requirements.equipment.push(target);
+            currentDoc.requirements.equipment.push({ item: target, safety_precaution: customItem.safety_precaution, _ai_suggested: true });
             s._revert = { item_name: target, was_custom: true };
         }
     } else if (type === 'add_coshh') {
         // Item 4: duplicate check
         const cArr = currentDoc.requirements.coshh || [];
-        if (cArr.some(n => n.toLowerCase() === target.toLowerCase())) {
+        if (cArr.some(c => (c.substance || c).toLowerCase() === target.toLowerCase())) {
             console.log('[AI] Skipped duplicate: add_coshh -', target); return false;
             return;
         }
         let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.coshh_substances, target, c => c.substance);
         if (match) {
-            if (!cArr.includes(match.substance)) {
+            if (!cArr.some(c => (c.substance || c) === match.substance)) {
                 currentDoc.requirements.coshh = currentDoc.requirements.coshh || [];
-                currentDoc.requirements.coshh.push(match.substance);
+                currentDoc.requirements.coshh.push({
+                    substance: match.substance,
+                    storage_requirements: text || match.storage_requirements || '',
+                    _ai_suggested: true
+                });
                 s._revert = { substance_name: match.substance, was_custom: false };
             }
         } else {
             const customItem = { substance: target, storage_requirements: text || 'Store per manufacturer instructions.', _ai_suggested: true };
             REQUIREMENTS_LIBRARY.coshh_substances.push(customItem);
             currentDoc.requirements.coshh = currentDoc.requirements.coshh || [];
-            currentDoc.requirements.coshh.push(target);
+            currentDoc.requirements.coshh.push({ substance: target, storage_requirements: customItem.storage_requirements, _ai_suggested: true });
             s._revert = { substance_name: target, was_custom: true };
         }
     } else if (type === 'add_ppe') {
         // Item 4: duplicate check
         const pArr = currentDoc.requirements.ppe || [];
-        if (pArr.some(n => n.toLowerCase() === target.toLowerCase())) {
+        if (pArr.some(p => (p.item || p).toLowerCase() === target.toLowerCase())) {
             console.log('[AI] Skipped duplicate: add_ppe -', target); return false;
             return;
         }
         let match = fuzzyMatchLibrary(REQUIREMENTS_LIBRARY.ppe, target, p => p.item);
         if (match) {
-            if (!pArr.includes(match.item)) {
+            if (!pArr.some(p => (p.item || p) === match.item)) {
                 currentDoc.requirements.ppe = currentDoc.requirements.ppe || [];
-                currentDoc.requirements.ppe.push(match.item);
+                currentDoc.requirements.ppe.push({
+                    item: match.item,
+                    standard: text || match.standard || '',
+                    _ai_suggested: true
+                });
                 s._revert = { item_name: match.item, was_custom: false };
             }
         } else {
             const customItem = { item: target, standard: text || 'As specified by manufacturer.', _ai_suggested: true };
             REQUIREMENTS_LIBRARY.ppe.push(customItem);
             currentDoc.requirements.ppe = currentDoc.requirements.ppe || [];
-            currentDoc.requirements.ppe.push(target);
+            currentDoc.requirements.ppe.push({ item: target, standard: customItem.standard, _ai_suggested: true });
             s._revert = { item_name: target, was_custom: true };
         }
     } else if (type === 'ra_method_gap') {
@@ -4506,7 +4540,7 @@ function applyAISuggestion(s) {
             // Item 5: store original for revert
             s._revert = { question_id: envQ.id, original_answer: envQ.answer || 'NO', original_mechanism: envQ.mechanism || '' };
             envQ.answer = 'YES';
-            if (!envQ.mechanism && text) envQ.mechanism = text;
+            if (!envQ.mechanism && text) envQ.mechanism = parseEnvMechanism(text);
         } else {
             let libQ = ENVIRONMENT_LIBRARY.questions.find(q => q.id === target);
             if (!libQ) {
@@ -4520,7 +4554,7 @@ function applyAISuggestion(s) {
                 currentDoc.environment.questions = currentDoc.environment.questions || [];
                 currentDoc.environment.questions.push({
                     id: libQ.id, question: libQ.question, answer: 'YES',
-                    mechanism: text || libQ.default_mechanisms.map(m => '\u2022 ' + m).join('\n'),
+                    mechanism: parseEnvMechanism(text) || libQ.default_mechanisms.map(m => '\u2022 ' + m).join('\n'),
                     control: libQ.default_controls.map(c => '\u2022 ' + c).join('\n'),
                 });
                 s._revert = { question_id: libQ.id, original_answer: 'NO', original_mechanism: '' };
@@ -4675,13 +4709,13 @@ async function exportExcel() {
             const h = MII_HAZARDS.find(hz => hz.id === ra.hazard_id);
             return {
                 hazard_id: ra.hazard_id,
-                hazard_name: h ? h.name : ra.hazard_id,
+                hazard_name: h ? h.name : (ra.hazard_name || ra.hazard_id),
                 category: h ? h.category : 'Other',
                 risk_description: ra.risk_description || (h ? h.risk_description : '') || '',
                 who_harmed: ra.who_harmed || (h ? h.who_harmed : '') || 'Working party and others',
                 initial_l: ra.initial_l || (h ? h.initial_likelihood : 3) || 3,
                 initial_s: ra.initial_s || (h ? h.initial_severity : 3) || 3,
-                controls: ra.controls || (h ? h.default_controls : '') || '',
+                controls: (ra.controls || (h ? h.default_controls : '') || '').replace(/\ud83e\udd16\s*/g, ''),
                 final_l: ra.final_l || (h ? h.final_likelihood : 1) || 1,
                 final_s: ra.final_s || (h ? h.final_severity : 3) || 3
             };
