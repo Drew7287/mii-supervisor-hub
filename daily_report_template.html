@@ -1064,7 +1064,7 @@
                         <div class="detail">Before starting, on return to area, after any change</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="powra.html" onclick="openPowra(event)" style="color:var(--accent);text-decoration:underline;">POWRA Form</a></td>
+                    <td class="col-forms"><a href="#" onclick="openPowra(event)" style="color:var(--accent);text-decoration:underline;">POWRA Form</a></td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Count:" /></td>
                 </tr>
                 <tr>
@@ -1786,8 +1786,6 @@ if ('serviceWorker' in navigator) {
     function getActiveCrew() {
         const names = [];
         document.querySelectorAll('#manning-body tr').forEach(row => {
-            const actual = parseFloat(row.querySelector('.manning-actual')?.value) || 0;
-            if (actual < 1) return;
             const sel = row.querySelector('.name-select');
             let name = '';
             if (sel) {

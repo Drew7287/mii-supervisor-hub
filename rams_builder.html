@@ -1378,7 +1378,7 @@ const EXPORT_API = window.location.hostname === 'localhost' || window.location.p
 
 // ─── AI Proxy Configuration ──────────────────────────────
 const AI_PROXY_URL = 'https://ramsbuilder-api-b7g8addbcabrcybd.westeurope-01.azurewebsites.net';
-const AI_PROXY_KEY = 'KrfeQw30hcRDuL0II_0jMcQgKMfJ6Xf6dYpdsDOARmk';
+const AI_PROXY_KEY = localStorage.getItem('rams_api_key') || '';
 let aiSuggestions = []; // Current AI suggestions for the document
 let sswLibrary = []; // Safe Systems of Work library
 
@@ -1477,11 +1477,11 @@ function buildSSWPromptSection(matchedSSWs) {
 }
 
 async function aiCall(endpoint, prompt, opts = {}) {
+    if (!AI_PROXY_KEY) throw new Error('No API key configured. Set rams_api_key in localStorage.');
     const url = `${AI_PROXY_URL}/api/${endpoint}`;
     const body = { prompt, model: opts.model, max_tokens: opts.max_tokens };
     if (opts.system) body.system = opts.system;
-    const headers = { 'Content-Type': 'application/json' };
-    if (AI_PROXY_KEY) headers['x-functions-key'] = AI_PROXY_KEY;
+    const headers = { 'Content-Type': 'application/json', 'x-functions-key': AI_PROXY_KEY };
     const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
     if (!resp.ok) throw new Error(`AI call failed: ${resp.status} ${resp.statusText}`);
     const data = await resp.json();

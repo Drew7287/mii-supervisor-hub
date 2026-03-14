@@ -562,9 +562,11 @@
 <!-- Action Buttons -->
 <div class="action-bar">
     <button class="btn btn-primary" onclick="openAddJobModal()">Add Job</button>
+    <button class="btn btn-secondary" onclick="triggerEstimateImport()">Import Estimate</button>
     <button class="btn btn-secondary" onclick="window.location.href='cost_mapping_library.html'">Mapping Library</button>
     <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
 </div>
+<input type="file" id="estimate-import-input" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleEstimateImport(event)">
 
 <!-- Filters -->
 <div class="filter-bar">
@@ -700,6 +702,29 @@
         <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border)">
             <button class="btn btn-secondary" onclick="closeAddJobModal()">Cancel</button>
             <button class="btn btn-primary" id="btn-create-job" onclick="createJob()">Create Job</button>
+        </div>
+    </div>
+</div>
+
+<!-- Estimate Import Modal -->
+<div id="estimate-import-modal" class="modal-overlay" style="display:none">
+    <div class="modal-container" style="max-width:600px">
+        <div class="modal-header">
+            <h2>Import Estimate</h2>
+            <button class="modal-close" onclick="closeEstimateImport()">&times;</button>
+        </div>
+        <div class="modal-section">
+            <div class="form-group">
+                <label>Apply to Job:</label>
+                <select id="estimate-job-select" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px">
+                    <option value="">-- Select a job --</option>
+                </select>
+            </div>
+            <div id="estimate-preview" style="margin-top:16px"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border)">
+            <button class="btn btn-secondary" onclick="closeEstimateImport()">Cancel</button>
+            <button class="btn btn-primary" id="estimate-apply-btn" onclick="applyEstimateImport()" disabled>Apply Budget</button>
         </div>
     </div>
 </div>
@@ -928,7 +953,25 @@ async function handleMarkupChange(input) {
 
     try {
         await CostDB.updateMarkup(jobId, parseFloat(input.value));
-        await loadAllData();
+        // Update in-memory job instead of full reload
+        const job = _jobs.find(function(j) { return j.id === jobId; });
+        if (job) {
+            const pct = parseFloat(input.value) || 14;
+            const multiplier = 1 + pct / 100;
+            job.markup_pct = pct;
+            if (job.categories) {
+                let totalAtCost = 0;
+                job.categories.forEach(function(cat) {
+                    cat.at_cost = multiplier > 0 ? (parseFloat(cat.contract_value) || 0) / multiplier : 0;
+                    totalAtCost += cat.at_cost;
+                });
+                job.total_at_cost = totalAtCost;
+                job.budget_at_cost = totalAtCost;
+                job.total_variance = job.total_at_cost - (job.total_exposure || 0);
+            }
+        }
+        renderStats();
+        renderTable();
     } catch (err) {
         console.error('Markup update error:', err);
         showToast('Failed to update markup: ' + err.message, 'error');
@@ -983,7 +1026,10 @@ async function ctxToggleStatus() {
     await CostDB.updateJobStatus(_ctxJobId, newStatus);
     showToast('Job ' + job.job_number + ' marked as ' + newStatus, 'success');
     hideContextMenu();
-    await loadAllData();
+    // Update in-memory instead of full reload
+    job.status = newStatus;
+    renderStats();
+    renderTable();
 }
 
 async function ctxDelete() {
@@ -1003,7 +1049,10 @@ async function ctxDelete() {
     try {
         await CostDB.deleteJob(jobId);
         showToast('Job ' + job.job_number + ' deleted', 'success');
-        await loadAllData();
+        // Remove from in-memory array instead of full reload
+        _jobs = _jobs.filter(function(j) { return j.id !== jobId; });
+        renderStats();
+        renderTable();
     } catch (err) {
         console.error('Delete job error:', err);
         showToast('Failed to delete: ' + err.message, 'error');
@@ -1712,6 +1761,128 @@ function _cellNum(aoa, row, col) {
 }
 
 // (handleEstimateFile and createJob replaced by wizard functions above)
+
+// ===== ESTIMATE IMPORT =====
+let _pendingEstimate = null;
+
+function triggerEstimateImport() {
+    document.getElementById('estimate-import-input').value = '';
+    document.getElementById('estimate-import-input').click();
+}
+
+async function handleEstimateImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const result = parseEstimate(workbook);
+
+        if (!result || !result.categories.length) {
+            showToast('Could not find category data in this file. Ensure it has a Price Matrix sheet.', 'error');
+            return;
+        }
+
+        _pendingEstimate = result;
+        _pendingEstimate._filename = file.name;
+
+        // Populate job dropdown
+        var select = document.getElementById('estimate-job-select');
+        select.innerHTML = '<option value="">-- Select a job --</option>';
+        var sorted = _jobs.slice().sort(function(a, b) { return (a.job_number || '').localeCompare(b.job_number || ''); });
+        sorted.forEach(function(j) {
+            var opt = document.createElement('option');
+            opt.value = j.id;
+            opt.textContent = j.job_number + ' \u2014 ' + (j.job_name || '').substring(0, 50);
+            select.appendChild(opt);
+        });
+
+        // If estimate has a ref, try to auto-select matching job
+        if (result.estimate_ref) {
+            var match = _jobs.find(function(j) { return j.estimate_ref === result.estimate_ref; });
+            if (match) select.value = match.id;
+        }
+
+        // Show preview
+        renderEstimatePreview(result);
+
+        // Show modal
+        document.getElementById('estimate-import-modal').style.display = 'flex';
+        document.getElementById('estimate-apply-btn').disabled = !select.value;
+
+        select.onchange = function() {
+            document.getElementById('estimate-apply-btn').disabled = !this.value;
+        };
+    } catch (err) {
+        console.error('Estimate parse error:', err);
+        showToast('Failed to parse estimate: ' + err.message, 'error');
+    }
+}
+
+function renderEstimatePreview(est) {
+    var preview = document.getElementById('estimate-preview');
+    var html = '<div style="font-size:13px;color:var(--text-light);margin-bottom:8px">';
+    if (est.estimate_ref) html += '<strong>Ref:</strong> ' + esc(est.estimate_ref) + '<br>';
+    if (est.markup) html += '<strong>Markup:</strong> ' + est.markup + '%<br>';
+    if (est._filename) html += '<strong>File:</strong> ' + esc(est._filename) + '<br>';
+    html += '</div>';
+
+    html += '<table style="width:100%;font-size:13px;border-collapse:collapse">';
+    html += '<thead><tr style="border-bottom:2px solid var(--border)"><th style="text-align:left;padding:6px">Category</th><th style="text-align:right;padding:6px">Contract Value</th></tr></thead><tbody>';
+    var total = 0;
+    est.categories.forEach(function(c) {
+        total += c.contract_value;
+        html += '<tr style="border-bottom:1px solid var(--border)">' +
+            '<td style="padding:6px">' + esc(c.category_name) + '</td>' +
+            '<td style="text-align:right;padding:6px">' + formatGBP(c.contract_value) + '</td></tr>';
+    });
+    html += '<tr style="border-top:2px solid var(--text);font-weight:bold"><td style="padding:6px">Total</td><td style="text-align:right;padding:6px">' + formatGBP(total) + '</td></tr>';
+    html += '</tbody></table>';
+    preview.innerHTML = html;
+}
+
+function closeEstimateImport() {
+    document.getElementById('estimate-import-modal').style.display = 'none';
+    _pendingEstimate = null;
+}
+
+async function applyEstimateImport() {
+    var jobId = document.getElementById('estimate-job-select').value;
+    if (!jobId || !_pendingEstimate) return;
+
+    var est = _pendingEstimate;
+    var job = _jobs.find(function(j) { return j.id === jobId; });
+    if (!job) { showToast('Job not found', 'error'); return; }
+
+    try {
+        document.getElementById('estimate-apply-btn').disabled = true;
+        document.getElementById('estimate-apply-btn').textContent = 'Applying...';
+
+        var markupPct = est.markup || job.markup_pct || 14;
+
+        // Build category data
+        var categories = est.categories.map(function(c) {
+            return {
+                number: c.category_number,
+                contract_value: c.contract_value,
+                name: c.category_name,
+            };
+        });
+
+        // Update via CostDB - this handles local + server sync
+        await CostDB.updateJobBudget(jobId, markupPct, categories, est.estimate_ref);
+
+        showToast('Budget updated for ' + job.job_number + ' from estimate', 'success');
+        closeEstimateImport();
+        await loadAllData();
+    } catch (err) {
+        console.error('Apply estimate error:', err);
+        showToast('Failed to apply: ' + err.message, 'error');
+        document.getElementById('estimate-apply-btn').disabled = false;
+        document.getElementById('estimate-apply-btn').textContent = 'Apply Budget';
+    }
+}
 
 // ===== REFRESH =====
 async function refreshAll() {

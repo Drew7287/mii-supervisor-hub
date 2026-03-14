@@ -996,6 +996,7 @@ let _recTotal = 0;
 const REC_LIMIT = 50;
 let _debounceTimer = null;
 let _typeDebounceTimer = null;
+let _recordsCache = {};
 
 // ─── Init ──────────────────────────────────────────────────────
 
@@ -1144,6 +1145,10 @@ function renderRecords(records) {
         return;
     }
 
+    // Cache records for safe onclick lookups
+    _recordsCache = {};
+    records.forEach(r => { _recordsCache[r.id] = r; });
+
     // Group by employee
     const grouped = {};
     records.forEach(r => {
@@ -1178,7 +1183,7 @@ function renderRecords(records) {
                 <td>${r.expiry_date || 'N/A'}</td>
                 <td>${esc(r.certificate_number || '—')}</td>
                 <td>
-                    <button class="btn-edit" onclick="openEditRecord('${r.id}', '${esc(emp.employee_name)}', '${emp.employee_id}', ${JSON.stringify(r).replace(/'/g, '&#39;').replace(/"/g, '&quot;')})">Edit</button>
+                    <button class="btn-edit" onclick="openEditRecordById('${r.id}', '${emp.employee_id}')">Edit</button>
                     <button class="btn-delete" onclick="deleteRecord('${r.id}')">Del</button>
                 </td>
             </tr>
@@ -1304,7 +1309,7 @@ function renderFilteredTypes() {
                 ${t.has_expiry ? (t.validity_months ? t.validity_months + ' mo' : 'Has expiry') : 'No expiry'}
                 &middot; ${t.record_count} records
             </div>
-            <button class="btn-edit" onclick='openEditType(${JSON.stringify(t)})'>Edit</button>
+            <button class="btn-edit" data-type-id="${esc(t.id)}" onclick="openEditTypeById(this.dataset.typeId)">Edit</button>
         </div>
     `).join('');
 }
@@ -1324,6 +1329,12 @@ function openAddRecord(empId, empName) {
     document.getElementById('rm-expiry-group').style.display = 'block';
     document.getElementById('rm-notes').value = '';
     document.getElementById('record-modal').classList.add('open');
+}
+
+function openEditRecordById(id, empId) {
+    const rec = _recordsCache[id];
+    if (!rec) { toast('Record not found', 'error'); return; }
+    openEditRecord(id, rec.employee_name, empId, rec);
 }
 
 function openEditRecord(id, empName, empId, rec) {
@@ -1452,6 +1463,12 @@ function openTypeModal() {
     document.getElementById('type-modal').classList.add('open');
 }
 
+function openEditTypeById(typeId) {
+    const t = (_typesCache || []).find(x => String(x.id) === String(typeId));
+    if (!t) { toast('Type not found', 'error'); return; }
+    openEditType(t);
+}
+
 function openEditType(t) {
     document.getElementById('type-modal-title').textContent = 'Edit Training Type';
     document.getElementById('tm-id').value = t.id;
@@ -1502,12 +1519,8 @@ async function saveType() {
         closeTypeModal();
         toast(id ? 'Type updated' : 'Type created', 'success');
         // If created from cert upload, auto-select the new type
-        if (!id && document.getElementById('cert-type-search')) {
-            var newCode = document.getElementById('type-code').value.trim();
-            var newName = document.getElementById('type-name').value.trim();
-            if (newCode && typeof _certSelectTypeCallback === 'function') {
-                _certSelectTypeCallback(newCode, newName);
-            }
+        if (!id && typeof _certSelectTypeCallback === 'function') {
+            _certSelectTypeCallback(body.code, body.name);
         }
         _typesCache = null;
         loadTypes();
@@ -1654,13 +1667,13 @@ async function getEmployeesForCert() {
         var pairs = await MiiDB.getEmployeePairs();
         _certEmployees = pairs.map(function(p) { return { employee_number: p[0], name: p[1], trade: '' }; });
     } catch(e) {}
-    if (\!_certEmployees.length) {
+    if (!_certEmployees.length) {
         try {
             var emps = await MiiDB.getAll('employees');
             _certEmployees = emps.map(function(emp) { return { employee_number: emp.employee_number, name: emp.name, trade: emp.trade || '' }; });
         } catch(e2) {}
     }
-    if (\!_certEmployees.length) {
+    if (!_certEmployees.length) {
         try {
             var res = await fetch(MII_API + '/employees', { headers: authHeaders() });
             var data = await res.json();
@@ -1829,7 +1842,7 @@ async function populateDropdown(inputId, listId, type) {
         var matches = fuzzyMatchEmployees(query, emps);
         matches.forEach(function(m) {
             var pct = Math.round(m.score * 100);
-            items += '<div class="cert-dropdown-item" data-value="' + esc(m.employee_number) + '" data-name="' + esc(m.name) + '" onclick="selectDropdownItem(this, 'employee')">' +
+            items += '<div class="cert-dropdown-item" data-value="' + esc(m.employee_number) + '" data-name="' + esc(m.name) + '" onclick="selectDropdownItem(this, \'employee\')">' +
                 esc(m.employee_number) + ' - ' + esc(m.name) + ' (' + pct + '%)</div>';
         });
         items += '<div class="cert-dropdown-item separator" onclick="openBrowseEmployees()">Browse All Employees...</div>';
@@ -1839,7 +1852,7 @@ async function populateDropdown(inputId, listId, type) {
         var matches = fuzzyMatchTrainingTypes(query, _typesCache || []);
         matches.forEach(function(m) {
             var pct = Math.round(m.score * 100);
-            items += '<div class="cert-dropdown-item" data-value="' + esc(m.code) + '" data-name="' + esc(m.name) + '" onclick="selectDropdownItem(this, 'training_type')">' +
+            items += '<div class="cert-dropdown-item" data-value="' + esc(m.code) + '" data-name="' + esc(m.name) + '" onclick="selectDropdownItem(this, \'training_type\')">' +
                 esc(m.code) + ' - ' + esc(m.name) + ' (' + pct + '%)</div>';
         });
         items += '<div class="cert-dropdown-item separator" onclick="openBrowseTypes()">Browse All Training Types...</div>';
@@ -2108,7 +2121,7 @@ async function loadCertificates() {
 async function viewCertificate(id) {
     try {
         var cert = await MiiDB.get('certificates', id);
-        if (\!cert) { toast('Certificate not found', 'error'); return; }
+        if (!cert) { toast('Certificate not found', 'error'); return; }
         var dispName = (cert.employee_name || cert.employee_number) + ' - ' + (cert.training_type_name || cert.training_type_code || cert.training_type);
         document.getElementById('cert-viewer-title').textContent = dispName;
         var contentEl = document.getElementById('cert-viewer-content');
@@ -2127,7 +2140,7 @@ function closeCertViewer() {
 }
 
 async function deleteCertificate(id) {
-    if (\!confirm('Delete this certificate?')) return;
+    if (!confirm('Delete this certificate?')) return;
     try {
         await MiiDB.remove('certificates', id);
         toast('Certificate deleted', 'success');
@@ -2170,8 +2183,8 @@ async function saveNewEmployee() {
     var empNum = isDirect ? document.getElementById('new-emp-number').value.trim() : 'AGN-' + Date.now();
     var empName = document.getElementById('new-emp-name').value.trim();
     var empTrade = document.getElementById('new-emp-trade').value.trim();
-    if (\!empName) { toast('Please enter employee name', 'error'); return; }
-    if (isDirect && \!empNum) { toast('Please enter employee number', 'error'); return; }
+    if (!empName) { toast('Please enter employee name', 'error'); return; }
+    if (isDirect && !empNum) { toast('Please enter employee number', 'error'); return; }
     try {
         var emp = { employee_number: empNum, name: empName, trade: empTrade, is_active: true, created_at: new Date().toISOString() };
         await MiiDB.save('employees', emp);
@@ -2489,13 +2502,13 @@ async function saveAllBatchValid() {
 // ---- AI Certificate Extraction ----
 
 function getRamsApiKey() {
-    return localStorage.getItem('rams_api_key') || 'KrfeQw30hcRDuL0II_0jMcQgKMfJ6Xf6dYpdsDOARmk';
+    return localStorage.getItem('rams_api_key') || '';
 }
 
 async function callExtractCertificate(imageDataUri, mediaType) {
     var apiKey = getRamsApiKey();
-    var headers = { 'Content-Type': 'application/json' };
-    if (apiKey) headers['x-functions-key'] = apiKey;
+    if (!apiKey) throw new Error('No API key configured. Set rams_api_key in localStorage.');
+    var headers = { 'Content-Type': 'application/json', 'x-functions-key': apiKey };
 
     var res = await fetch(RAMS_API + '/extract-certificate', {
         method: 'POST',

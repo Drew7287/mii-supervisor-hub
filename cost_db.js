@@ -464,12 +464,82 @@
     async getAllJobs() {
       await MiiDB.ready();
       const jobs = await MiiDB.getAll('cost_jobs');
-      // Only show standalone jobs and groups (hide children)
       const visible = jobs.filter(j => !j.group_id);
+
+      // Load ALL transactions and categories ONCE
+      const allTxns = await MiiDB.getAll('cost_transactions');
+      const allCats = await MiiDB.getAll('cost_categories');
+
+      // Group transactions by job_id
+      const txnsByJob = {};
+      for (const t of allTxns) {
+        const jid = t.job_id;
+        if (!txnsByJob[jid]) txnsByJob[jid] = [];
+        txnsByJob[jid].push(t);
+      }
+
+      // Group categories by job_id
+      const catsByJob = {};
+      for (const c of allCats) {
+        const jid = c.job_id;
+        if (!catsByJob[jid]) catsByJob[jid] = [];
+        catsByJob[jid].push(c);
+      }
+
       const enriched = [];
       for (const job of visible) {
-        const full = await this.getJob(job.id);
-        if (full) enriched.push(full);
+        const txns = txnsByJob[job.id] || [];
+        const cats = catsByJob[job.id] || [];
+
+        // Compute financials from txns
+        let totalActual = 0, totalCommitted = 0, totalRevenue = 0;
+        for (const t of txns) {
+          const cost = parseFloat(t.total_cost) || 0;
+          if (t.is_revenue) {
+            totalRevenue += cost;
+          } else if (t.is_commitment) {
+            totalCommitted += cost;
+          } else {
+            totalActual += cost;
+          }
+        }
+
+        const catContract = cats.reduce((s, c) => s + (parseFloat(c.contract_value) || 0), 0);
+        const catAtCost = cats.reduce((s, c) => s + (parseFloat(c.at_cost) || 0), 0);
+
+        job.total_contract = catContract || parseFloat(job.contract_value_total) || 0;
+        job.total_at_cost = catAtCost || parseFloat(job.budget_at_cost) || 0;
+        job.total_actual = totalActual;
+        job.total_committed = totalCommitted;
+        job.total_exposure = totalActual + totalCommitted;
+        job.total_revenue = totalRevenue;
+        job.total_variance = job.total_at_cost - job.total_exposure;
+        job.transaction_count = txns.length;
+        job.categories = cats;
+
+        // Handle groups - merge child financials
+        if (job.is_group) {
+          const childJobs = jobs.filter(j => j.group_id === job.id);
+          let grpActual = 0, grpCommitted = 0, grpRevenue = 0, grpCount = 0;
+          for (const child of childJobs) {
+            const cTxns = txnsByJob[child.id] || [];
+            for (const t of cTxns) {
+              const cost = parseFloat(t.total_cost) || 0;
+              if (t.is_revenue) grpRevenue += cost;
+              else if (t.is_commitment) grpCommitted += cost;
+              else grpActual += cost;
+            }
+            grpCount += cTxns.length;
+          }
+          job.total_actual = grpActual;
+          job.total_committed = grpCommitted;
+          job.total_exposure = grpActual + grpCommitted;
+          job.total_revenue = grpRevenue;
+          job.total_variance = job.total_at_cost - job.total_exposure;
+          job.transaction_count = grpCount;
+        }
+
+        enriched.push(job);
       }
       return enriched.sort((a, b) => (a.job_number || '').localeCompare(b.job_number || ''));
     },
@@ -504,6 +574,81 @@
       job.contract_value_total = totalContract;
       job.budget_at_cost = totalAtCost;
       await MiiDB.save('cost_jobs', job);
+      this.syncJobToServer(jobId).catch(() => {});
+    },
+
+    /**
+     * Update a job's category budgets from an imported estimate.
+     * Creates or updates category records, recalculates at_cost, updates job totals.
+     * Syncs to server.
+     * @param {string} jobId
+     * @param {number} markupPct - markup percentage
+     * @param {Array} categories - array of {number, contract_value, name?}
+     * @param {string} [estimateRef] - optional estimate reference
+     */
+    async updateJobBudget(jobId, markupPct, categories, estimateRef) {
+      await MiiDB.ready();
+
+      const job = await MiiDB.get('cost_jobs', jobId);
+      if (!job) throw new Error(`Job ${jobId} not found`);
+
+      const pct = parseFloat(markupPct) || 14;
+      const multiplier = 1 + pct / 100;
+      job.markup_pct = pct;
+      if (estimateRef) job.estimate_ref = estimateRef;
+      job.updated_at = new Date().toISOString();
+
+      // Build lookup of new values
+      const newValues = {};
+      for (const c of categories) {
+        newValues[c.number] = { contract_value: parseFloat(c.contract_value) || 0, name: c.name };
+      }
+
+      // Get or create category records
+      const existingCats = await getByField('cost_categories', 'job_id', jobId);
+      const existingByNum = {};
+      for (const c of existingCats) {
+        existingByNum[c.category_number] = c;
+      }
+
+      let totalContract = 0;
+      let totalAtCost = 0;
+
+      for (const def of DEFAULT_CATEGORIES) {
+        const nv = newValues[def.number];
+        const contractValue = nv ? nv.contract_value : 0;
+        const atCost = multiplier > 0 ? contractValue / multiplier : 0;
+        totalContract += contractValue;
+        totalAtCost += atCost;
+
+        if (existingByNum[def.number]) {
+          // Update existing
+          const cat = existingByNum[def.number];
+          cat.contract_value = contractValue;
+          cat.at_cost = atCost;
+          if (nv && nv.name) cat.category_name = nv.name;
+          await MiiDB.save('cost_categories', cat);
+        } else {
+          // Create new
+          await MiiDB.save('cost_categories', {
+            id: generateId(),
+            job_id: jobId,
+            category_number: def.number,
+            category_name: (nv && nv.name) || def.name,
+            contract_value: contractValue,
+            at_cost: atCost,
+            zero_budget: false,
+            sort_order: def.number,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+
+      job.contract_value_total = totalContract;
+      job.budget_at_cost = totalAtCost;
+      await MiiDB.save('cost_jobs', job);
+
+      // Sync to server
       this.syncJobToServer(jobId).catch(() => {});
     },
 
