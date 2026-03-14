@@ -708,6 +708,7 @@
         <option value="needs_review">Needs Review</option>
         <option value="complete">Complete</option>
         <option value="on_hold">On Hold</option>
+        <option value="archived">Archived</option>
     </select>
     <span class="filter-count" id="filter-count"></span>
 </div>
@@ -724,6 +725,7 @@
     <button class="context-menu-item" id="ctx-open" onclick="ctxOpen()">Open</button>
     <div class="context-menu-sep"></div>
     <button class="context-menu-item" id="ctx-toggle-status" onclick="ctxToggleStatus()">Mark Complete</button>
+    <button class="context-menu-item" id="ctx-archive" onclick="ctxArchive()">Archive</button>
     <div class="context-menu-sep"></div>
     <button class="context-menu-item danger" id="ctx-delete" onclick="ctxDelete()">Delete</button>
 </div>
@@ -993,12 +995,21 @@ function getFilteredJobs() {
 
     return _jobs.filter(function(j) {
         if (division && getDivision(j.job_number) !== division) return false;
+        // Hide archived unless explicitly filtering for them
+        if (!status && (j.status || 'active') === 'archived') return false;
         if (status && (j.status || 'active') !== status) return false;
         if (search) {
             const hay = ((j.job_number || '') + ' ' + (j.job_name || '') + ' ' + (j.client || '')).toLowerCase();
             if (hay.indexOf(search) === -1) return false;
         }
         return true;
+    }).sort(function(a, b) {
+        // Sort by last transaction date descending (most recent first)
+        var da = a.last_txn_date || a.last_import_at || '';
+        var db = b.last_txn_date || b.last_import_at || '';
+        if (db > da) return 1;
+        if (da > db) return -1;
+        return (a.job_number || '').localeCompare(b.job_number || '');
     });
 }
 
@@ -1098,6 +1109,7 @@ function renderTable() {
         '<th class="right">Revenue</th>' +
         '<th class="right">Variance</th>' +
         '<th class="right">Txns</th>' +
+        '<th>Last Activity</th>' +
         '</tr></thead><tbody>';
 
     filtered.forEach(function(job) {
@@ -1121,6 +1133,7 @@ function renderTable() {
             '<td class="right">' + formatGBP(revenue) + '</td>' +
             '<td class="right ' + varianceClass + '">' + formatGBP(variance) + '</td>' +
             '<td class="right">' + (job.transaction_count || 0).toLocaleString() + '</td>' +
+            '<td style="font-size:0.78rem;color:var(--text-light);white-space:nowrap">' + formatDate(job.last_txn_date || job.last_import_at) + '</td>' +
             '</tr>';
     });
 
@@ -1180,6 +1193,9 @@ function showContextMenu(e, jobId) {
     const toggleBtn = document.getElementById('ctx-toggle-status');
     toggleBtn.textContent = job.status === 'complete' ? 'Reactivate' : 'Mark Complete';
 
+    const archiveBtn = document.getElementById('ctx-archive');
+    archiveBtn.textContent = job.status === 'archived' ? 'Unarchive' : 'Archive';
+
     const menu = document.getElementById('context-menu');
     menu.style.left = e.clientX + 'px';
     menu.style.top = e.clientY + 'px';
@@ -1211,6 +1227,20 @@ async function ctxToggleStatus() {
     showToast('Job ' + job.job_number + ' marked as ' + newStatus, 'success');
     hideContextMenu();
     // Update in-memory instead of full reload
+    job.status = newStatus;
+    renderStats();
+    renderTable();
+}
+
+async function ctxArchive() {
+    if (!_ctxJobId) return;
+    const job = _jobs.find(function(j) { return j.id === _ctxJobId; });
+    if (!job) return;
+
+    const newStatus = job.status === 'archived' ? 'active' : 'archived';
+    await CostDB.updateJobStatus(_ctxJobId, newStatus);
+    showToast('Job ' + job.job_number + ' ' + (newStatus === 'archived' ? 'archived' : 'restored'), 'success');
+    hideContextMenu();
     job.status = newStatus;
     renderStats();
     renderTable();
