@@ -401,6 +401,73 @@
             box-shadow: 0 0 0 2px rgba(0,120,212,.15);
         }
 
+        /* ===== GROUPED JOBS PANEL ===== */
+        .grouped-jobs-panel {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 10px 24px 0;
+            display: none;
+        }
+        .grouped-jobs-panel.visible { display: block; }
+        .grouped-jobs-bar {
+            background: #EBF5FF;
+            border: 1px solid #B3D7FF;
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+        .grouped-jobs-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .grouped-jobs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .grouped-job-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 10px;
+            background: var(--white);
+            border-radius: 5px;
+            font-size: 0.82rem;
+        }
+        .grouped-job-row .job-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .grouped-job-row .job-no {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .grouped-job-row .job-name {
+            color: var(--text-light);
+            margin-left: 6px;
+        }
+        .grouped-job-row .job-spend {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .grouped-job-row .btn-ungroup {
+            padding: 3px 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: inherit;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            background: var(--white);
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .grouped-job-row .btn-ungroup:hover {
+            background: #fff5f5;
+        }
+
         /* Responsive */
         @media (max-width: 900px) {
             .stat-row { grid-template-columns: repeat(3, 1fr); }
@@ -413,6 +480,7 @@
             .tabs { padding: 0 12px; }
             .tab-btn { padding: 10px 14px; font-size: 0.75rem; }
             .content { padding: 12px 12px 48px; }
+            .grouped-jobs-panel { padding: 10px 12px 0; }
         }
     </style>
 </head>
@@ -431,6 +499,14 @@
     <span class="status-badge" id="hdr-status">--</span>
     <button onclick="document.getElementById('job-import-file').click()" style="margin-left:12px;padding:6px 14px;background:#0078d4;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;font-family:inherit;font-weight:600">Import Transactions</button>
     <input type="file" id="job-import-file" accept=".xlsx,.csv" style="display:none">
+</div>
+
+<!-- GROUPED JOBS (shown for group parents) -->
+<div class="grouped-jobs-panel" id="grouped-jobs-panel">
+    <div class="grouped-jobs-bar">
+        <div class="grouped-jobs-title">Grouped Jobs</div>
+        <div class="grouped-jobs-list" id="grouped-jobs-list"></div>
+    </div>
 </div>
 
 <!-- TAB BAR -->
@@ -638,6 +714,87 @@ function populateHeader(job) {
     badge.textContent = (job.status || 'Active').toUpperCase();
     badge.className = 'status-badge ' + status;
     document.title = (job.job_name || 'Cost Tracker') + ' \u2014 MII Engineering';
+
+    // Show grouped jobs panel if this is a group parent
+    loadGroupedJobs(job);
+}
+
+// ===== GROUPED JOBS (for group parents) =====
+async function loadGroupedJobs(job) {
+    var panel = document.getElementById('grouped-jobs-panel');
+    var list = document.getElementById('grouped-jobs-list');
+
+    if (!job.is_group) {
+        panel.classList.remove('visible');
+        return;
+    }
+
+    try {
+        // Try to load children from server first, fall back to local
+        var children = [];
+        var token = localStorage.getItem('mii_token');
+        if (token) {
+            var resp = await fetch(MII_API + '/cost/jobs', {
+                headers: { 'Authorization': 'Bearer ' + token },
+            });
+            if (resp.ok) {
+                var data = await resp.json();
+                children = (data.jobs || []).filter(function(j) { return j.group_id === job.id; });
+            }
+        }
+        // Fallback to local DB
+        if (children.length === 0) {
+            children = await CostDB.getGroupChildren(job.id);
+        }
+
+        if (children.length === 0) {
+            panel.classList.remove('visible');
+            return;
+        }
+
+        var html = '';
+        children.forEach(function(child) {
+            var spend = parseFloat(child.total_actual || child.total_exposure || 0);
+            html += '<div class="grouped-job-row">' +
+                '<div class="job-info">' +
+                    '<span class="job-no">' + esc(child.job_number || '') + '</span>' +
+                    '<span class="job-name">' + esc(child.job_name || '') + '</span>' +
+                '</div>' +
+                '<span class="job-spend">' + fmt(spend) + '</span>' +
+                '<button class="btn-ungroup" onclick="ungroupJob(\'' + esc(child.id) + '\', \'' + esc(child.job_number || '') + '\')">Ungroup</button>' +
+                '</div>';
+        });
+
+        list.innerHTML = html;
+        panel.classList.add('visible');
+    } catch (err) {
+        console.error('Failed to load grouped jobs:', err);
+        panel.classList.remove('visible');
+    }
+}
+
+async function ungroupJob(childId, childJobNumber) {
+    if (!confirm('Remove ' + childJobNumber + ' from this group?\n\nIt will appear as a standalone job on the dashboard.')) {
+        return;
+    }
+
+    try {
+        await CostDB.removeJobFromGroup(childId);
+
+        // Reload job data to refresh the header and grouped jobs panel
+        _data = await CostDB.getFullAnalysis(_jobId);
+        if (_data && _data.job) {
+            populateHeader(_data.job);
+            _tabDirty = [true, true, true, true, true, true];
+            _tabLoaded = [false, false, false, false, false, false];
+            var activeTab = document.querySelector('.tab-btn.active');
+            renderTab(activeTab ? parseInt(activeTab.dataset.tab) : 0);
+        }
+        alert(childJobNumber + ' has been ungrouped.');
+    } catch (err) {
+        console.error('Ungroup error:', err);
+        alert('Failed to ungroup: ' + err.message);
+    }
 }
 
 // ===== RENDER DISPATCHER =====

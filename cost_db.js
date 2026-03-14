@@ -360,6 +360,79 @@
     },
 
     /**
+     * Get full child job objects for a group.
+     * @param {string} groupId
+     * @returns {Promise<Array<Object>>}
+     */
+    async getGroupChildren(groupId) {
+      await MiiDB.ready();
+      const all = await MiiDB.getAll('cost_jobs');
+      return all.filter(j => j.group_id === groupId);
+    },
+
+    /**
+     * Remove a child job from its group.
+     * If the group has no remaining children, also clears the parent's is_group flag.
+     * Syncs both parent and child to server.
+     * @param {string} childJobId
+     */
+    async removeJobFromGroup(childJobId) {
+      await MiiDB.ready();
+      const child = await MiiDB.get('cost_jobs', childJobId);
+      if (!child || !child.group_id) throw new Error('Job is not in a group');
+
+      const parentId = child.group_id;
+      child.group_id = null;
+      child.updated_at = new Date().toISOString();
+      await MiiDB.save('cost_jobs', child);
+      this.syncJobToServer(childJobId).catch(() => {});
+
+      // Check if parent still has children
+      const remaining = await this.getGroupChildIds(parentId);
+      if (remaining.length === 0) {
+        const parent = await MiiDB.get('cost_jobs', parentId);
+        if (parent) {
+          parent.is_group = false;
+          parent.updated_at = new Date().toISOString();
+          await MiiDB.save('cost_jobs', parent);
+          this.syncJobToServer(parentId).catch(() => {});
+        }
+      }
+    },
+
+    /**
+     * Group multiple child jobs under a parent job.
+     * Sets parent's is_group = true and each child's group_id = parent.id.
+     * Syncs all affected jobs to server.
+     * @param {string} parentJobId
+     * @param {Array<string>} childJobIds
+     */
+    async groupJobsUnderParent(parentJobId, childJobIds) {
+      await MiiDB.ready();
+      const parent = await MiiDB.get('cost_jobs', parentJobId);
+      if (!parent) throw new Error('Parent job not found');
+
+      const now = new Date().toISOString();
+
+      // Mark parent as group
+      parent.is_group = true;
+      parent.updated_at = now;
+      await MiiDB.save('cost_jobs', parent);
+      this.syncJobToServer(parentJobId).catch(() => {});
+
+      // Link each child
+      for (const childId of childJobIds) {
+        const child = await MiiDB.get('cost_jobs', childId);
+        if (child) {
+          child.group_id = parentJobId;
+          child.updated_at = now;
+          await MiiDB.save('cost_jobs', child);
+          this.syncJobToServer(childId).catch(() => {});
+        }
+      }
+    },
+
+    /**
      * General-purpose job update.
      * @param {string} jobId
      * @param {Object} fields - fields to update

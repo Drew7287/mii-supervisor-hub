@@ -530,6 +530,125 @@
             margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
         }
 
+        /* ===== GROUPING BANNER ===== */
+        .grouping-banner {
+            background: #EBF5FF;
+            border: 1px solid #B3D7FF;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin: 12px 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+        .grouping-banner-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .grouping-banner-text { flex: 1; }
+        .grouping-banner .btn {
+            padding: 5px 14px;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+
+        /* ===== GROUPING MODAL EXTRAS ===== */
+        .group-preview-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .group-preview-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .group-preview-item:last-child { border-bottom: none; }
+        .group-preview-parent {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.88rem;
+            margin-bottom: 4px;
+        }
+        .group-preview-child {
+            padding: 4px 0 4px 18px;
+            font-size: 0.82rem;
+            color: var(--text-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .group-preview-child .spend {
+            font-variant-numeric: tabular-nums;
+            color: var(--text);
+            font-weight: 600;
+        }
+        .group-checkbox-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .group-checkbox-item {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            cursor: pointer;
+        }
+        .group-checkbox-item:last-child { border-bottom: none; }
+        .group-checkbox-item:hover { background: #f5f7fa; }
+        .group-checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        .group-checkbox-item .job-label { flex: 1; }
+        .group-checkbox-item .job-spend {
+            font-variant-numeric: tabular-nums;
+            color: var(--text-light);
+            font-size: 0.78rem;
+        }
+        .group-financial-preview {
+            margin-top: 12px;
+            padding: 12px 14px;
+            background: #f5f7fa;
+            border-radius: 6px;
+            font-size: 0.82rem;
+        }
+        .group-financial-preview .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        .group-financial-preview .row.total {
+            font-weight: 700;
+            border-top: 1px solid var(--border);
+            margin-top: 4px;
+            padding-top: 6px;
+        }
+        .filter-input-wrap {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .filter-input-wrap input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        .filter-input-wrap input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0,120,212,0.15);
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .stats-bar { grid-template-columns: repeat(2, 1fr); }
@@ -563,8 +682,10 @@
 <div class="action-bar">
     <button class="btn btn-primary" onclick="openAddJobModal()">Add Job</button>
     <button class="btn btn-secondary" onclick="triggerEstimateImport()">Import Estimate</button>
+    <button class="btn btn-secondary" onclick="openManualGroupModal()">Group Jobs</button>
     <button class="btn btn-secondary" onclick="window.location.href='cost_mapping_library.html'">Mapping Library</button>
     <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
+    <button class="btn btn-secondary" onclick="showRefreshTransactionsInfo()" title="Import new Opera 3 transactions from local export files">Refresh Transactions</button>
 </div>
 <input type="file" id="estimate-import-input" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleEstimateImport(event)">
 
@@ -729,6 +850,64 @@
     </div>
 </div>
 
+<!-- Grouping Auto-detect Banner (inserted dynamically) -->
+<div id="grouping-banner-slot"></div>
+
+<!-- ===== AUTO-DETECT REVIEW MODAL ===== -->
+<div class="modal-overlay" id="group-review-modal">
+    <div class="modal-container" style="max-width:640px">
+        <div class="modal-header">
+            <h2>Suggested Sub-Job Groupings</h2>
+            <button class="modal-close" onclick="closeGroupReviewModal()">&times;</button>
+        </div>
+        <div class="modal-section">
+            <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:12px">
+                These jobs have a /01, /02 etc. suffix and a matching parent job exists.
+                Grouping them will merge their financials under the parent.
+            </p>
+            <div class="group-preview-list" id="group-review-list"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border)">
+            <button class="btn btn-secondary" onclick="closeGroupReviewModal()">Cancel</button>
+            <button class="btn btn-primary" id="btn-apply-all-groups" onclick="applyAllSuggestedGroups()">Apply All</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MANUAL GROUPING MODAL ===== -->
+<div class="modal-overlay" id="manual-group-modal">
+    <div class="modal-container" style="max-width:640px">
+        <div class="modal-header">
+            <h2>Group Jobs</h2>
+            <button class="modal-close" onclick="closeManualGroupModal()">&times;</button>
+        </div>
+        <div class="modal-section">
+            <h3>Parent Job</h3>
+            <div class="filter-input-wrap">
+                <input type="text" id="group-parent-filter" placeholder="Type to filter..." oninput="filterManualGroupParent()">
+            </div>
+            <select id="group-parent-select" size="1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:inherit" onchange="onManualGroupParentChange()">
+                <option value="">-- Select parent job --</option>
+            </select>
+        </div>
+        <div class="modal-section">
+            <h3>Child Jobs</h3>
+            <div class="filter-input-wrap">
+                <input type="text" id="group-child-filter" placeholder="Type to filter children..." oninput="filterManualGroupChildren()">
+            </div>
+            <div class="group-checkbox-list" id="group-child-list"></div>
+        </div>
+        <div class="group-financial-preview" id="group-financial-preview" style="display:none">
+            <h3 style="font-size:0.82rem;font-weight:700;color:var(--primary);margin:0 0 8px;padding:0;border:none">Combined Financials</h3>
+            <div id="group-financial-rows"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border);margin-top:16px">
+            <button class="btn btn-secondary" onclick="closeManualGroupModal()">Cancel</button>
+            <button class="btn btn-primary" id="btn-create-group" onclick="applyManualGroup()" disabled>Create Group</button>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div class="toast-container" id="toast-container"></div>
 
@@ -829,13 +1008,15 @@ function applyFilters() {
 }
 
 // ===== DATA =====
-let _jobs = [];  // all jobs from server
+let _jobs = [];      // visible jobs (no children) for display
+let _allJobs = [];   // ALL jobs including children (for grouping detection)
 
 async function loadAllData() {
     try {
         const token = localStorage.getItem('mii_token');
         if (!token) {
             _jobs = await CostDB.getAllJobs();
+            _allJobs = await MiiDB.getAll('cost_jobs');
         } else {
             // Load directly from server — includes spend totals
             const resp = await fetch(MII_API + '/cost/jobs', {
@@ -843,20 +1024,23 @@ async function loadAllData() {
             });
             if (resp.ok) {
                 const data = await resp.json();
-                _jobs = (data.jobs || []).filter(j => !j.group_id);
+                _allJobs = data.jobs || [];
+                _jobs = _allJobs.filter(j => !j.group_id);
             } else {
                 const errData = await resp.json().catch(() => ({}));
                 console.warn('API returned', resp.status, errData.error || resp.statusText);
                 showToast('API error: ' + (errData.error || resp.statusText), 'error');
                 _jobs = await CostDB.getAllJobs();
+                _allJobs = await MiiDB.getAll('cost_jobs');
             }
         }
         renderStats();
         renderTable();
+        detectSubJobGroupings();
     } catch (err) {
         console.error('Failed to load data:', err);
         // Fallback to local on network error
-        try { _jobs = await CostDB.getAllJobs(); renderStats(); renderTable(); } catch(e) {}
+        try { _jobs = await CostDB.getAllJobs(); _allJobs = []; renderStats(); renderTable(); } catch(e) {}
         if (!_jobs.length) {
             document.getElementById('table-container').innerHTML =
                 '<div class="empty-state"><div class="info-box">Failed to load data. Check console for details.</div></div>';
@@ -1884,11 +2068,349 @@ async function applyEstimateImport() {
     }
 }
 
+// ===== JOB GROUPING: AUTO-DETECT =====
+var _suggestedGroups = [];  // [{parent: jobObj, children: [jobObj, ...]}]
+var _groupBannerDismissed = false;
+
+function detectSubJobGroupings() {
+    if (_groupBannerDismissed) {
+        clearGroupingBanner();
+        return;
+    }
+
+    // Use _allJobs to find children that are not yet grouped
+    var source = _allJobs.length ? _allJobs : _jobs;
+
+    // Build a lookup of job_number -> job for all jobs that DON'T have a slash
+    var parentLookup = {};
+    source.forEach(function(j) {
+        if (j.job_number && j.job_number.indexOf('/') === -1 && !j.group_id) {
+            parentLookup[j.job_number.toUpperCase()] = j;
+        }
+    });
+
+    // Find jobs with /NN suffix whose parent exists and that aren't already grouped
+    var groupMap = {};  // parentJobNumber -> { parent, children[] }
+    source.forEach(function(j) {
+        if (!j.job_number || j.group_id) return;  // already grouped
+        var slashIdx = j.job_number.indexOf('/');
+        if (slashIdx === -1) return;
+
+        var baseNumber = j.job_number.substring(0, slashIdx);
+        var parent = parentLookup[baseNumber.toUpperCase()];
+        if (!parent || parent.id === j.id) return;
+
+        // Don't suggest if parent is already a group containing this child
+        if (parent.is_group) return;
+
+        var key = baseNumber.toUpperCase();
+        if (!groupMap[key]) {
+            groupMap[key] = { parent: parent, children: [] };
+        }
+        groupMap[key].children.push(j);
+    });
+
+    _suggestedGroups = [];
+    for (var key in groupMap) {
+        if (groupMap[key].children.length > 0) {
+            _suggestedGroups.push(groupMap[key]);
+        }
+    }
+
+    var slot = document.getElementById('grouping-banner-slot');
+    if (_suggestedGroups.length === 0) {
+        slot.innerHTML = '';
+        return;
+    }
+
+    var totalChildren = _suggestedGroups.reduce(function(s, g) { return s + g.children.length; }, 0);
+    slot.innerHTML =
+        '<div class="grouping-banner">' +
+            '<span class="grouping-banner-icon">&#x1F517;</span>' +
+            '<span class="grouping-banner-text">' +
+                totalChildren + ' sub-job' + (totalChildren !== 1 ? 's' : '') +
+                ' detected that could be grouped under ' +
+                _suggestedGroups.length + ' parent job' + (_suggestedGroups.length !== 1 ? 's' : '') + '.' +
+            '</span>' +
+            '<button class="btn btn-primary" onclick="openGroupReviewModal()">Review</button>' +
+            '<button class="btn btn-secondary" onclick="dismissGroupingBanner()">Dismiss</button>' +
+        '</div>';
+}
+
+function clearGroupingBanner() {
+    document.getElementById('grouping-banner-slot').innerHTML = '';
+}
+
+function dismissGroupingBanner() {
+    _groupBannerDismissed = true;
+    clearGroupingBanner();
+}
+
+// ===== JOB GROUPING: REVIEW MODAL (auto-detect) =====
+function openGroupReviewModal() {
+    var list = document.getElementById('group-review-list');
+    var html = '';
+
+    _suggestedGroups.forEach(function(group) {
+        html += '<div class="group-preview-item">';
+        html += '<div class="group-preview-parent">' +
+            esc(group.parent.job_number) + ' - ' + esc(group.parent.job_name || '') +
+            '</div>';
+        group.children.forEach(function(child) {
+            var spend = parseFloat(child.total_actual || child.total_exposure || 0);
+            html += '<div class="group-preview-child">' +
+                '<span>' + esc(child.job_number) + ' - ' + esc(child.job_name || '') + '</span>' +
+                '<span class="spend">' + formatGBP(spend) + '</span>' +
+                '</div>';
+        });
+        html += '</div>';
+    });
+
+    list.innerHTML = html;
+    document.getElementById('group-review-modal').classList.add('active');
+}
+
+function closeGroupReviewModal() {
+    document.getElementById('group-review-modal').classList.remove('active');
+}
+
+async function applyAllSuggestedGroups() {
+    var btn = document.getElementById('btn-apply-all-groups');
+    btn.disabled = true;
+    btn.textContent = 'Applying...';
+
+    try {
+        var grouped = 0;
+        for (var i = 0; i < _suggestedGroups.length; i++) {
+            var group = _suggestedGroups[i];
+            var childIds = group.children.map(function(c) { return c.id; });
+            await CostDB.groupJobsUnderParent(group.parent.id, childIds);
+            grouped += childIds.length;
+        }
+
+        closeGroupReviewModal();
+        _suggestedGroups = [];
+        clearGroupingBanner();
+        showToast('Grouped ' + grouped + ' sub-jobs under their parents', 'success');
+        await loadAllData();
+    } catch (err) {
+        console.error('Group apply error:', err);
+        showToast('Failed to apply groupings: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Apply All';
+    }
+}
+
+// ===== JOB GROUPING: MANUAL MODAL =====
+var _manualGroupParentOptions = [];
+var _manualGroupChildOptions = [];
+
+function openManualGroupModal() {
+    // Build parent options from visible jobs that aren't already children
+    _manualGroupParentOptions = _jobs.filter(function(j) { return !j.group_id; });
+    _manualGroupChildOptions = _jobs.filter(function(j) { return !j.group_id; });
+
+    populateManualGroupParent('');
+    document.getElementById('group-parent-filter').value = '';
+    document.getElementById('group-child-filter').value = '';
+    document.getElementById('group-child-list').innerHTML =
+        '<div style="padding:12px;color:var(--text-light);font-size:0.82rem">Select a parent job first</div>';
+    document.getElementById('group-financial-preview').style.display = 'none';
+    document.getElementById('btn-create-group').disabled = true;
+
+    document.getElementById('manual-group-modal').classList.add('active');
+}
+
+function closeManualGroupModal() {
+    document.getElementById('manual-group-modal').classList.remove('active');
+}
+
+function populateManualGroupParent(filter) {
+    var sel = document.getElementById('group-parent-select');
+    var currentVal = sel.value;
+
+    // Clear and rebuild
+    while (sel.options.length > 1) sel.remove(1);
+
+    var lower = (filter || '').toLowerCase();
+    _manualGroupParentOptions.forEach(function(j) {
+        var label = j.job_number + ' - ' + (j.job_name || '') + (j.client ? ' (' + j.client + ')' : '');
+        if (lower && label.toLowerCase().indexOf(lower) === -1) return;
+        var opt = document.createElement('option');
+        opt.value = j.id;
+        opt.textContent = label;
+        sel.appendChild(opt);
+    });
+
+    // Restore selection if still present
+    if (currentVal) {
+        for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === currentVal) {
+                sel.value = currentVal;
+                break;
+            }
+        }
+    }
+}
+
+function filterManualGroupParent() {
+    var filter = document.getElementById('group-parent-filter').value;
+    populateManualGroupParent(filter);
+}
+
+function onManualGroupParentChange() {
+    var parentId = document.getElementById('group-parent-select').value;
+    if (!parentId) {
+        document.getElementById('group-child-list').innerHTML =
+            '<div style="padding:12px;color:var(--text-light);font-size:0.82rem">Select a parent job first</div>';
+        document.getElementById('group-financial-preview').style.display = 'none';
+        document.getElementById('btn-create-group').disabled = true;
+        return;
+    }
+    populateManualGroupChildren('');
+}
+
+function populateManualGroupChildren(filter) {
+    var parentId = document.getElementById('group-parent-select').value;
+    if (!parentId) return;
+
+    var container = document.getElementById('group-child-list');
+    var lower = (filter || '').toLowerCase();
+    var html = '';
+
+    _manualGroupChildOptions.forEach(function(j) {
+        if (j.id === parentId) return;  // exclude parent from child list
+        if (j.is_group) return;  // don't allow grouping a group as a child
+
+        var label = j.job_number + ' - ' + (j.job_name || '');
+        if (lower && label.toLowerCase().indexOf(lower) === -1) return;
+
+        var spend = parseFloat(j.total_actual || j.total_exposure || 0);
+        html += '<label class="group-checkbox-item">' +
+            '<input type="checkbox" value="' + esc(j.id) + '" onchange="updateManualGroupPreview()">' +
+            '<span class="job-label">' + esc(j.job_number) + ' - ' + esc(j.job_name || '') + '</span>' +
+            '<span class="job-spend">' + formatGBP(spend) + '</span>' +
+            '</label>';
+    });
+
+    if (!html) {
+        html = '<div style="padding:12px;color:var(--text-light);font-size:0.82rem">No matching jobs</div>';
+    }
+
+    container.innerHTML = html;
+    updateManualGroupPreview();
+}
+
+function filterManualGroupChildren() {
+    var filter = document.getElementById('group-child-filter').value;
+    populateManualGroupChildren(filter);
+}
+
+function getSelectedChildIds() {
+    var checks = document.querySelectorAll('#group-child-list input[type="checkbox"]:checked');
+    var ids = [];
+    checks.forEach(function(cb) { ids.push(cb.value); });
+    return ids;
+}
+
+function updateManualGroupPreview() {
+    var parentId = document.getElementById('group-parent-select').value;
+    var childIds = getSelectedChildIds();
+    var preview = document.getElementById('group-financial-preview');
+    var btn = document.getElementById('btn-create-group');
+
+    if (!parentId || childIds.length === 0) {
+        preview.style.display = 'none';
+        btn.disabled = true;
+        return;
+    }
+
+    // Gather financials
+    var parentJob = _jobs.find(function(j) { return j.id === parentId; });
+    var totalContract = parseFloat(parentJob.contract_value_total || parentJob.total_contract || 0);
+    var totalBudget = parseFloat(parentJob.budget_at_cost || parentJob.total_at_cost || 0);
+    var totalSpend = parseFloat(parentJob.total_actual || parentJob.total_exposure || 0);
+    var totalRevenue = parseFloat(parentJob.total_revenue || 0);
+
+    childIds.forEach(function(cid) {
+        var child = _jobs.find(function(j) { return j.id === cid; });
+        if (!child) return;
+        totalContract += parseFloat(child.contract_value_total || child.total_contract || 0);
+        totalBudget += parseFloat(child.budget_at_cost || child.total_at_cost || 0);
+        totalSpend += parseFloat(child.total_actual || child.total_exposure || 0);
+        totalRevenue += parseFloat(child.total_revenue || 0);
+    });
+
+    var rows = document.getElementById('group-financial-rows');
+    rows.innerHTML =
+        '<div class="row"><span>Contract Value</span><span>' + formatGBP(totalContract) + '</span></div>' +
+        '<div class="row"><span>Budget (At Cost)</span><span>' + formatGBP(totalBudget) + '</span></div>' +
+        '<div class="row"><span>Spend</span><span>' + formatGBP(totalSpend) + '</span></div>' +
+        '<div class="row"><span>Revenue</span><span>' + formatGBP(totalRevenue) + '</span></div>' +
+        '<div class="row total"><span>Variance</span><span>' + formatGBP(totalBudget - totalSpend) + '</span></div>';
+
+    preview.style.display = 'block';
+    btn.disabled = false;
+}
+
+async function applyManualGroup() {
+    var parentId = document.getElementById('group-parent-select').value;
+    var childIds = getSelectedChildIds();
+
+    if (!parentId || childIds.length === 0) return;
+
+    var btn = document.getElementById('btn-create-group');
+    btn.disabled = true;
+    btn.textContent = 'Grouping...';
+
+    try {
+        await CostDB.groupJobsUnderParent(parentId, childIds);
+
+        closeManualGroupModal();
+        showToast('Grouped ' + childIds.length + ' job' + (childIds.length !== 1 ? 's' : '') + ' under parent', 'success');
+        _groupBannerDismissed = false;  // re-check after manual group
+        await loadAllData();
+    } catch (err) {
+        console.error('Manual group error:', err);
+        showToast('Failed to group jobs: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Group';
+    }
+}
+
 // ===== REFRESH =====
 async function refreshAll() {
     showToast('Refreshing...', 'info');
+    _groupBannerDismissed = false;
     await loadAllData();
     showToast('Done', 'success');
+}
+
+// ===== REFRESH TRANSACTIONS (local script helper) =====
+function showRefreshTransactionsInfo() {
+    var modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    modal.innerHTML = '<div style="background:white;border-radius:10px;padding:28px 32px;max-width:540px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,0.2);">' +
+        '<h3 style="margin:0 0 12px;font-size:1.1rem;color:var(--primary);">Refresh Transactions from Opera 3</h3>' +
+        '<p style="margin:0 0 12px;font-size:0.9rem;color:var(--text-light);">New transactions are imported from the SharePoint-synced Opera 3 export files using a local Python script.</p>' +
+        '<div style="background:#f5f7fa;border-radius:6px;padding:14px;margin:0 0 14px;font-family:Consolas,monospace;font-size:0.82rem;line-height:1.6;">' +
+        '<div style="color:var(--text-light);margin-bottom:4px;"># Open a terminal and run:</div>' +
+        '<div><strong>cd "D:\\ForexProjects\\MII\\R&R Review"</strong></div>' +
+        '<div><strong>python refresh_transactions.py</strong></div>' +
+        '<div style="color:var(--text-light);margin-top:8px;"># Or filter by division:</div>' +
+        '<div><strong>python refresh_transactions.py --divisions SW,ELJ</strong></div>' +
+        '<div style="color:var(--text-light);margin-top:8px;"># Preview without importing:</div>' +
+        '<div><strong>python refresh_transactions.py --dry-run</strong></div>' +
+        '</div>' +
+        '<p style="margin:0 0 14px;font-size:0.82rem;color:var(--text-light);">The script reads All_Batches.csv and MII_Daily_Export.xlsx from the SharePoint sync folder, deduplicates against the database, and pushes only new transactions via the API.</p>' +
+        '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+        '<button onclick="this.closest(\'div[style]\').remove()" style="padding:8px 18px;border:1px solid var(--border);border-radius:6px;background:white;cursor:pointer;font-size:0.85rem;">Close</button>' +
+        '<button onclick="navigator.clipboard.writeText(\'cd \\\"D:\\\\ForexProjects\\\\MII\\\\R&R Review\\\" && python refresh_transactions.py\');showToast(\'Command copied to clipboard\',\'success\');this.closest(\'div[style]\').remove();" style="padding:8px 18px;border:none;border-radius:6px;background:var(--accent);color:white;cursor:pointer;font-size:0.85rem;font-weight:600;">Copy Command</button>' +
+        '</div></div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
 }
 
 // ===== INIT =====
