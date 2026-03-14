@@ -466,6 +466,7 @@
 
 </div>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="mii-db.js"></script>
 <script src="cost_db.js"></script>
 <script>
@@ -1528,6 +1529,15 @@ function renderEstimate() {
     html += '</div>';
     html += '</div>';
 
+    // Import estimate from file
+    html += '<h3 class="section-title">Import from Estimate File</h3>';
+    html += '<div style="background:var(--white);border-radius:8px;box-shadow:var(--shadow);padding:20px;margin-bottom:16px">';
+    html += '<p style="font-size:0.78rem;color:var(--text-light);margin-bottom:12px">Load an MII Price Matrix file to auto-populate category budgets.</p>';
+    html += '<input type="file" id="estimate-file-input" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleEstimateFileImport(event)">';
+    html += '<button onclick="document.getElementById(\'estimate-file-input\').click()" style="padding:8px 18px;border:none;border-radius:6px;background:var(--accent);color:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">Choose Estimate File</button>';
+    html += '<span id="estimate-file-status" style="margin-left:12px;font-size:0.8rem;color:var(--text-light)"></span>';
+    html += '</div>';
+
     // Category budget editor
     html += '<h3 class="section-title">Category Budgets</h3>';
     html += '<div style="background:var(--white);border-radius:8px;box-shadow:var(--shadow);padding:20px">';
@@ -1633,6 +1643,151 @@ async function saveBudgets() {
         alert('Budgets saved successfully.');
     } catch (e) {
         alert('Failed to save: ' + e.message);
+    }
+}
+
+// ===== ESTIMATE FILE IMPORT =====
+const CATEGORY_NAME_MAP = {
+    'DESIGN': 1, 'DESIGN / MANAGEMENT': 1, 'DESIGN/MANAGEMENT': 1, 'DESIGN AND MANAGEMENT': 1,
+    'LABOUR': 2, 'DIRECT LABOUR': 2, 'LABOR': 2,
+    'PLANT & EQUIPMENT': 3, 'PLANT AND EQUIPMENT': 3, 'PLANT': 3, 'CONSTRUCTION PLANT': 3, 'CONSTRUCTION PLANT & EQUIPMENT': 3,
+    'EQUIPMENT HIRED': 4, 'HIRED EQUIPMENT': 4, 'HIRE EQUIPMENT': 4, 'EQUIPMENT HIRE': 4,
+    'MATERIALS': 5, 'MATERIAL': 5,
+    'OFF SITE': 6, 'OFFSITE': 6, 'OFF SITE / SUBCONTRACT': 6, 'OFF-SITE': 6, 'SUB-CONTRACTORS': 6, 'SUBCONTRACTORS': 6, 'SUB CONTRACTORS': 6,
+    'CONSUMABLES': 7, 'CONSUMABLE': 7,
+    'TRAVEL & ACCOMMODATION': 8, 'TRAVEL AND ACCOMMODATION': 8, 'TRAVEL': 8, 'T&A': 8,
+};
+const CATEGORY_NAMES_EST = ['', 'Design', 'Labour', 'Plant & Equipment', 'Equipment Hired', 'Materials', 'Off Site', 'Consumables', 'Travel & Accommodation'];
+
+function _estCellStr(aoa, row, col) {
+    if (row >= aoa.length || !aoa[row]) return '';
+    const v = aoa[row][col];
+    return v != null ? v.toString().trim() : '';
+}
+
+function _normCatName(raw) {
+    if (!raw) return null;
+    return CATEGORY_NAME_MAP[raw.toString().trim().toUpperCase()] || null;
+}
+
+function parseEstimateFile(workbook) {
+    let sheetName = null;
+    for (const sn of workbook.SheetNames) {
+        const lower = sn.toLowerCase();
+        if (lower.includes('price matrix') && lower.includes('tata')) { sheetName = sn; break; }
+    }
+    if (!sheetName) sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('price matrix'));
+    if (!sheetName) sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+    if (!aoa || aoa.length < 3) return null;
+
+    const result = { estimate_ref: '', markup: null, categories: [] };
+
+    // Find markup
+    for (let r = 0; r < Math.min(10, aoa.length); r++) {
+        for (let c = 0; c < (aoa[r] || []).length; c++) {
+            const cell = (aoa[r] || [])[c];
+            if (cell && typeof cell === 'string') {
+                const m = cell.match(/@\s*(\d+(?:\.\d+)?)\s*%/);
+                if (m) result.markup = parseFloat(m[1]);
+            }
+        }
+    }
+
+    // Find category name column
+    let nameCol = -1, nameRowStart = -1;
+    const colCount = Math.max.apply(null, aoa.slice(0, 10).map(r => r ? r.length : 0));
+    for (let c = 0; c < colCount; c++) {
+        let matchCount = 0, firstRow = -1;
+        for (let r = 0; r < Math.min(10, aoa.length); r++) {
+            if (_normCatName(_estCellStr(aoa, r, c))) {
+                matchCount++;
+                if (firstRow < 0) firstRow = r;
+            }
+        }
+        if (matchCount >= 3) { nameCol = c; nameRowStart = firstRow; break; }
+    }
+    if (nameCol < 0) return null;
+
+    // Find value column
+    let valCol = -1, bestCount = 0;
+    for (let vc = nameCol + 1; vc < colCount + 5; vc++) {
+        let numCount = 0;
+        for (let r = nameRowStart; r < Math.min(nameRowStart + 9, aoa.length); r++) {
+            if (!_normCatName(_estCellStr(aoa, r, nameCol))) continue;
+            const v = aoa[r] ? aoa[r][vc] : undefined;
+            if (v != null && v !== '' && v !== '-' && !isNaN(parseFloat(v))) numCount++;
+        }
+        if (numCount > bestCount) { bestCount = numCount; valCol = vc; }
+    }
+    if (valCol < 0) valCol = nameCol + 1;
+
+    // Extract categories
+    for (let r = nameRowStart; r < Math.min(nameRowStart + 9, aoa.length); r++) {
+        const catNum = _normCatName(_estCellStr(aoa, r, nameCol));
+        if (!catNum || result.categories.find(x => x.category_number === catNum)) continue;
+        let val = 0;
+        const rawVal = aoa[r] ? aoa[r][valCol] : undefined;
+        if (rawVal != null && rawVal !== '' && rawVal !== '-') val = parseFloat(rawVal) || 0;
+        result.categories.push({ category_number: catNum, category_name: CATEGORY_NAMES_EST[catNum], contract_value: Math.round(val * 100) / 100 });
+    }
+
+    // Extract estimate ref
+    for (let r = 0; r < Math.min(10, aoa.length); r++) {
+        for (let c = 0; c < Math.min(nameCol, (aoa[r] || []).length); c++) {
+            const v = _estCellStr(aoa, r, c);
+            if (/^MII[-\s]/i.test(v) && !result.estimate_ref) result.estimate_ref = v;
+        }
+    }
+
+    if (!result.markup) result.markup = 14;
+    return result.categories.length > 0 ? result : null;
+}
+
+async function handleEstimateFileImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('estimate-file-status');
+    statusEl.textContent = 'Parsing...';
+
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const result = parseEstimateFile(workbook);
+
+        if (!result || !result.categories.length) {
+            statusEl.textContent = 'No category data found in file.';
+            statusEl.style.color = '#CC0000';
+            return;
+        }
+
+        // Populate the category inputs
+        const markup = result.markup || parseFloat(document.getElementById('est-markup').value) || 14;
+        document.getElementById('est-markup').value = markup;
+
+        result.categories.forEach(function(c) {
+            const input = document.querySelector('.est-cv[data-cat="' + c.category_number + '"]');
+            if (input) input.value = c.contract_value.toFixed(2);
+        });
+
+        // Update estimate ref if found
+        if (result.estimate_ref) {
+            const refInput = document.getElementById('estimate-ref-input');
+            if (refInput) refInput.value = result.estimate_ref;
+        }
+
+        // Recalculate at-cost values
+        updateEstimateTotals();
+
+        const total = result.categories.reduce(function(s, c) { return s + c.contract_value; }, 0);
+        statusEl.textContent = 'Loaded ' + result.categories.length + ' categories from ' + file.name + ' (total: ' + fmt(total) + '). Click Save Budgets to apply.';
+        statusEl.style.color = '#006600';
+    } catch (err) {
+        console.error('Estimate file error:', err);
+        statusEl.textContent = 'Failed: ' + err.message;
+        statusEl.style.color = '#CC0000';
     }
 }
 
