@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MII Engineering — COSHH Register</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; }
+        .topbar h1 { font-size: 1.2rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; transition: color 0.15s; }
+        .topbar a:hover { color: #fff; }
+
+        .content { max-width: 900px; margin: 0 auto; padding: 24px; }
+        .page-title { font-size: 1.4rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+        .page-subtitle { font-size: 0.9rem; color: var(--text-light); margin-bottom: 20px; }
+
+        .search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+        .search-input { flex: 1; padding: 10px 14px; font-size: 0.95rem; font-family: inherit; border: 1.5px solid var(--border); border-radius: 8px; outline: none; transition: border-color 0.15s; }
+        .search-input:focus { border-color: var(--accent); }
+        .search-input::placeholder { color: #aab4c0; }
+
+        .result-count { font-size: 0.8rem; color: var(--text-light); padding: 4px 0 8px; }
+
+        .coshh-list { list-style: none; background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        .coshh-item { display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid #f0f2f5; transition: background 0.1s; text-decoration: none; color: inherit; gap: 12px; }
+        .coshh-item:last-child { border-bottom: none; }
+        .coshh-item:hover { background: #f5f8fc; }
+
+        .coshh-ref { font-size: 0.72rem; font-weight: 700; color: var(--accent); background: #e8f2fc; padding: 3px 8px; border-radius: 4px; white-space: nowrap; min-width: 36px; text-align: center; }
+        .coshh-title { flex: 1; font-size: 0.92rem; font-weight: 500; color: var(--text); }
+        .coshh-issue { font-size: 0.75rem; color: var(--text-light); white-space: nowrap; }
+        .coshh-open { font-size: 0.75rem; color: var(--accent); opacity: 0; transition: opacity 0.15s; white-space: nowrap; }
+        .coshh-item:hover .coshh-open { opacity: 1; }
+        .coshh-icon { font-size: 1rem; color: var(--danger); opacity: 0.6; text-decoration: none; }
+
+        .empty-state { text-align: center; padding: 40px; color: var(--text-light); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>COSHH Assessment Register</h1>
+    <a href="sheq_hub.html">&larr; SHEQ Hub</a>
+</div>
+
+<div class="content">
+    <div class="page-title">COSHH Register</div>
+    <div class="page-subtitle">SF 048B COSHH risk assessments. Click any row to open the assessment on SharePoint.</div>
+
+    <div class="search-bar">
+        <input type="text" class="search-input" id="search" placeholder="Search by substance, ref number, or keyword... e.g. diesel, 024, welding" oninput="filterCoshh()">
+    </div>
+
+    <div class="result-count" id="result-count"></div>
+    <div id="coshh-container"></div>
+</div>
+
+<script>
+    const SP_BASE = 'https://miiengineering.sharepoint.com/sites/IMS/Shared%20Documents/COSHH%20Assessments/';
+
+    // [ref, substance, issue, filename]
+    const COSHH_DATA = [
+        ["001", "Diesel", "Issue 3", "SF 048B (001) COSHH RA Diesel (Issue 3).pdf"],
+        ["002", "Carbon Steel Welding Activities MMA", "Issue 3", "SF 048B (002) COSHH RA Carbon steel welding activities MMA(Issue 3).pdf"],
+        ["003", "Stainless Steel Welding Activities MMA", "Issue 3", "SF 048B (003) COSHH RA Stainless Steel welding activities MMA (Issue 3).pdf"],
+        ["004", "Stainless Steel MIG MAG", "Issue 3", "SF 048B (004) COSHH RA Stainless steel MIG MAG (Issue 3).pdf"],
+        ["005", "Stainless Steel TIG", "Issue 3", "SF 048B (005) COSHH RA Stainless Steel TIG (Issue 3).pdf"],
+        ["006", "Carbon Steel Welding (TIG)", "Issue 3", "SF 048B (006) COSHH RA Carbon Steel Welding (TIG) (Issue 3).pdf"],
+        ["007", "Carbon Steel Welding MIG MAG", "Issue 3", "SF 048B (007) COSHH RA Carbon steel welding MIG MAG (Issue 3).pdf"],
+        ["008", "Propane Bottles", "Issue 3", "SF 048B (008) COSHH RA Propane Bottles (Issue 3).pdf"],
+        ["009", "Oxygen Bottles", "Issue 3", "SF 048B (009) COSHH RA Oxygen Bottles (Issue 3).pdf"],
+        ["010", "Anti-Splatter Spray SWP", "Issue 3", "SF 048B (010) COSHH RA Anti-splatter spray SWP (Issue 3).pdf"],
+        ["011", "Cutting and Tapping Fluid", "Issue 3", "SF 048B (011) COSHH RA cutting and tapping fluid (Issue 3).pdf"],
+        ["012", "Gloss Paint", "Issue 4", "SF 048B (012) COSHH RA Gloss Paint (Issue 4).pdf"],
+        ["013", "Rustoleum 6400 Shop Primers (Red + Grey)", "Issue 3", "SF 048B (013) COSHH RA Rustoleum 6400 Shop Primers (Red+Grey) (Issue 3).pdf"],
+        ["014", "Line Marker Paint Aerosol Solutions", "Issue 3", "SF 048B (014) COSHH RA  Line marker paint aerosol solutions (Issue 3).pdf"],
+        ["015", "ROLCOL Foliac Graphite (STEAMSEAL)", "Issue 2", "SF 048B (015) COSHH RA ROLCOL foliac Graphite (STEAMSEAL) (Issue 2).pdf"],
+        ["016", "Nufins CONFIL GROUT (Resin)", "Issue 2", "SF 048B (016) RA NufinsCONFIL GROUT (Resin) (Issue 2) .pdf"],
+        ["017", "MANITOU HUILE SPECIALE FREINS IMMERGES", "Issue 2", "SF 048B (017) COSHH RA MANITOU HUILE SPECIALE FREINS IMMERGES (Issue 2).pdf"],
+        ["018", "J-FIX Q Capsule", "Issue 2", "SF 048B (018) COSHH RA  J-FIX Q Capsule (Issue 2).pdf"],
+        ["019", "International Interherm 50", "Issue 2", "SF 048B (019) COSHH RA International Interherm 50 (Issue 2).pdf"],
+        ["020", "International Intercure 420 Grey Part A", "Issue 2", "SF 048B (020) COSHH RA International Intercure 420 Grey part A (Issue 2).pdf"],
+        ["021", "International Intercure 200 Grey Part A", "Issue 2", "SF 048B (021) COSHH RA International Intercure 200 Grey Part A (Issue 2).pdf"],
+        ["022", "HEMPEL'S Silicone Aluminium 56914", "Issue 2", "SF 048B (022) COSHH RA HEMPEL'S SILICONE ALUMINIUM 56914 (Issue 2).pdf"],
+        ["023", "Fosrol Lokfix S.25 P.25", "Issue 2", "SF 048B (023) COSHH RA Fosrol Lokfix s.25 p.25 (Issue 2).pdf"],
+        ["024", "WD40 Aerosol", "Issue 3", "SF 048B (024) COSHH RA WD40 Aresol (Issue 3).pdf"],
+        ["025", "WATCO Bund Sealer (Curing Agent)", "Issue 2", "SF 048B (025) COSHH RA WATCO Bund Sealer (Curing Agent)(Issue 2).pdf"],
+        ["026", "WATCO Bund Sealer (Resin)", "Issue 2", "SF 048B (026) COSHH RA WATCO Bund Sealer (Resin)(Issue 2).pdf"],
+        ["027", "TYGRIS R235 Electrical Cleaner", "Issue 2", "SF 048B (027) COSHH RA TYGRIS R235 Electrical Cleaner (Issue 2).pdf"],
+        ["028", "Swarfega Jizer", "Issue 3", "SF 048B (028) COSHH RA Swarfega Jizer (Issue 3).pdf"],
+        ["029", "Stag Jointing Paste B", "Issue 3", "SF 048B (029) COSHH RA Stag Jointing Paste B (Issue 3).pdf"],
+        ["030", "SIF Purging Flux (TIG)", "Issue 3", "SF 048B (030) COSHH RA SIF Purging Flux(TIG)(Issue 3).pdf"],
+        ["031", "Shell Tellus S2 MX 68", "Issue 2", "SF 048B (031) COSHH RA Shell Tellus S2 MX 68 (Issue 2).pdf"],
+        ["032", "RS Metal Epoxy Putty", "Issue 2", "SF 048B (032) COSHH RA RS Metal Epoxy Putty (Issue 2).pdf"],
+        ["033", "Prysmian Cold Pour Compound", "Issue 2", "SF 048B (033) COSHH RA Prysmian Cold pour compound (Issue 2).pdf"],
+        ["034", "Plus Gas Lubricant", "Issue 3", "SF 048B (034) COSHH RA Plus Gas lubricant (Issue 3).pdf"],
+        ["035", "Omala S4 GXV Gear Oil", "Issue 2", "SF 048B (035) COSHH RA Omala S4 GXV Gear Oil (Issue 2).pdf"],
+        ["036", "Neopaint NPT16 Aerosol (MPI)", "Issue 3", "SF 048B (036) COSHH RA Neopaint NPT16 Areosol (MPI) (Issue 3).pdf"],
+        ["037", "NEOASTRA-F (MPI)", "Issue 3", "SF 048B (037) COSHH RA NEOASTRA-F (MPI) (Issue 3).pdf"],
+        ["038", "MPI NEOCOL-B", "Issue 3", "SF 048B (038) COSHH RA MPI NEOCOL-B (Issue 3).pdf"],
+        ["039", "Loctite 577", "Issue 2", "SF 048B (039) COSHH RA Loctite 577 (Issue 2).pdf"],
+        ["040", "Johnstones TC1 Paint Thinner", "Issue 3", "SF 048B (040) COSHH RA Johnstones TC1 Paint Thinner (Issue 3).pdf"],
+        ["041", "JCP Polyester Resin", "Issue 3", "SF 048B (041) COSHH RA JCP Polyester Resin (Issue 3).pdf"],
+        ["042", "JAD Developer Aerosol (MPI)", "Issue 3", "SF 048B (042) COSHH RA JAD developer aerosol(MPI) (Issue 3).pdf"],
+        ["043", "HILTI HIT-RE 500 V3 (B)", "Issue 2", "SF 048B (043) COSHH RA HILTI HIT - RE 500 V3 (B)(Issue 2).pdf"],
+        ["044", "Hempel's Silvum (Alu Paint)", "Issue 3", "SF 048B (044) COSHH RA Hempel's Silvum (Alu Paint) (Issue 3).pdf"],
+        ["045", "Denso Primer D", "Issue 2", "SF 048B (045) COSHH RA Denso Primer D (Issue 2).pdf"],
+        ["046", "DEB Janitol Original", "Issue 3", "SF 048B (046) COSHH RA DEB Janitol Originial (Issue 3).pdf"],
+        ["047", "Ambersil Rust Flash", "Issue 2", "SF 048B (047) COSHH RA Ambersil Rust Flash (Issue 2).pdf"],
+        ["048", "Aerosol Solutions AS 1414", "Issue 3", "SF 048B (048) COSHH RA Aerosol Solutions AS 1414 (Issue 3).pdf"],
+        ["049", "Parex TECGRIP V, H VL, HL Base Component", "Issue 2", "SF 048B (049) COSHH RAParex TECGRIP V, H VL, HL BASE COMPONENT (Issue 2).pdf"],
+        ["050", "Rustoleum 1085 Cold Galvanizing (Brush)", "Issue 2", "SF 048B (050) COSHH RA Rustoleum 1085 Cold Galvanizing (brush) (Issue 2).pdf"],
+        ["052", "Fischer RM II", "Issue 2", "SF 048B (052) COSHH RA Fischer RM II (Issue 2).pdf"],
+        ["053", "General Dust (Not containing any component listed as hazardous in EH40)", "Sept 2024", "SF 048B (053) COSHH RA General Dust (Not containing any component specfically listed as hazardous in EH40) (Sept 2024) pdf.pdf"],
+    ];
+
+    const container = document.getElementById('coshh-container');
+    const searchInput = document.getElementById('search');
+    const countEl = document.getElementById('result-count');
+
+    function buildURL(filename) {
+        return SP_BASE + encodeURIComponent(filename);
+    }
+
+    function render(data) {
+        if (!data.length) {
+            container.innerHTML = '<div class="empty-state">No assessments match your search.</div>';
+            countEl.textContent = '0 of ' + COSHH_DATA.length + ' assessments';
+            return;
+        }
+
+        const ul = document.createElement('ul');
+        ul.className = 'coshh-list';
+
+        data.forEach(([ref, substance, issue, filename]) => {
+            const li = document.createElement('li');
+            const url = buildURL(filename);
+            li.innerHTML = `
+                <a class="coshh-item" href="${url}" target="_blank">
+                    <span class="coshh-ref">${ref}</span>
+                    <span class="coshh-title">${substance}</span>
+                    <span class="coshh-issue">${issue}</span>
+                    <span class="coshh-open">Open &rarr;</span>
+                    <span class="coshh-icon">&#128196;</span>
+                </a>
+            `;
+            ul.appendChild(li);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(ul);
+        countEl.textContent = data.length + ' of ' + COSHH_DATA.length + ' assessments';
+    }
+
+    function filterCoshh() {
+        const q = searchInput.value.toLowerCase().trim();
+        if (!q) { render(COSHH_DATA); return; }
+        const terms = q.split(/\s+/);
+        const filtered = COSHH_DATA.filter(([ref, substance, issue]) => {
+            const haystack = (ref + ' ' + substance + ' ' + issue).toLowerCase();
+            return terms.every(t => haystack.includes(t));
+        });
+        render(filtered);
+    }
+
+    render(COSHH_DATA);
+</script>
+
+</body>
+</html>

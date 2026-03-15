@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Substance Library — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; }
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        .page-wrap { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+        .page-header { margin-bottom: 20px; }
+        .page-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+        .page-header p { font-size: 0.85rem; color: var(--text-light); line-height: 1.5; }
+
+        /* Upload area */
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--white); margin-bottom: 24px; }
+        .upload-zone:hover { border-color: var(--accent); }
+        .upload-zone.dragover { border-color: var(--accent); background: #e8f2fc; }
+        .upload-zone.processing { border-color: var(--warning); background: #fffdf5; cursor: wait; }
+        .upload-zone .uz-icon { font-size: 2rem; margin-bottom: 8px; color: var(--text-light); }
+        .upload-zone .uz-title { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+        .upload-zone .uz-hint { font-size: 0.82rem; color: var(--text-light); }
+        .upload-zone.processing .uz-icon { animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .upload-error { background: #fde8ea; color: var(--danger); padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
+        .upload-error.show { display: block; }
+
+        /* Preview card (shown after parsing) */
+        .preview-card { background: var(--white); border: 2px solid var(--success); border-radius: 10px; padding: 20px; margin-bottom: 24px; display: none; }
+        .preview-card.show { display: block; }
+        .preview-card .pc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+        .preview-card .pc-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+        .preview-card .pc-mfg { font-size: 0.85rem; color: var(--text-light); margin-top: 2px; }
+        .preview-card .pc-actions { display: flex; gap: 8px; }
+        .preview-card .pc-actions button { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .btn-save-lib { background: var(--success); color: var(--white); }
+        .btn-save-lib:hover { opacity: 0.9; }
+        .btn-coshh { background: var(--primary); color: var(--white); }
+        .btn-coshh:hover { opacity: 0.9; }
+        .btn-discard { background: var(--white); color: var(--text-light); border: 1px solid var(--border) !important; }
+
+        .pc-section { margin-bottom: 12px; }
+        .pc-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 4px; }
+        .pc-value { font-size: 0.88rem; line-height: 1.5; }
+        .pc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .pc-chip { padding: 4px 10px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; background: #fde8ea; color: var(--danger); }
+        .pc-chip.blue { background: #e8f2fc; color: var(--accent); }
+        .pc-chip.green { background: #e6f7ec; color: var(--success); }
+
+        .pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 600px) { .pc-grid { grid-template-columns: 1fr; } }
+
+        /* Search bar */
+        .search-bar { margin-bottom: 16px; }
+        .search-bar input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
+        .search-bar input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+
+        /* Library list */
+        .lib-empty { text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 0.9rem; }
+        .lib-list { display: flex; flex-direction: column; gap: 8px; }
+        .lib-item { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; transition: all 0.15s; cursor: pointer; }
+        .lib-item:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .lib-item .li-info { flex: 1; min-width: 0; }
+        .lib-item .li-name { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
+        .lib-item .li-mfg { font-size: 0.8rem; color: var(--text-light); margin-top: 2px; }
+        .lib-item .li-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+        .lib-item .li-tag { padding: 2px 8px; border-radius: 3px; font-size: 0.7rem; font-weight: 600; background: #fde8ea; color: var(--danger); }
+        .lib-item .li-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 12px; }
+        .lib-item .li-actions button { padding: 6px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--white); font-size: 0.78rem; font-weight: 600; font-family: inherit; cursor: pointer; color: var(--text); }
+        .lib-item .li-actions button:hover { border-color: var(--accent); color: var(--accent); }
+        .lib-item .li-actions button.delete { color: var(--danger); }
+        .lib-item .li-actions button.delete:hover { border-color: var(--danger); background: #fde8ea; }
+
+        .section-divider { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); padding: 18px 0 8px; border-bottom: 2px solid var(--primary); margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Substance Library</h1>
+    <a href="sheq_hub.html">&larr; SHEQ Hub</a>
+</div>
+
+<div class="page-wrap">
+
+    <div class="page-header">
+        <h2>MSDS / Substance Library</h2>
+        <p>Upload a Material Safety Data Sheet (MSDS) to automatically extract substance data. Saved substances can be used to auto-fill COSHH risk assessments.</p>
+    </div>
+
+    <!-- UPLOAD ZONE -->
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="uz-icon" id="uz-icon">&#128196;</div>
+        <div class="uz-title" id="uz-title">Drop MSDS here or click to upload</div>
+        <div class="uz-hint" id="uz-hint">PDF format &mdash; the AI will extract substance data automatically</div>
+        <input type="file" id="file-input" accept=".pdf" style="display:none" onchange="handleFileSelect(this)">
+    </div>
+
+    <div class="upload-error" id="upload-error"></div>
+
+    <!-- PREVIEW (after parsing) -->
+    <div class="preview-card" id="preview-card">
+        <div class="pc-header">
+            <div>
+                <div class="pc-title" id="pc-name">—</div>
+                <div class="pc-mfg" id="pc-mfg">—</div>
+            </div>
+            <div class="pc-actions">
+                <button class="btn-save-lib" onclick="saveToLibrary()">Save to Library</button>
+                <button class="btn-coshh" onclick="createCoshh()">Create COSHH</button>
+                <button class="btn-discard" onclick="discardPreview()">Discard</button>
+            </div>
+        </div>
+
+        <div class="pc-grid">
+            <div class="pc-section">
+                <div class="pc-label">GHS Classification</div>
+                <div class="pc-chips" id="pc-ghs"></div>
+            </div>
+            <div class="pc-section">
+                <div class="pc-label">Hazard Type</div>
+                <div class="pc-chips" id="pc-hazard-type"></div>
+            </div>
+            <div class="pc-section">
+                <div class="pc-label">Exposure Routes</div>
+                <div class="pc-chips" id="pc-routes"></div>
+            </div>
+            <div class="pc-section">
+                <div class="pc-label">WELs</div>
+                <div class="pc-value" id="pc-wels">—</div>
+            </div>
+        </div>
+
+        <div class="pc-section">
+            <div class="pc-label">Health Risks</div>
+            <div class="pc-value" id="pc-risks">—</div>
+        </div>
+        <div class="pc-section">
+            <div class="pc-label">PPE Required</div>
+            <div class="pc-chips" id="pc-ppe"></div>
+        </div>
+        <div class="pc-section">
+            <div class="pc-label">Control Measures</div>
+            <div class="pc-value" id="pc-controls">—</div>
+        </div>
+        <div class="pc-section">
+            <div class="pc-label">First Aid</div>
+            <div class="pc-value" id="pc-firstaid">—</div>
+        </div>
+        <div class="pc-grid">
+            <div class="pc-section">
+                <div class="pc-label">Storage</div>
+                <div class="pc-value" id="pc-storage">—</div>
+            </div>
+            <div class="pc-section">
+                <div class="pc-label">Disposal</div>
+                <div class="pc-chips" id="pc-disposal"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div class="section-divider">Saved Substances</div>
+
+    <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search substances..." oninput="renderLibrary()">
+    </div>
+
+    <div id="lib-container">
+        <div class="lib-empty">No substances saved yet. Upload an MSDS to get started.</div>
+    </div>
+
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+    const MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    let _parsedData = null;
+
+    // ───── Drag & drop ─────
+
+    const zone = document.getElementById('upload-zone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+    });
+
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) processFile(input.files[0]);
+    }
+
+    // ───── Process uploaded PDF ─────
+
+    async function processFile(file) {
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+            showError('Please upload a PDF file.');
+            return;
+        }
+
+        if (file.size > 20 * 1024 * 1024) {
+            showError('File is too large (max 20 MB).');
+            return;
+        }
+
+        hideError();
+        setProcessing(true, file.name);
+
+        try {
+            const base64 = await fileToBase64(file);
+
+            const res = await fetch(MII_API + '/parse-msds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pdf_base64: base64, filename: file.name }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showError(data.error || 'Failed to parse MSDS.');
+                setProcessing(false);
+                return;
+            }
+
+            _parsedData = data;
+            _parsedData._source_filename = file.name;
+            showPreview(data);
+        } catch (e) {
+            showError('Network error — check your connection and try again.');
+        }
+
+        setProcessing(false);
+    }
+
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = reader.result;
+                // Strip the data:...;base64, prefix
+                resolve(result.split(',')[1]);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ───── UI helpers ─────
+
+    function setProcessing(on, filename) {
+        const z = document.getElementById('upload-zone');
+        if (on) {
+            z.classList.add('processing');
+            document.getElementById('uz-icon').textContent = '\u2699';
+            document.getElementById('uz-title').textContent = 'Analysing ' + (filename || 'MSDS') + '...';
+            document.getElementById('uz-hint').textContent = 'This usually takes 10-20 seconds';
+        } else {
+            z.classList.remove('processing');
+            document.getElementById('uz-icon').textContent = '\uD83D\uDCC4';
+            document.getElementById('uz-title').textContent = 'Drop MSDS here or click to upload';
+            document.getElementById('uz-hint').textContent = 'PDF format \u2014 the AI will extract substance data automatically';
+        }
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('upload-error');
+        el.textContent = msg;
+        el.classList.add('show');
+    }
+    function hideError() {
+        document.getElementById('upload-error').classList.remove('show');
+    }
+
+    function showPreview(d) {
+        document.getElementById('pc-name').textContent = d.substance_name || 'Unknown substance';
+        document.getElementById('pc-mfg').textContent = d.manufacturer || '';
+
+        renderChips('pc-ghs', d.ghs_classification || []);
+        renderChips('pc-hazard-type', d.hazard_type || [], 'blue');
+        renderChips('pc-routes', d.exposure_route || [], 'blue');
+        renderChips('pc-ppe', (d.ppe_recommended || []).map(p => p.type + (p.detail ? ' (' + p.detail + ')' : '')), 'green');
+        renderChips('pc-disposal', d.disposal || []);
+
+        const welParts = [];
+        if (d.wel_long_term) welParts.push('8hr TWA: ' + d.wel_long_term);
+        if (d.wel_short_term) welParts.push('15-min STEL: ' + d.wel_short_term);
+        document.getElementById('pc-wels').textContent = welParts.join(' | ') || 'N/A';
+
+        document.getElementById('pc-risks').textContent = d.health_risks || 'N/A';
+        document.getElementById('pc-firstaid').textContent = d.first_aid || 'N/A';
+        document.getElementById('pc-storage').textContent = d.storage || 'N/A';
+
+        const controls = (d.control_measures || []).map(c => c.measure).join('; ');
+        document.getElementById('pc-controls').textContent = controls || 'N/A';
+
+        document.getElementById('preview-card').classList.add('show');
+    }
+
+    function renderChips(containerId, items, color) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = items.map(t => '<span class="pc-chip ' + (color || '') + '">' + escHtml(t) + '</span>').join('');
+    }
+
+    function discardPreview() {
+        _parsedData = null;
+        document.getElementById('preview-card').classList.remove('show');
+    }
+
+    // ───── Save to library ─────
+
+    async function saveToLibrary() {
+        if (!_parsedData) return;
+
+        const record = Object.assign({}, _parsedData, {
+            id: 'MSDS-' + Date.now().toString(36).toUpperCase(),
+            created_at: new Date().toISOString(),
+        });
+
+        await MiiDB.save('msds_substances', record);
+        discardPreview();
+        renderLibrary();
+    }
+
+    // ───── Create COSHH from parsed data ─────
+
+    function createCoshh() {
+        if (!_parsedData) return;
+        // Save to sessionStorage so the COSHH form can pick it up
+        sessionStorage.setItem('coshh_prefill', JSON.stringify(_parsedData));
+        window.location.href = 'coshh_assessment.html?prefill=1';
+    }
+
+    // ───── Library list ─────
+
+    async function renderLibrary() {
+        const all = await MiiDB.getAll('msds_substances');
+        const query = (document.getElementById('search-input').value || '').toLowerCase();
+        const filtered = query
+            ? all.filter(s => (s.substance_name || '').toLowerCase().includes(query) || (s.manufacturer || '').toLowerCase().includes(query))
+            : all;
+
+        const container = document.getElementById('lib-container');
+
+        if (!filtered.length) {
+            container.innerHTML = '<div class="lib-empty">' + (query ? 'No substances match your search.' : 'No substances saved yet. Upload an MSDS to get started.') + '</div>';
+            return;
+        }
+
+        // Sort newest first
+        filtered.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+        container.innerHTML = '<div class="lib-list">' + filtered.map(s => `
+            <div class="lib-item" onclick="viewSubstance('${s.id}')">
+                <div class="li-info">
+                    <div class="li-name">${escHtml(s.substance_name || 'Unknown')}</div>
+                    <div class="li-mfg">${escHtml(s.manufacturer || '')}</div>
+                    <div class="li-tags">
+                        ${(s.ghs_classification || []).map(g => '<span class="li-tag">' + escHtml(g) + '</span>').join('')}
+                    </div>
+                </div>
+                <div class="li-actions">
+                    <button onclick="event.stopPropagation(); usForCoshh('${s.id}')">Create COSHH</button>
+                    <button class="delete" onclick="event.stopPropagation(); deleteSubstance('${s.id}')">Delete</button>
+                </div>
+            </div>
+        `).join('') + '</div>';
+    }
+
+    async function usForCoshh(id) {
+        const substance = await MiiDB.get('msds_substances', id);
+        if (!substance) return;
+        sessionStorage.setItem('coshh_prefill', JSON.stringify(substance));
+        window.location.href = 'coshh_assessment.html?prefill=1';
+    }
+
+    async function deleteSubstance(id) {
+        if (!confirm('Delete this substance from the library?')) return;
+        await MiiDB.remove('msds_substances', id);
+        renderLibrary();
+    }
+
+    function viewSubstance(id) {
+        // For now, clicking a substance triggers Create COSHH
+        usForCoshh(id);
+    }
+
+    function escHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    // ───── Init ─────
+    renderLibrary();
+</script>
+
+</body>
+</html>

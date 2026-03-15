@@ -17,7 +17,7 @@
   'use strict';
 
   const DB_NAME = 'mii-hub';
-  const DB_VERSION = 11;
+  const DB_VERSION = 12;
 
   // IndexedDB store name → localStorage key mapping
   const STORE_LS_MAP = {
@@ -34,6 +34,8 @@
     havs_entries: 'mii_havs_entries',
     sheq_observations: 'mii_sheq_observations',
     powra: 'mii_powra',
+    coshh_assessments: 'mii_coshh_assessments',
+    msds_substances: 'mii_msds_substances',
     checklist_state: 'mii_supervisor_checklist_v4',
   };
 
@@ -64,6 +66,8 @@
     'cost_rate_grades',
     'cost_estimates',
     'cost_estimate_items',
+    'coshh_assessments',
+    'msds_substances',
   ];
 
   // Reference data stores (pulled from server, not pushed via sync_queue)

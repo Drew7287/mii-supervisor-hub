@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>COSHH Risk Assessment — MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--text); background: var(--bg); min-height: 100vh; padding-bottom: 90px; }
+        .topbar { background: var(--primary); color: var(--white); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+        .form-header { max-width: 700px; margin: 0 auto; padding: 20px 20px 0; }
+        .form-ref { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--danger); }
+        .form-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin: 2px 0 6px; }
+        .form-desc { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; margin-bottom: 8px; }
+        .form-body { max-width: 700px; margin: 0 auto; padding: 12px 20px; }
+        .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); padding: 14px 0 8px; border-bottom: 2px solid var(--primary); margin-bottom: 12px; }
+        .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .field label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 3px; }
+        .field input, .field select, .field textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--white); }
+        .field textarea { min-height: 80px; resize: vertical; }
+        .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+        .field.full { grid-column: 1 / -1; }
+
+        /* Toggle chips — used for checkboxes like persons at risk, hazard type, etc. */
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .chip { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--white); font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; color: var(--text); user-select: none; }
+        .chip:hover { border-color: #999; }
+        .chip.selected { border-color: var(--accent); background: #e8f2fc; color: var(--accent); }
+        .chip.selected.danger { border-color: var(--danger); background: #fde8ea; color: var(--danger); }
+
+        /* GHS pictogram grid */
+        .ghs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px; }
+        .ghs-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--white); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+        .ghs-btn:hover { border-color: #999; }
+        .ghs-btn.selected { border-color: var(--danger); background: #fde8ea; }
+        .ghs-btn .ghs-icon { font-size: 1.6rem; }
+        .ghs-btn .ghs-label { font-size: 0.7rem; font-weight: 600; color: var(--text); text-align: center; line-height: 1.3; }
+        .ghs-btn.selected .ghs-label { color: var(--danger); }
+
+        /* Control measures list */
+        .control-list { margin-bottom: 16px; }
+        .control-item { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+        .control-item input.control-text { flex: 1; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.88rem; font-family: inherit; background: var(--white); }
+        .control-item select.control-who { width: 140px; padding: 9px 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; font-family: inherit; background: var(--white); }
+        .control-item .btn-remove { width: 32px; height: 36px; border: none; background: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0; }
+        .control-item .btn-remove:hover { background: #fde8ea; }
+        .control-item input:focus, .control-item select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,120,212,0.12); }
+        .btn-add { padding: 8px 16px; border: 1.5px dashed var(--border); border-radius: 6px; background: var(--white); font-size: 0.82rem; font-family: inherit; color: var(--text-light); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* PPE grid */
+        .ppe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+        .ppe-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--white); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+        .ppe-item:hover { border-color: #999; }
+        .ppe-item.selected { border-color: var(--accent); background: #e8f2fc; }
+        .ppe-icon { font-size: 1.2rem; flex-shrink: 0; width: 28px; text-align: center; }
+        .ppe-info { flex: 1; min-width: 0; }
+        .ppe-name { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+        .ppe-detail { margin-top: 4px; width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; font-family: inherit; display: none; }
+        .ppe-item.selected .ppe-detail { display: block; }
+        .ppe-check { width: 20px; height: 20px; border: 1.5px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: transparent; transition: all 0.15s; }
+        .ppe-item.selected .ppe-check { border-color: var(--accent); background: var(--accent); color: var(--white); }
+
+        /* Yes/No toggle */
+        .yn-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
+        .yn-btn { padding: 10px 24px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--white); font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.15s; }
+        .yn-btn:hover { border-color: #999; }
+        .yn-btn.selected.yes { border-color: var(--success); background: #e6f7ec; color: var(--success); }
+        .yn-btn.selected.no { border-color: var(--danger); background: #fde8ea; color: var(--danger); }
+
+        /* Risk rating */
+        .risk-options { display: flex; gap: 6px; margin-bottom: 16px; }
+        .risk-btn { flex: 1; padding: 12px 6px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--white); font-size: 0.88rem; font-weight: 700; font-family: inherit; cursor: pointer; text-align: center; transition: all 0.15s; }
+        .risk-btn:hover { border-color: #999; }
+        .risk-btn.selected.high { border-color: var(--danger); background: #fde8ea; color: var(--danger); }
+        .risk-btn.selected.medium { border-color: var(--warning); background: #fff6e0; color: #b07d00; }
+        .risk-btn.selected.low { border-color: var(--success); background: #e6f7ec; color: var(--success); }
+
+        /* Disposal checkboxes */
+        .disposal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+
+        /* Submit bar */
+        .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); }
+        .submit-status { font-size: 0.82rem; color: var(--text-light); }
+        .btn-submit { padding: 10px 24px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; font-family: inherit; cursor: pointer; color: var(--white); background: var(--danger); transition: opacity 0.15s; }
+        .btn-submit:hover { opacity: 0.9; }
+
+        /* Success overlay */
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
+        .overlay.show { display: flex; }
+        .overlay-card { background: var(--white); border-radius: 12px; padding: 32px 28px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .overlay-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 14px; background: #e6f7ec; color: var(--success); }
+        .overlay-card h3 { font-size: 1.15rem; color: var(--primary); margin-bottom: 6px; }
+        .overlay-card .report-id { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+        .overlay-card p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+        .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+        .overlay-actions button { padding: 9px 20px; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+
+        /* MSDS upload area */
+        .msds-upload { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 16px; cursor: pointer; transition: all 0.15s; background: var(--white); }
+        .msds-upload:hover { border-color: var(--accent); }
+        .msds-upload .upload-icon { font-size: 1.5rem; margin-bottom: 6px; color: var(--text-light); }
+        .msds-upload .upload-text { font-size: 0.85rem; color: var(--text-light); }
+        .msds-upload .upload-hint { font-size: 0.75rem; color: var(--border); margin-top: 4px; }
+        .msds-upload.has-file { border-color: var(--success); border-style: solid; background: #f8fdf9; }
+        .msds-upload.has-file .upload-icon { color: var(--success); }
+        .msds-upload.has-file .upload-text { color: var(--success); font-weight: 600; }
+
+        @media (max-width: 600px) {
+            .fields { grid-template-columns: 1fr; }
+            .ghs-grid { grid-template-columns: repeat(3, 1fr); }
+            .ppe-grid { grid-template-columns: 1fr; }
+            .disposal-grid { grid-template-columns: 1fr; }
+            .control-item { flex-wrap: wrap; }
+            .control-item select.control-who { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>COSHH Risk Assessment</h1>
+    <a href="sheq_hub.html">&larr; SHEQ Hub</a>
+</div>
+
+<div class="form-header">
+    <div class="form-ref">SF 048B &mdash; COSHH</div>
+    <h2>COSHH Risk Assessment</h2>
+    <div class="form-desc">Assess the risks from hazardous substances used or encountered during work activities. A current safety data sheet (MSDS) should be referenced for each substance assessed.</div>
+</div>
+
+<div class="form-body">
+
+    <!-- ===== 1. ASSESSMENT DETAILS ===== -->
+    <div class="section-title">1 &mdash; Assessment Details</div>
+    <div class="fields">
+        <div class="field">
+            <label>Reference Number</label>
+            <input type="text" id="f-ref" placeholder="e.g. 053">
+        </div>
+        <div class="field">
+            <label>Site / Establishment</label>
+            <input type="text" id="f-site" placeholder="e.g. All areas">
+        </div>
+        <div class="field full">
+            <label>Activity / Work Process</label>
+            <textarea id="f-activity" placeholder="Describe the activity or work process. Include how long and how often this is carried out and the quantity of substance used." style="min-height:80px"></textarea>
+        </div>
+        <div class="field full">
+            <label>Location of Process</label>
+            <input type="text" id="f-location" placeholder="e.g. Site, Workshop Areas">
+        </div>
+    </div>
+
+    <!-- ===== 2. PERSONS AT RISK ===== -->
+    <div class="section-title">2 &mdash; Persons at Risk</div>
+    <div class="chip-group" id="persons-at-risk">
+        <button class="chip" data-val="Employees (including trainees)" onclick="toggleChip(this)">Employees (incl. trainees)</button>
+        <button class="chip" data-val="Contractors" onclick="toggleChip(this)">Contractors</button>
+        <button class="chip" data-val="Public" onclick="toggleChip(this)">Public</button>
+    </div>
+
+    <!-- ===== 3. SUBSTANCE INFORMATION ===== -->
+    <div class="section-title">3 &mdash; Substance Information</div>
+
+    <div class="msds-upload" id="msds-upload" onclick="document.getElementById('msds-file').click()">
+        <div class="upload-icon">&#128196;</div>
+        <div class="upload-text" id="msds-text">Upload MSDS / Safety Data Sheet</div>
+        <div class="upload-hint">PDF or image — coming soon: auto-fill from MSDS</div>
+        <input type="file" id="msds-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleMsdsUpload(this)">
+    </div>
+
+    <div class="fields">
+        <div class="field full">
+            <label>Substance Name &amp; Manufacturer</label>
+            <textarea id="f-substance" placeholder="Name the substance involved in the process and its manufacturer." style="min-height:60px"></textarea>
+        </div>
+    </div>
+
+    <!-- ===== 4. GHS CLASSIFICATION ===== -->
+    <div class="section-title">4 &mdash; Classification (GHS Hazard Pictograms)</div>
+    <div class="ghs-grid" id="ghs-grid">
+        <button class="ghs-btn" data-val="Flammable" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#9832;</span>
+            <span class="ghs-label">Flammable</span>
+        </button>
+        <button class="ghs-btn" data-val="Corrosive" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#9763;</span>
+            <span class="ghs-label">Corrosive</span>
+        </button>
+        <button class="ghs-btn" data-val="Oxidising" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#128293;</span>
+            <span class="ghs-label">Oxidising</span>
+        </button>
+        <button class="ghs-btn" data-val="Acute Toxicity" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#9760;</span>
+            <span class="ghs-label">Acute Toxicity</span>
+        </button>
+        <button class="ghs-btn" data-val="Health Hazard" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#9888;</span>
+            <span class="ghs-label">Health Hazard</span>
+        </button>
+        <button class="ghs-btn" data-val="Serious Health Hazard" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#128128;</span>
+            <span class="ghs-label">Serious Health Hazard</span>
+        </button>
+        <button class="ghs-btn" data-val="Environmental" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#127795;</span>
+            <span class="ghs-label">Hazardous to Environment</span>
+        </button>
+        <button class="ghs-btn" data-val="Gas Under Pressure" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#127785;</span>
+            <span class="ghs-label">Gas Under Pressure</span>
+        </button>
+        <button class="ghs-btn" data-val="Explosive" onclick="toggleGhs(this)">
+            <span class="ghs-icon">&#128163;</span>
+            <span class="ghs-label">Explosive</span>
+        </button>
+    </div>
+
+    <!-- ===== 5. HAZARD TYPE ===== -->
+    <div class="section-title">5 &mdash; Hazard Type</div>
+    <div class="chip-group" id="hazard-type">
+        <button class="chip" data-val="Gas" onclick="toggleChip(this)">Gas</button>
+        <button class="chip" data-val="Vapour" onclick="toggleChip(this)">Vapour</button>
+        <button class="chip" data-val="Mist" onclick="toggleChip(this)">Mist</button>
+        <button class="chip" data-val="Fume" onclick="toggleChip(this)">Fume</button>
+        <button class="chip" data-val="Dust" onclick="toggleChip(this)">Dust</button>
+        <button class="chip" data-val="Liquid" onclick="toggleChip(this)">Liquid</button>
+        <button class="chip" data-val="Solid" onclick="toggleChip(this)">Solid</button>
+    </div>
+    <div class="fields">
+        <div class="field full">
+            <label>Other Hazard Type (if applicable)</label>
+            <input type="text" id="f-hazard-other" placeholder="Specify if not listed above">
+        </div>
+    </div>
+
+    <!-- ===== 6. ROUTE OF EXPOSURE ===== -->
+    <div class="section-title">6 &mdash; Route of Exposure</div>
+    <div class="chip-group" id="exposure-route">
+        <button class="chip" data-val="Inhalation" onclick="toggleChip(this)">Inhalation</button>
+        <button class="chip" data-val="Skin" onclick="toggleChip(this)">Skin</button>
+        <button class="chip" data-val="Eyes" onclick="toggleChip(this)">Eyes</button>
+        <button class="chip" data-val="Ingestion" onclick="toggleChip(this)">Ingestion</button>
+    </div>
+    <div class="fields">
+        <div class="field full">
+            <label>Other Route (if applicable)</label>
+            <input type="text" id="f-exposure-other" placeholder="Specify if not listed above">
+        </div>
+    </div>
+
+    <!-- ===== 7. WORKPLACE EXPOSURE LIMITS ===== -->
+    <div class="section-title">7 &mdash; Workplace Exposure Limits (WELs)</div>
+    <div class="fields">
+        <div class="field">
+            <label>Long-term Exposure (8hr TWA)</label>
+            <input type="text" id="f-wel-long" placeholder="e.g. 10 mg/m3 (Inhalable dust)">
+        </div>
+        <div class="field">
+            <label>Short-term Exposure (15 min)</label>
+            <input type="text" id="f-wel-short" placeholder="e.g. N/A">
+        </div>
+    </div>
+
+    <!-- ===== 8. HEALTH RISKS ===== -->
+    <div class="section-title">8 &mdash; Risks to Health from Identified Hazards</div>
+    <div class="fields">
+        <div class="field full">
+            <label>State the risks to health</label>
+            <textarea id="f-health-risks" placeholder="Describe short-term and long-term health risks from the identified hazards..."></textarea>
+        </div>
+    </div>
+
+    <!-- ===== 9. CONTROL MEASURES ===== -->
+    <div class="section-title">9 &mdash; Control Measures</div>
+    <div class="control-list" id="control-list">
+        <div class="control-item">
+            <input class="control-text" type="text" placeholder="Describe the control measure...">
+            <select class="control-who">
+                <option value="">By who?</option>
+                <option value="Individual">Individual</option>
+                <option value="Supervision">Supervision</option>
+                <option value="Individual / Supervision">Individual / Supervision</option>
+                <option value="Management">Management</option>
+            </select>
+            <button class="btn-remove" onclick="removeControl(this)" title="Remove">&times;</button>
+        </div>
+    </div>
+    <button class="btn-add" onclick="addControl()">+ Add Control Measure</button>
+
+    <!-- ===== 10. HEALTH SURVEILLANCE ===== -->
+    <div class="section-title">10 &mdash; Health Surveillance</div>
+    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:8px;">Is health surveillance or monitoring required?</p>
+    <div class="yn-toggle" id="health-surv">
+        <button class="yn-btn yes" onclick="selectYN('health-surv','Yes',this)">Yes</button>
+        <button class="yn-btn no" onclick="selectYN('health-surv','No',this)">No</button>
+    </div>
+
+    <!-- ===== 11. PPE ===== -->
+    <div class="section-title">11 &mdash; Personal Protective Equipment</div>
+    <div class="ppe-grid" id="ppe-grid">
+        <div class="ppe-item" onclick="togglePpe(this)">
+            <span class="ppe-icon">&#128567;</span>
+            <div class="ppe-info">
+                <div class="ppe-name">Dust Mask</div>
+                <input class="ppe-detail" type="text" data-ppe="Dust Mask" placeholder="Type & standard" onclick="event.stopPropagation()">
+            </div>
+            <span class="ppe-check">&#10003;</span>
+        </div>
+        <div class="ppe-item" onclick="togglePpe(this)">
+            <span class="ppe-icon">&#128168;</span>
+            <div class="ppe-info">
+                <div class="ppe-name">Respirator</div>
+                <input class="ppe-detail" type="text" data-ppe="Respirator" placeholder="Type & standard (e.g. FFP3)" onclick="event.stopPropagation()">
+            </div>
+            <span class="ppe-check">&#10003;</span>
+        </div>
+        <div class="ppe-item" onclick="togglePpe(this)">
+            <span class="ppe-icon">&#129511;</span>
+            <div class="ppe-info">
+                <div class="ppe-name">Gloves</div>
+                <input class="ppe-detail" type="text" data-ppe="Gloves" placeholder="Type & standard (e.g. EN 388:2016)" onclick="event.stopPropagation()">
+            </div>
+            <span class="ppe-check">&#10003;</span>
+        </div>
+        <div class="ppe-item" onclick="togglePpe(this)">
+            <span class="ppe-icon">&#128095;</span>
+            <div class="ppe-info">
+                <div class="ppe-name">Footwear</div>
+                <input class="ppe-detail" type="text" data-ppe="Footwear" placeholder="Type & standard" onclick="event.stopPropagation()">
+            </div>
+            <span class="ppe-check">&#10003;</span>
+        </div>
+        <div class="ppe-item" onclick="togglePpe(this)">
+            <span class="ppe-icon">&#129405;</span>
+            <div class="ppe-info">
+                <div class="ppe-name">Visor</div>
+                <input class="ppe-detail" type="text" data-ppe="Visor" placeholder="Type & standard" onclick="event.stopPropagation()">
+            </div>
+            <span class="ppe-check">&#10003;</span>
+        </div>
+        <div class="ppe-item" onclick="togglePpe(this)">
+            <span class="ppe-icon">&#128083;</span>
+            <div class="ppe-info">
+                <div class="ppe-name">Goggles</div>
+                <input class="ppe-detail" type="text" data-ppe="Goggles" placeholder="Type (e.g. Spoggles)" onclick="event.stopPropagation()">
+            </div>
+            <span class="ppe-check">&#10003;</span>
+        </div>
+        <div class="ppe-item" onclick="togglePpe(this)">
+            <span class="ppe-icon">&#129509;</span>
+            <div class="ppe-info">
+                <div class="ppe-name">Overalls</div>
+                <input class="ppe-detail" type="text" data-ppe="Overalls" placeholder="Type (e.g. General Workwear)" onclick="event.stopPropagation()">
+            </div>
+            <span class="ppe-check">&#10003;</span>
+        </div>
+        <div class="ppe-item" onclick="togglePpe(this)">
+            <span class="ppe-icon">&#128736;</span>
+            <div class="ppe-info">
+                <div class="ppe-name">Other PPE</div>
+                <input class="ppe-detail" type="text" data-ppe="Other" placeholder="Specify PPE and standard" onclick="event.stopPropagation()">
+            </div>
+            <span class="ppe-check">&#10003;</span>
+        </div>
+    </div>
+
+    <!-- ===== 12. FIRST AID ===== -->
+    <div class="section-title">12 &mdash; First Aid Measures</div>
+    <div class="fields">
+        <div class="field full">
+            <label>First Aid Measures</label>
+            <textarea id="f-first-aid" placeholder="Describe first aid measures for exposure..."></textarea>
+        </div>
+    </div>
+
+    <!-- ===== 13. STORAGE ===== -->
+    <div class="section-title">13 &mdash; Storage</div>
+    <div class="fields">
+        <div class="field full">
+            <label>Storage Requirements</label>
+            <textarea id="f-storage" placeholder="Describe storage requirements or enter N/A..." style="min-height:60px"></textarea>
+        </div>
+    </div>
+
+    <!-- ===== 14. DISPOSAL ===== -->
+    <div class="section-title">14 &mdash; Disposal of Substances &amp; Contaminated Containers</div>
+    <div class="chip-group" id="disposal-method">
+        <button class="chip" data-val="Hazardous Waste" onclick="toggleChip(this)">Hazardous Waste</button>
+        <button class="chip" data-val="Skip" onclick="toggleChip(this)">Skip</button>
+        <button class="chip" data-val="Return to Depot" onclick="toggleChip(this)">Return to Depot</button>
+        <button class="chip" data-val="Return to Supplier" onclick="toggleChip(this)">Return to Supplier</button>
+    </div>
+    <div class="fields">
+        <div class="field full">
+            <label>Other Disposal Method (if applicable)</label>
+            <input type="text" id="f-disposal-other" placeholder="Specify if not listed above">
+        </div>
+    </div>
+
+    <!-- ===== 15. EXPOSURE CONTROL ===== -->
+    <div class="section-title">15 &mdash; Exposure Adequately Controlled?</div>
+    <div class="yn-toggle" id="exposure-controlled">
+        <button class="yn-btn yes" onclick="selectYN('exposure-controlled','Yes',this)">Yes</button>
+        <button class="yn-btn no" onclick="selectYN('exposure-controlled','No',this)">No</button>
+    </div>
+
+    <!-- ===== 16. RISK RATING ===== -->
+    <div class="section-title">16 &mdash; Risk Rating Following Control Measures</div>
+    <div class="risk-options" id="risk-rating">
+        <button class="risk-btn high" onclick="selectRisk('High',this)">High</button>
+        <button class="risk-btn medium" onclick="selectRisk('Medium',this)">Medium</button>
+        <button class="risk-btn low" onclick="selectRisk('Low',this)">Low</button>
+    </div>
+
+    <!-- ===== 17. SIGN-OFF ===== -->
+    <div class="section-title">17 &mdash; Sign-Off</div>
+    <div class="fields">
+        <div class="field">
+            <label>Assessed By</label>
+            <input type="text" id="f-assessor" placeholder="Full name">
+        </div>
+        <div class="field">
+            <label>Assessment Date</label>
+            <input type="date" id="f-date">
+        </div>
+        <div class="field">
+            <label>Review Date</label>
+            <input type="date" id="f-review-date">
+        </div>
+    </div>
+
+</div>
+
+<!-- SUBMIT BAR -->
+<div class="submit-bar">
+    <span class="submit-status" id="submit-status">Complete all required fields</span>
+    <button class="btn-submit" onclick="submitAssessment()">Save Assessment</button>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="overlay" id="overlay-success">
+    <div class="overlay-card">
+        <div class="overlay-icon">&#10003;</div>
+        <h3>COSHH Assessment Saved</h3>
+        <div class="report-id" id="saved-id"></div>
+        <p>The assessment has been saved locally and queued for sync.</p>
+        <div class="overlay-actions">
+            <button class="btn-primary" onclick="window.location.reload()">New Assessment</button>
+            <button class="btn-outline" onclick="window.location.href='sheq_hub.html'">Back to SHEQ</button>
+        </div>
+    </div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+    // ───── State ─────
+    let _selectedYN = {};
+    let _selectedRisk = '';
+    let _msdsFileName = '';
+
+    // Set today's date
+    document.getElementById('f-date').valueAsDate = new Date();
+
+    // Default review date = 3 years from today
+    const reviewDate = new Date();
+    reviewDate.setFullYear(reviewDate.getFullYear() + 3);
+    document.getElementById('f-review-date').valueAsDate = reviewDate;
+
+    // ───── Toggle helpers ─────
+
+    function toggleChip(btn) {
+        btn.classList.toggle('selected');
+    }
+
+    function toggleGhs(btn) {
+        btn.classList.toggle('selected');
+    }
+
+    function togglePpe(el) {
+        el.classList.toggle('selected');
+        const input = el.querySelector('.ppe-detail');
+        if (el.classList.contains('selected')) {
+            setTimeout(() => input.focus(), 50);
+        }
+    }
+
+    function selectYN(groupId, value, btn) {
+        const container = document.getElementById(groupId);
+        container.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        _selectedYN[groupId] = value;
+    }
+
+    function selectRisk(value, btn) {
+        document.querySelectorAll('#risk-rating .risk-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        _selectedRisk = value;
+    }
+
+    // ───── Control measures ─────
+
+    function addControl() {
+        const list = document.getElementById('control-list');
+        const item = document.createElement('div');
+        item.className = 'control-item';
+        item.innerHTML = `
+            <input class="control-text" type="text" placeholder="Describe the control measure...">
+            <select class="control-who">
+                <option value="">By who?</option>
+                <option value="Individual">Individual</option>
+                <option value="Supervision">Supervision</option>
+                <option value="Individual / Supervision">Individual / Supervision</option>
+                <option value="Management">Management</option>
+            </select>
+            <button class="btn-remove" onclick="removeControl(this)" title="Remove">&times;</button>
+        `;
+        list.appendChild(item);
+        item.querySelector('.control-text').focus();
+    }
+
+    function removeControl(btn) {
+        const item = btn.closest('.control-item');
+        const list = document.getElementById('control-list');
+        if (list.children.length > 1) {
+            item.remove();
+        }
+    }
+
+    // ───── MSDS upload (placeholder — stores filename only for now) ─────
+
+    function handleMsdsUpload(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            _msdsFileName = file.name;
+            const area = document.getElementById('msds-upload');
+            area.classList.add('has-file');
+            document.getElementById('msds-text').textContent = file.name;
+        }
+    }
+
+    // ───── Prefill from Substance Library ─────
+
+    function applyPrefill(d) {
+        // Substance name
+        if (d.substance_name) {
+            document.getElementById('f-substance').value = d.substance_name + (d.manufacturer ? ' (' + d.manufacturer + ')' : '');
+        }
+
+        // GHS classification
+        (d.ghs_classification || []).forEach(val => {
+            const btn = document.querySelector('#ghs-grid .ghs-btn[data-val="' + val + '"]');
+            if (btn) btn.classList.add('selected');
+        });
+
+        // Hazard type
+        (d.hazard_type || []).forEach(val => {
+            const btn = document.querySelector('#hazard-type .chip[data-val="' + val + '"]');
+            if (btn) btn.classList.add('selected');
+        });
+
+        // Exposure route
+        (d.exposure_route || []).forEach(val => {
+            const btn = document.querySelector('#exposure-route .chip[data-val="' + val + '"]');
+            if (btn) btn.classList.add('selected');
+        });
+
+        // WELs
+        if (d.wel_long_term) document.getElementById('f-wel-long').value = d.wel_long_term;
+        if (d.wel_short_term) document.getElementById('f-wel-short').value = d.wel_short_term;
+
+        // Health risks
+        if (d.health_risks) document.getElementById('f-health-risks').value = d.health_risks;
+
+        // Control measures
+        const controls = d.control_measures || [];
+        if (controls.length) {
+            const list = document.getElementById('control-list');
+            list.innerHTML = '';
+            controls.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'control-item';
+                item.innerHTML = `
+                    <input class="control-text" type="text" placeholder="Describe the control measure...">
+                    <select class="control-who">
+                        <option value="">By who?</option>
+                        <option value="Individual">Individual</option>
+                        <option value="Supervision">Supervision</option>
+                        <option value="Individual / Supervision">Individual / Supervision</option>
+                        <option value="Management">Management</option>
+                    </select>
+                    <button class="btn-remove" onclick="removeControl(this)" title="Remove">&times;</button>
+                `;
+                item.querySelector('.control-text').value = c.measure || '';
+                if (c.by_who) item.querySelector('.control-who').value = c.by_who;
+                list.appendChild(item);
+            });
+        }
+
+        // PPE
+        (d.ppe_recommended || []).forEach(p => {
+            const items = document.querySelectorAll('#ppe-grid .ppe-item');
+            items.forEach(item => {
+                const input = item.querySelector('.ppe-detail');
+                if (input.dataset.ppe === p.type) {
+                    item.classList.add('selected');
+                    if (p.detail) input.value = p.detail;
+                }
+            });
+        });
+
+        // First aid
+        if (d.first_aid) document.getElementById('f-first-aid').value = d.first_aid;
+
+        // Storage
+        if (d.storage) document.getElementById('f-storage').value = d.storage;
+
+        // Disposal
+        (d.disposal || []).forEach(val => {
+            const btn = document.querySelector('#disposal-method .chip[data-val="' + val + '"]');
+            if (btn) btn.classList.add('selected');
+        });
+
+        // MSDS source filename
+        if (d._source_filename) {
+            _msdsFileName = d._source_filename;
+            const area = document.getElementById('msds-upload');
+            area.classList.add('has-file');
+            document.getElementById('msds-text').textContent = 'Pre-filled from: ' + d._source_filename;
+        }
+    }
+
+    // Check for prefill on load
+    if (new URLSearchParams(window.location.search).get('prefill') === '1') {
+        try {
+            const data = JSON.parse(sessionStorage.getItem('coshh_prefill'));
+            if (data) {
+                applyPrefill(data);
+                sessionStorage.removeItem('coshh_prefill');
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    // ───── Collect selected chips ─────
+
+    function getSelectedChips(containerId) {
+        const chips = document.querySelectorAll('#' + containerId + ' .chip.selected');
+        return Array.from(chips).map(c => c.dataset.val);
+    }
+
+    function getSelectedGhs() {
+        const btns = document.querySelectorAll('#ghs-grid .ghs-btn.selected');
+        return Array.from(btns).map(b => b.dataset.val);
+    }
+
+    function getControlMeasures() {
+        const items = document.querySelectorAll('#control-list .control-item');
+        const measures = [];
+        items.forEach(item => {
+            const text = item.querySelector('.control-text').value.trim();
+            const who = item.querySelector('.control-who').value;
+            if (text) measures.push({ measure: text, by_who: who });
+        });
+        return measures;
+    }
+
+    function getSelectedPpe() {
+        const items = document.querySelectorAll('#ppe-grid .ppe-item.selected');
+        const ppe = [];
+        items.forEach(item => {
+            const input = item.querySelector('.ppe-detail');
+            ppe.push({ type: input.dataset.ppe, detail: input.value.trim() });
+        });
+        return ppe;
+    }
+
+    // ───── Submit ─────
+
+    async function submitAssessment() {
+        const ref = document.getElementById('f-ref').value.trim();
+        const substance = document.getElementById('f-substance').value.trim();
+
+        if (!substance) {
+            document.getElementById('submit-status').textContent = 'Substance name is required';
+            document.getElementById('submit-status').style.color = 'var(--danger)';
+            return;
+        }
+
+        const record = {
+            id: 'COSHH-' + Date.now().toString(36).toUpperCase(),
+            ref_number: ref,
+            site: document.getElementById('f-site').value.trim(),
+            activity: document.getElementById('f-activity').value.trim(),
+            location: document.getElementById('f-location').value.trim(),
+            persons_at_risk: getSelectedChips('persons-at-risk'),
+            substance: substance,
+            msds_filename: _msdsFileName,
+            ghs_classification: getSelectedGhs(),
+            hazard_type: getSelectedChips('hazard-type'),
+            hazard_type_other: document.getElementById('f-hazard-other').value.trim(),
+            exposure_route: getSelectedChips('exposure-route'),
+            exposure_route_other: document.getElementById('f-exposure-other').value.trim(),
+            wel_long_term: document.getElementById('f-wel-long').value.trim(),
+            wel_short_term: document.getElementById('f-wel-short').value.trim(),
+            health_risks: document.getElementById('f-health-risks').value.trim(),
+            control_measures: getControlMeasures(),
+            health_surveillance: _selectedYN['health-surv'] || '',
+            ppe: getSelectedPpe(),
+            first_aid: document.getElementById('f-first-aid').value.trim(),
+            storage: document.getElementById('f-storage').value.trim(),
+            disposal_method: getSelectedChips('disposal-method'),
+            disposal_other: document.getElementById('f-disposal-other').value.trim(),
+            exposure_controlled: _selectedYN['exposure-controlled'] || '',
+            risk_rating: _selectedRisk,
+            assessed_by: document.getElementById('f-assessor').value.trim(),
+            assessment_date: document.getElementById('f-date').value,
+            review_date: document.getElementById('f-review-date').value,
+            created_at: new Date().toISOString(),
+            status: 'Active',
+        };
+
+        try {
+            await MiiDB.save('coshh_assessments', record);
+            document.getElementById('saved-id').textContent = record.id;
+            document.getElementById('overlay-success').classList.add('show');
+        } catch (e) {
+            document.getElementById('submit-status').textContent = 'Error saving: ' + e.message;
+            document.getElementById('submit-status').style.color = 'var(--danger)';
+        }
+    }
+</script>
+
+</body>
+</html>

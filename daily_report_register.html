@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Report Register &mdash; MII Engineering</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #003366;
+            --primary-light: #004d99;
+            --accent: #0078d4;
+            --success: #28a745;
+            --warning: #e6a000;
+            --danger: #dc3545;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --border: #d0d5dd;
+            --text: #1a1a1a;
+            --text-light: #667085;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.14);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ===== TOP BAR ===== */
+        .topbar {
+            background: var(--primary);
+            color: var(--white);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar h1 { font-size: 1.05rem; font-weight: 700; }
+        .topbar a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85rem; }
+        .topbar a:hover { color: #fff; }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px 24px;
+        }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .filter-bar input,
+        .filter-bar select {
+            flex: 1;
+            min-width: 140px;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            background: var(--white);
+        }
+        .filter-bar input[type="date"] {
+            min-width: 130px;
+            flex: 0.6;
+        }
+        .filter-bar select {
+            min-width: 120px;
+            flex: 0.5;
+        }
+        .filter-bar input:focus,
+        .filter-bar select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.12);
+        }
+        .filter-bar .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--accent);
+            color: var(--white);
+            transition: opacity 0.15s;
+            white-space: nowrap;
+        }
+        .filter-bar .btn:hover { opacity: 0.9; }
+        .filter-bar .btn-clear {
+            background: var(--white);
+            color: var(--text-light);
+            border: 1px solid var(--border);
+        }
+        .filter-bar .btn-clear:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ===== TABLE ===== */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .report-table thead th {
+            background: var(--primary);
+            color: var(--white);
+            padding: 12px 16px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            text-align: left;
+        }
+        .report-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s;
+        }
+        .report-table tbody tr:hover { background: #f5f8fc; }
+        .report-table tbody tr:last-child { border-bottom: none; }
+        .report-table td {
+            padding: 12px 16px;
+            font-size: 0.88rem;
+        }
+
+        /* ===== STATUS BADGES ===== */
+        .badge {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 3px 10px;
+            border-radius: 4px;
+        }
+        .badge.draft { background: #f0f2f5; color: var(--text-light); }
+        .badge.submitted { background: #e8f2fc; color: var(--accent); }
+        .badge.reviewed { background: #e6f7ec; color: var(--success); }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-view,
+        .btn-pdf {
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            background: var(--white);
+            font-size: 0.78rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .btn-view:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-pdf:hover { border-color: var(--success); color: var(--success); }
+
+        /* ===== PAGINATION ===== */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            font-size: 0.82rem;
+            color: var(--text-light);
+        }
+        .pagination .page-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .pagination button {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--white);
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+
+        /* ===== EMPTY / LOADING / ERROR ===== */
+        .status-msg {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-light);
+            font-size: 0.92rem;
+        }
+        .status-msg.error { color: var(--danger); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 700px) {
+            .container { padding: 12px 14px; }
+            .report-table thead th,
+            .report-table td { padding: 10px 10px; font-size: 0.8rem; }
+            .col-hide-mobile { display: none; }
+            .filter-bar input,
+            .filter-bar select { min-width: 100%; flex: 1 1 100%; }
+            .filter-bar input[type="date"] { flex: 1 1 48%; min-width: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>Daily Report Register</h1>
+    <a href="index.html">&larr; Hub</a>
+</div>
+
+<div class="container">
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="Search supervisor, job no, site..." oninput="debounceFilter()">
+        <input type="date" id="dateFrom" onchange="applyFilters()" title="From date">
+        <input type="date" id="dateTo" onchange="applyFilters()" title="To date">
+        <select id="statusFilter" onchange="applyFilters()">
+            <option value="">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="submitted">Submitted</option>
+            <option value="reviewed">Reviewed</option>
+        </select>
+        <button class="btn btn-clear" onclick="clearFilters()">Clear</button>
+    </div>
+
+    <!-- TABLE -->
+    <div id="tableContent">
+        <div class="status-msg">Loading reports...</div>
+    </div>
+
+    <!-- PAGINATION -->
+    <div id="paginationBar" class="pagination" style="display:none;">
+        <span id="pageInfo"></span>
+        <div class="page-btns">
+            <button id="btnPrev" onclick="changePage(-1)">Prev</button>
+            <button id="btnNext" onclick="changePage(1)">Next</button>
+        </div>
+    </div>
+</div>
+
+<script src="mii-db.js"></script>
+<script>
+(function() {
+    'use strict';
+
+    var MII_API = 'https://mii-hub-api.azurewebsites.net/api';
+    var PAGE_SIZE = 25;
+    var allReports = [];
+    var filteredReports = [];
+    var currentPage = 0;
+    var filterTimeout = null;
+
+    // ===== AUTH =====
+    function checkAuth() {
+        var token = localStorage.getItem('mii_token');
+        if (!token) {
+            window.location.href = 'hub.html';
+            return null;
+        }
+        return token;
+    }
+
+    function authHeaders() {
+        return { 'Authorization': 'Bearer ' + localStorage.getItem('mii_token') };
+    }
+
+    // ===== DATA LOADING =====
+    async function loadReports() {
+        document.getElementById('tableContent').innerHTML = '<div class="status-msg">Loading reports...</div>';
+        document.getElementById('paginationBar').style.display = 'none';
+
+        // Try API first, fall back to IndexedDB
+        var loaded = false;
+        var token = localStorage.getItem('mii_token');
+        if (token && navigator.onLine) {
+            try {
+                var resp = await fetch(MII_API + '/daily-reports', {
+                    headers: authHeaders()
+                });
+                if (resp.ok) {
+                    var data = await resp.json();
+                    allReports = data.reports || data || [];
+                    loaded = true;
+                }
+            } catch (e) {
+                console.warn('API load failed, falling back to IndexedDB:', e);
+            }
+        }
+
+        if (!loaded) {
+            try {
+                await MiiDB.ready();
+                allReports = await MiiDB.getAll('daily_reports');
+            } catch (e) {
+                document.getElementById('tableContent').innerHTML =
+                    '<div class="status-msg error">Failed to load reports: ' + escapeHtml(e.message) + '</div>';
+                return;
+            }
+        }
+
+        // Normalise field names (API may use snake_case, client uses camelCase)
+        allReports = allReports.map(function(r) {
+            return {
+                id: r.id || r.clientId || '',
+                clientId: r.clientId || r.client_id || r.id || '',
+                reportDate: r.reportDate || r.report_date || '',
+                supervisorName: r.supervisorName || r.supervisor_name || '',
+                supervisorId: r.supervisorId || r.supervisor_id || '',
+                jobNumber: r.jobNumber || r.job_number || r.zone || '',
+                site: r.site || '',
+                shift: r.shift || '',
+                status: r.status || 'draft',
+                submittedAt: r.submittedAt || r.submitted_at || '',
+                updatedAt: r.updatedAt || r.updated_at || '',
+            };
+        });
+
+        // Sort by date descending (most recent first), then by updatedAt
+        allReports.sort(function(a, b) {
+            if (a.reportDate !== b.reportDate) return a.reportDate > b.reportDate ? -1 : 1;
+            var aTime = a.updatedAt || a.submittedAt || '';
+            var bTime = b.updatedAt || b.submittedAt || '';
+            return aTime > bTime ? -1 : 1;
+        });
+
+        applyFilters();
+    }
+
+    // ===== FILTERING =====
+    window.applyFilters = function() {
+        var search = document.getElementById('searchInput').value.trim().toLowerCase();
+        var dateFrom = document.getElementById('dateFrom').value;
+        var dateTo = document.getElementById('dateTo').value;
+        var statusVal = document.getElementById('statusFilter').value;
+
+        filteredReports = allReports.filter(function(r) {
+            // Text search
+            if (search) {
+                var haystack = [r.supervisorName, r.jobNumber, r.site, r.shift].join(' ').toLowerCase();
+                if (haystack.indexOf(search) === -1) return false;
+            }
+            // Date range
+            if (dateFrom && r.reportDate < dateFrom) return false;
+            if (dateTo && r.reportDate > dateTo) return false;
+            // Status
+            if (statusVal && r.status !== statusVal) return false;
+            return true;
+        });
+
+        currentPage = 0;
+        renderTable();
+    };
+
+    window.clearFilters = function() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+        document.getElementById('statusFilter').value = '';
+        applyFilters();
+    };
+
+    window.debounceFilter = function() {
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(applyFilters, 300);
+    };
+
+    // ===== RENDERING =====
+    function renderTable() {
+        var el = document.getElementById('tableContent');
+
+        if (filteredReports.length === 0) {
+            el.innerHTML = '<div class="status-msg">No reports found.</div>';
+            document.getElementById('paginationBar').style.display = 'none';
+            return;
+        }
+
+        var start = currentPage * PAGE_SIZE;
+        var end = Math.min(start + PAGE_SIZE, filteredReports.length);
+        var page = filteredReports.slice(start, end);
+
+        var html = '<table class="report-table">';
+        html += '<thead><tr>';
+        html += '<th>Date</th>';
+        html += '<th>Supervisor</th>';
+        html += '<th class="col-hide-mobile">Job No</th>';
+        html += '<th class="col-hide-mobile">Site</th>';
+        html += '<th class="col-hide-mobile">Shift</th>';
+        html += '<th>Status</th>';
+        html += '<th>Actions</th>';
+        html += '</tr></thead><tbody>';
+
+        for (var i = 0; i < page.length; i++) {
+            var r = page[i];
+            var badgeClass = r.status === 'submitted' ? 'submitted' : r.status === 'reviewed' ? 'reviewed' : 'draft';
+            var statusText = r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Draft';
+            var viewHref = buildViewUrl(r);
+            var printHref = buildViewUrl(r) + '&print=1';
+
+            html += '<tr>';
+            html += '<td>' + escapeHtml(formatDate(r.reportDate)) + '</td>';
+            html += '<td>' + escapeHtml(r.supervisorName || '-') + '</td>';
+            html += '<td class="col-hide-mobile">' + escapeHtml(r.jobNumber || '-') + '</td>';
+            html += '<td class="col-hide-mobile">' + escapeHtml(r.site || '-') + '</td>';
+            html += '<td class="col-hide-mobile">' + escapeHtml(r.shift || '-') + '</td>';
+            html += '<td><span class="badge ' + badgeClass + '">' + escapeHtml(statusText) + '</span></td>';
+            html += '<td><div class="action-btns">';
+            html += '<a class="btn-view" href="' + escapeHtml(viewHref) + '">View</a>';
+            html += '<a class="btn-pdf" href="' + escapeHtml(printHref) + '" target="_blank">PDF</a>';
+            html += '</div></td>';
+            html += '</tr>';
+        }
+
+        html += '</tbody></table>';
+        el.innerHTML = html;
+
+        // Pagination
+        var pagBar = document.getElementById('paginationBar');
+        if (filteredReports.length > PAGE_SIZE) {
+            pagBar.style.display = 'flex';
+            document.getElementById('pageInfo').textContent =
+                'Showing ' + (start + 1) + '-' + end + ' of ' + filteredReports.length;
+            document.getElementById('btnPrev').disabled = currentPage === 0;
+            document.getElementById('btnNext').disabled = end >= filteredReports.length;
+        } else {
+            pagBar.style.display = 'flex';
+            document.getElementById('pageInfo').textContent =
+                filteredReports.length + ' report' + (filteredReports.length !== 1 ? 's' : '');
+            document.getElementById('btnPrev').disabled = true;
+            document.getElementById('btnNext').disabled = true;
+        }
+    }
+
+    window.changePage = function(dir) {
+        currentPage = Math.max(0, currentPage + dir);
+        renderTable();
+        window.scrollTo(0, 0);
+    };
+
+    // ===== URL BUILDERS =====
+    function buildViewUrl(report) {
+        // daily_report_template.html loads by ?date=...&supervisor=...
+        var date = report.reportDate || '';
+        var supervisor = report.supervisorId || report.supervisorName || '';
+        return 'daily_report_template.html?date=' + encodeURIComponent(date) + '&supervisor=' + encodeURIComponent(supervisor);
+    }
+
+    // ===== HELPERS =====
+    function formatDate(d) {
+        if (!d) return '-';
+        try {
+            var dt = new Date(d + 'T00:00:00');
+            if (isNaN(dt.getTime())) return d;
+            return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch (e) {
+            return d;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(String(str)));
+        return div.innerHTML;
+    }
+
+    // ===== INIT =====
+    var token = checkAuth();
+    if (token) loadReports();
+
+})();
+</script>
+</body>
+</html>

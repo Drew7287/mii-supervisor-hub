@@ -2240,12 +2240,24 @@ if ('serviceWorker' in navigator) {
             try {
                 const token = localStorage.getItem('mii_token');
                 if (token && navigator.onLine) {
-                    await fetch(MII_API + '/sync/batch', {
+                    const resp = await fetch(MII_API + '/sync/batch', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                         body: JSON.stringify({ items: [{ entity: 'daily_reports', action: 'upsert', payload: data }] }),
                     });
-                    setSaveStatus('Saved & synced', 'var(--success)');
+                    if (resp.ok) {
+                        const result = await resp.json();
+                        if (result.errors && result.errors.length) {
+                            console.error('DR sync errors:', result.errors);
+                            setSaveStatus('Saved (sync errors)', 'var(--warning)');
+                        } else {
+                            setSaveStatus('Saved & synced', 'var(--success)');
+                        }
+                    } else {
+                        const errBody = await resp.json().catch(() => ({}));
+                        console.error('DR sync failed:', resp.status, errBody);
+                        setSaveStatus('Saved (sync failed: ' + (errBody.detail || errBody.error || resp.statusText) + ')', 'var(--warning)');
+                    }
                 }
             } catch (e) {
                 console.warn('DR sync failed (queued for later):', e);
@@ -2440,23 +2452,43 @@ if ('serviceWorker' in navigator) {
             await MiiDB.save('daily_reports', data);
 
             // Sync to API if online
+            let syncOk = false;
             try {
                 const token = localStorage.getItem('mii_token');
                 if (token && navigator.onLine) {
-                    await fetch(MII_API + '/sync/batch', {
+                    const resp = await fetch(MII_API + '/sync/batch', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                         body: JSON.stringify({ items: [{ entity: 'daily_reports', action: 'upsert', payload: data }] }),
                     });
+                    if (resp.ok) {
+                        const result = await resp.json();
+                        if (result.errors && result.errors.length) {
+                            console.error('Sync partial errors:', result.errors);
+                            status.textContent = 'Submitted locally but sync had errors: ' + result.errors[0].error;
+                            status.style.color = 'var(--warning)';
+                        } else {
+                            syncOk = true;
+                        }
+                    } else {
+                        const errBody = await resp.json().catch(() => ({}));
+                        console.error('Sync returned', resp.status, errBody);
+                        status.textContent = 'Submitted locally but sync failed: ' + (errBody.detail || errBody.error || resp.statusText);
+                        status.style.color = 'var(--warning)';
+                    }
                 }
             } catch (e) {
                 console.warn('Submit sync failed (queued for later):', e);
+                status.textContent = 'Submitted locally (offline, will sync later).';
+                status.style.color = 'var(--warning)';
             }
 
             btn.textContent = 'Submitted';
             btn.style.background = 'var(--success)';
-            status.textContent = 'Report submitted successfully.';
-            status.style.color = 'var(--success)';
+            if (syncOk || !navigator.onLine) {
+                status.textContent = syncOk ? 'Report submitted and synced.' : 'Submitted locally (offline, will sync later).';
+                status.style.color = 'var(--success)';
+            }
             setSaveStatus('Submitted', 'var(--success)');
         } catch (e) {
             console.error('Submit failed:', e);
@@ -2468,7 +2500,13 @@ if ('serviceWorker' in navigator) {
     }
 
     // Initialize on page load
-    initLoad();
+    initLoad().then(function() {
+        // Auto-print support: if ?print=1 is in the URL, trigger print after data loads
+        var printParam = new URLSearchParams(window.location.search).get('print');
+        if (printParam === '1') {
+            setTimeout(function() { window.print(); }, 600);
+        }
+    });
 </script>
 
 </body>
