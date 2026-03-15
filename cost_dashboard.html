@@ -1022,27 +1022,43 @@ function applyFilters() {
 let _jobs = [];      // visible jobs (no children) for display
 let _allJobs = [];   // ALL jobs including children (for grouping detection)
 
-async function loadAllData() {
+async function loadAllData(skipCache) {
+    // Instant render from cache while server loads (stale-while-revalidate)
+    if (!skipCache) {
+        var cached = localStorage.getItem('cost_jobs_cache');
+        if (cached) {
+            try {
+                _allJobs = JSON.parse(cached);
+                _jobs = _allJobs.filter(function(j) { return !j.group_id; });
+                renderStats();
+                renderTable();
+            } catch(_) {}
+        }
+    }
+
     try {
         const token = localStorage.getItem('mii_token');
         if (!token) {
             _jobs = await CostDB.getAllJobs();
             _allJobs = await MiiDB.getAll('cost_jobs');
         } else {
-            // Load directly from server — includes spend totals
-            const resp = await fetch(MII_API + '/cost/jobs', {
+            var resp = await fetch(MII_API + '/cost/jobs', {
                 headers: { 'Authorization': 'Bearer ' + token },
             });
             if (resp.ok) {
-                const data = await resp.json();
+                var data = await resp.json();
                 _allJobs = data.jobs || [];
-                _jobs = _allJobs.filter(j => !j.group_id);
+                _jobs = _allJobs.filter(function(j) { return !j.group_id; });
+                // Cache for next visit
+                try { localStorage.setItem('cost_jobs_cache', JSON.stringify(_allJobs)); } catch(_) {}
             } else {
-                const errData = await resp.json().catch(() => ({}));
+                var errData = await resp.json().catch(function() { return {}; });
                 console.warn('API returned', resp.status, errData.error || resp.statusText);
-                showToast('API error: ' + (errData.error || resp.statusText), 'error');
-                _jobs = await CostDB.getAllJobs();
-                _allJobs = await MiiDB.getAll('cost_jobs');
+                if (!_jobs.length) {
+                    showToast('API error: ' + (errData.error || resp.statusText), 'error');
+                    _jobs = await CostDB.getAllJobs();
+                    _allJobs = await MiiDB.getAll('cost_jobs');
+                }
             }
         }
         renderStats();
@@ -1050,8 +1066,9 @@ async function loadAllData() {
         detectSubJobGroupings();
     } catch (err) {
         console.error('Failed to load data:', err);
-        // Fallback to local on network error
-        try { _jobs = await CostDB.getAllJobs(); _allJobs = []; renderStats(); renderTable(); } catch(e) {}
+        if (!_jobs.length) {
+            try { _jobs = await CostDB.getAllJobs(); _allJobs = []; renderStats(); renderTable(); } catch(e) {}
+        }
         if (!_jobs.length) {
             document.getElementById('table-container').innerHTML =
                 '<div class="empty-state"><div class="info-box">Failed to load data. Check console for details.</div></div>';
