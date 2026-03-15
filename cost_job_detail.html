@@ -1902,17 +1902,75 @@ function parseEstimateFile(workbook) {
     return result.categories.length > 0 ? result : null;
 }
 
+function _workbookToText(workbook) {
+    var parts = [];
+    workbook.SheetNames.forEach(function(sn) {
+        var sheet = workbook.Sheets[sn];
+        var aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+        if (!aoa || aoa.length === 0) return;
+        parts.push('=== Sheet: ' + sn + ' ===');
+        var maxRows = Math.min(aoa.length, 50);
+        for (var r = 0; r < maxRows; r++) {
+            var row = aoa[r] || [];
+            var cells = [];
+            var maxCols = Math.min(row.length, 25);
+            for (var c = 0; c < maxCols; c++) {
+                var v = row[c];
+                if (v == null) cells.push('');
+                else if (typeof v === 'number') cells.push(v === Math.floor(v) ? String(v) : v.toFixed(4));
+                else cells.push(String(v).trim());
+            }
+            parts.push('Row ' + (r + 1) + ': ' + cells.join(' | '));
+        }
+    });
+    return parts.join('\n');
+}
+
+async function _parseEstimateAI(workbook, filename) {
+    var token = localStorage.getItem('mii_token');
+    if (!token) return null;
+
+    var sheetText = _workbookToText(workbook);
+    if (!sheetText || sheetText.length < 50) return null;
+
+    try {
+        var resp = await fetch(MII_API + '/cost/parse-estimate', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sheet_text: sheetText, filename: filename }),
+        });
+        if (!resp.ok) return null;
+        var data = await resp.json();
+        if (data.categories && data.categories.length > 0) {
+            return data;
+        }
+    } catch (e) {
+        console.warn('AI estimate parse failed:', e);
+    }
+    return null;
+}
+
 async function handleEstimateFileImport(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     const statusEl = document.getElementById('estimate-file-status');
-    statusEl.textContent = 'Parsing...';
+    statusEl.textContent = 'Parsing with AI...';
+    statusEl.style.color = 'var(--text-light)';
 
     try {
         const data = await file.arrayBuffer();
         const workbook = XLSX.read(data, { type: 'array' });
-        const result = parseEstimateFile(workbook);
+
+        // Try AI first, fall back to hardcoded
+        var result = await _parseEstimateAI(workbook, file.name);
+        var method = 'ai';
+
+        if (!result || !result.categories || !result.categories.length) {
+            statusEl.textContent = 'AI unavailable, using local parser...';
+            result = parseEstimateFile(workbook);
+            method = 'local';
+        }
 
         if (!result || !result.categories.length) {
             statusEl.textContent = 'No category data found in file.';
@@ -1926,7 +1984,7 @@ async function handleEstimateFileImport(e) {
 
         result.categories.forEach(function(c) {
             const input = document.querySelector('.est-cv[data-cat="' + c.category_number + '"]');
-            if (input) input.value = c.contract_value.toFixed(2);
+            if (input) input.value = (parseFloat(c.contract_value) || 0).toFixed(2);
         });
 
         // Update estimate ref if found
@@ -1938,8 +1996,9 @@ async function handleEstimateFileImport(e) {
         // Recalculate at-cost values
         updateEstimateTotals();
 
-        const total = result.categories.reduce(function(s, c) { return s + c.contract_value; }, 0);
-        statusEl.textContent = 'Loaded ' + result.categories.length + ' categories from ' + file.name + ' (total: ' + fmt(total) + '). Click Save Budgets to apply.';
+        const total = result.categories.reduce(function(s, c) { return s + (parseFloat(c.contract_value) || 0); }, 0);
+        var methodLabel = method === 'ai' ? 'AI' : 'local parser';
+        statusEl.textContent = 'Loaded ' + result.categories.length + ' categories via ' + methodLabel + ' from ' + file.name + ' (total: ' + fmt(total) + '). Click Save Budgets to apply.';
         statusEl.style.color = '#006600';
     } catch (err) {
         console.error('Estimate file error:', err);

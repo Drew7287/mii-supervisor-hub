@@ -2001,17 +2001,66 @@ function triggerEstimateImport() {
     document.getElementById('estimate-import-input').click();
 }
 
+function _dashWorkbookToText(workbook) {
+    var parts = [];
+    workbook.SheetNames.forEach(function(sn) {
+        var sheet = workbook.Sheets[sn];
+        var aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+        if (!aoa || aoa.length === 0) return;
+        parts.push('=== Sheet: ' + sn + ' ===');
+        var maxRows = Math.min(aoa.length, 50);
+        for (var r = 0; r < maxRows; r++) {
+            var row = aoa[r] || [];
+            var cells = [];
+            var maxCols = Math.min(row.length, 25);
+            for (var c = 0; c < maxCols; c++) {
+                var v = row[c];
+                if (v == null) cells.push('');
+                else if (typeof v === 'number') cells.push(v === Math.floor(v) ? String(v) : v.toFixed(4));
+                else cells.push(String(v).trim());
+            }
+            parts.push('Row ' + (r + 1) + ': ' + cells.join(' | '));
+        }
+    });
+    return parts.join('\n');
+}
+
+async function _dashParseEstimateAI(workbook, filename) {
+    var token = localStorage.getItem('mii_token');
+    if (!token) return null;
+    var sheetText = _dashWorkbookToText(workbook);
+    if (!sheetText || sheetText.length < 50) return null;
+    try {
+        var resp = await fetch(MII_API + '/cost/parse-estimate', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sheet_text: sheetText, filename: filename }),
+        });
+        if (!resp.ok) return null;
+        var data = await resp.json();
+        if (data.categories && data.categories.length > 0) return data;
+    } catch (e) { console.warn('AI estimate parse failed:', e); }
+    return null;
+}
+
 async function handleEstimateImport(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    showToast('Parsing estimate with AI...', 'info');
+
     try {
         const data = await file.arrayBuffer();
         const workbook = XLSX.read(data, { type: 'array' });
-        const result = parseEstimate(workbook);
+
+        // Try AI first, fall back to hardcoded
+        var result = await _dashParseEstimateAI(workbook, file.name);
+        if (!result || !result.categories || !result.categories.length) {
+            result = parseEstimate(workbook);
+        }
 
         if (!result || !result.categories.length) {
-            showToast('Could not find category data in this file. Ensure it has a Price Matrix sheet.', 'error');
+            showToast('Could not find category data in this file.', 'error');
             return;
         }
 
