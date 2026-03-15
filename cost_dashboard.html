@@ -1044,6 +1044,7 @@ async function loadAllData(skipCache) {
         } else {
             var resp = await fetch(MII_API + '/cost/jobs', {
                 headers: { 'Authorization': 'Bearer ' + token },
+                signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined,
             });
             if (resp.ok) {
                 var data = await resp.json();

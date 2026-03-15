@@ -683,46 +683,74 @@ async function init() {
         return;
     }
 
-    try {
-        // Server-direct: one API call gets job + categories + financials
-        var token = localStorage.getItem('mii_token');
-        var loaded = false;
+    // Stale-while-revalidate: show cached data instantly, fetch fresh in background
+    var cacheKey = 'cost_job_' + _jobId;
+    var shown = false;
 
-        if (token) {
-            try {
-                var resp = await fetch(MII_API + '/cost/jobs/' + encodeURIComponent(_jobId), {
-                    headers: { 'Authorization': 'Bearer ' + token },
-                });
-                if (resp.ok) {
-                    var job = await resp.json();
-                    if (job && job.id) {
-                        _data = { job: job };
-                        loaded = true;
-                    }
-                }
-            } catch (e) {
-                console.warn('Server fetch failed, falling back to local:', e);
+    // 1. Show cached data immediately (< 5ms)
+    try {
+        var cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            var parsed = JSON.parse(cached);
+            if (parsed && parsed.id) {
+                _data = { job: parsed };
+                populateHeader(_data.job);
+                renderTab(0);
+                _tabLoaded[0] = true;
+                _tabDirty[0] = false;
+                document.getElementById('loading-overlay').classList.add('hidden');
+                shown = true;
             }
         }
+    } catch (e) {}
 
-        // Fallback to local IndexedDB if server unavailable
-        if (!loaded) {
+    // 2. Fetch fresh from server (with 10s timeout for cold starts)
+    var token = localStorage.getItem('mii_token');
+    if (token) {
+        try {
+            var resp = await fetch(MII_API + '/cost/jobs/' + encodeURIComponent(_jobId), {
+                headers: { 'Authorization': 'Bearer ' + token },
+                signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined,
+            });
+            if (resp.ok) {
+                var job = await resp.json();
+                if (job && job.id) {
+                    _data = { job: job };
+                    // Update cache for next visit
+                    try { localStorage.setItem(cacheKey, JSON.stringify(job)); } catch (e) {}
+                    // Re-render with fresh data
+                    _tabDirty = [true, true, true, true, true, true];
+                    _tabLoaded = [false, false, false, false, false, false];
+                    populateHeader(_data.job);
+                    renderTab(document.querySelector('.tab-btn.active') ? (document.querySelector('.tab-btn.active').dataset.tab | 0) : 0);
+                    _tabLoaded[0] = true;
+                    _tabDirty[0] = false;
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                    shown = true;
+                }
+            }
+        } catch (e) {
+            console.warn('Server fetch failed:', e.message);
+        }
+    }
+
+    // 3. If nothing worked, try IndexedDB as last resort
+    if (!shown) {
+        try {
             _data = await CostDB.getFullAnalysis(_jobId);
-        }
+            if (_data && _data.job) {
+                populateHeader(_data.job);
+                renderTab(0);
+                _tabLoaded[0] = true;
+                _tabDirty[0] = false;
+                document.getElementById('loading-overlay').classList.add('hidden');
+                shown = true;
+            }
+        } catch (e) {}
+    }
 
-        if (!_data || !_data.job) {
-            document.getElementById('loading-overlay').innerHTML = 'Job not found.';
-            return;
-        }
-
-        populateHeader(_data.job);
-        renderTab(0);
-        _tabLoaded[0] = true;
-        _tabDirty[0] = false;
-        document.getElementById('loading-overlay').classList.add('hidden');
-    } catch(e) {
-        console.error('Failed to load job data:', e);
-        document.getElementById('loading-overlay').innerHTML = 'Failed to load data. Check console.';
+    if (!shown) {
+        document.getElementById('loading-overlay').innerHTML = 'Job not found. <a href="cost_dashboard.html" style="color:var(--accent)">Back to dashboard</a>';
     }
 }
 
