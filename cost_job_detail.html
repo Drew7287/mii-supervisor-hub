@@ -710,7 +710,7 @@ async function init() {
         try {
             var resp = await fetch(MII_API + '/cost/jobs/' + encodeURIComponent(_jobId), {
                 headers: { 'Authorization': 'Bearer ' + token },
-                signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined,
+                signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined,
             });
             if (resp.ok) {
                 var job = await resp.json();
