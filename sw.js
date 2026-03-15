@@ -3,10 +3,10 @@
  *
  * Strategy: Network-first for ALL requests.
  * Cache is only used as offline fallback.
- * 04d05664 is replaced by deploy.sh on every push.
+ * ff76214c is replaced by deploy.sh on every push.
  */
 
-const CACHE_VERSION = 'mii-hub-04d05664';
+const CACHE_VERSION = 'mii-hub-ff76214c';
 
 // ─── Install: skip waiting to activate immediately ──────────────
 self.addEventListener('install', (event) => {

@@ -1007,7 +1007,7 @@
                         <div class="detail">Topic &amp; attendance recorded</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="#" onclick="openSignOff(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 012B</a> / <a href="rams_library.html" target="_blank" style="color:var(--accent);text-decoration:underline;">RAMS</a></td>
+                    <td class="col-forms"><a href="#" onclick="openSignOff(event)" style="color:var(--accent);font-weight:600;text-decoration:none;">SF 012B</a> / <a href="#" onclick="openFromReport('rams_library.html');return false;" style="color:var(--accent);text-decoration:underline;">RAMS</a></td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Topic:" /></td>
                 </tr>
                 <tr>
@@ -1033,7 +1033,7 @@
                         <div class="detail">Telehandlers, MEWPs, lifting gear, power tools</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="inspections.html" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:none;">Inspections</a></td>
+                    <td class="col-forms"><a href="#" onclick="openFromReport('inspections.html');return false;" style="color:var(--accent);font-weight:600;text-decoration:none;">Inspections</a></td>
                     <td class="col-notes"><input class="note-input" type="text" /></td>
                 </tr>
             </tbody>
@@ -1153,7 +1153,7 @@
                         <div class="detail">Hazards/incidents reported, HAVs feedback, workplace acceptable [take photo], tools returned to stores</div></td>
                     <td class="col-check"><span class="check-box" onclick="toggleCheck(this)"></span></td>
                     <td class="col-na"><span class="check-box" onclick="toggleNA(this)"></span></td>
-                    <td class="col-forms"><a href="havs.html">HAVs Tracker</a><br><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&route=shorturl" target="_blank">SHEQ Obs</a></td>
+                    <td class="col-forms"><a href="#" onclick="openFromReport('havs.html');return false;">HAVs Tracker</a><br><a href="https://forms.office.com/pages/responsepage.aspx?id=m6l60Teos0KzH6G4TZB5i38_B85BYKFMjYx_0hH7rWtUQkFOWlBTTDlSS1FCUEVOTkVMVjBKNU0wWSQlQCN0PWcu&route=shorturl" target="_blank">SHEQ Obs</a></td>
                     <td class="col-notes"><input class="note-input" type="text" placeholder="Issues raised:" /></td>
                 </tr>
                 <tr>
@@ -1813,7 +1813,7 @@ if ('serviceWorker' in navigator) {
         const params = new URLSearchParams();
         if (names.length) params.set('crew', names.join(','));
         if (supervisor) params.set('presenter', supervisor);
-        window.open('toolbox_sign.html?' + params.toString(), '_blank');
+        openFromReport('toolbox_sign.html?' + params.toString());
     }
 
     // ===== SF 021A: Collect crew from manning tracker → Training Matrix (filtered) =====
@@ -1822,7 +1822,7 @@ if ('serviceWorker' in navigator) {
         const names = getActiveCrew();
         const params = new URLSearchParams();
         if (names.length) params.set('crew', names.join(','));
-        window.open('training_matrix.html?' + params.toString(), '_blank');
+        openFromReport('training_matrix.html?' + params.toString());
     }
 
     // ===== POWRA: Collect crew from manning tracker → POWRA form =====
@@ -1833,7 +1833,7 @@ if ('serviceWorker' in navigator) {
         const params = new URLSearchParams();
         if (names.length) params.set('crew', names.join(','));
         if (supervisor) params.set('assessor', supervisor);
-        window.open('powra.html?' + params.toString(), '_blank');
+        openFromReport('powra.html?' + params.toString());
     }
 
     // ===== PRE-USE INSPECTIONS: Open inspection form with inspector pre-filled =====
@@ -1843,7 +1843,20 @@ if ('serviceWorker' in navigator) {
         const params = new URLSearchParams();
         params.set('form', formType);
         if (supervisor) params.set('inspector', supervisor);
-        window.open('inspection.html?' + params.toString(), '_blank');
+        openFromReport('inspection.html?' + params.toString());
+    }
+
+    // ===== POPUP WINDOW FOR SUB-FORMS =====
+    // All links from the daily report open in a single reusable popup window.
+    // On tablets this avoids tab sprawl. "Back to Report" button closes the popup.
+    function openFromReport(url) {
+        var sep = url.indexOf('?') >= 0 ? '&' : '?';
+        var fullUrl = url + sep + 'from=report';
+        var w = Math.min(900, screen.width - 40);
+        var h = Math.min(800, screen.height - 80);
+        var left = Math.round((screen.width - w) / 2);
+        var top = Math.round((screen.height - h) / 2);
+        window.open(fullUrl, 'dr-form', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top + ',scrollbars=yes,resizable=yes');
     }
 
     // ===== SAVE / LOAD / AUTO-SAVE =====

@@ -808,5 +808,17 @@ async function renderDashboard() {
 init();
 </script>
 
+<script>
+(function() {
+    if (new URLSearchParams(location.search).get('from') === 'report') {
+        var bar = document.createElement('div');
+        bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#003366;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;box-shadow:0 -2px 8px rgba(0,0,0,0.2);';
+        bar.innerHTML = '<span style="font-size:0.85rem;font-weight:600;">Opened from Daily Report</span><button onclick="window.close()" style="padding:8px 20px;background:#28a745;color:#fff;border:none;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit;">Back to Report</button>';
+        document.body.style.paddingBottom = '56px';
+        document.body.appendChild(bar);
+    }
+})();
+</script>
+
 </body>
 </html>
