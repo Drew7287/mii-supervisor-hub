@@ -1139,7 +1139,7 @@ function renderTable() {
         const variance = budget - spend;
         const varianceClass = variance < 0 ? 'negative' : (variance > 0 ? 'positive' : '');
 
-        html += '<tr data-job-id="' + esc(job.id) + '" ondblclick="openJobDetail(\'' + esc(job.id) + '\')" oncontextmenu="showContextMenu(event, \'' + esc(job.id) + '\')">' +
+        html += '<tr data-job-id="' + esc(job.id) + '" onmouseenter="prewarmJob(\'' + esc(job.id) + '\')" ondblclick="openJobDetail(\'' + esc(job.id) + '\')" oncontextmenu="showContextMenu(event, \'' + esc(job.id) + '\')">' +
             '<td class="job-no' + (isGroup ? ' group' : '') + '">' + esc(job.job_number) + '</td>' +
             '<td class="project-name">' + esc(job.job_name) + '</td>' +
             '<td>' + esc(job.client || '') + '</td>' +
@@ -1193,6 +1193,18 @@ async function handleMarkupChange(input) {
 }
 
 // ===== NAVIGATION =====
+var _prewarmedJob = '';
+function prewarmJob(jobId) {
+    if (_prewarmedJob === jobId) return;
+    _prewarmedJob = jobId;
+    var token = localStorage.getItem('mii_token');
+    if (token) {
+        fetch(MII_API + '/cost/jobs/' + encodeURIComponent(jobId), {
+            headers: { 'Authorization': 'Bearer ' + token },
+        }).catch(function() {});
+    }
+}
+
 function openJobDetail(jobId) {
     window.location.href = 'cost_job_detail.html?id=' + encodeURIComponent(jobId);
 }
