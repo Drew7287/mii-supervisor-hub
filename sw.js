@@ -3,10 +3,10 @@
  *
  * Strategy: Network-first for ALL requests.
  * Cache is only used as offline fallback.
- * ec650e2d is replaced by deploy.sh on every push.
+ * 8920e798 is replaced by deploy.sh on every push.
  */
 
-const CACHE_VERSION = 'mii-hub-ec650e2d';
+const CACHE_VERSION = 'mii-hub-8920e798';
 
 // ─── Install: skip waiting to activate immediately ──────────────
 self.addEventListener('install', (event) => {

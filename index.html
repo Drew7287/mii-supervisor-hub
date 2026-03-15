@@ -781,6 +781,20 @@
         }
         hideLoginOverlay();
         applyUserInfo();
+
+        // Pre-fetch cost jobs data so cost tracker loads instantly when clicked
+        // This warms the Azure Function AND caches the response
+        var userObj = JSON.parse(localStorage.getItem('mii_user') || '{}');
+        if (userObj.role === 'ADMIN') {
+            fetch(MII_API + '/cost/jobs', { headers: { 'Authorization': 'Bearer ' + token } })
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (data && data.jobs) {
+                        try { localStorage.setItem('cost_jobs_cache', JSON.stringify(data.jobs)); } catch(_) {}
+                    }
+                })
+                .catch(function() {});
+        }
     }
 
     // Role hierarchy: ADMIN > SUPERVISOR > VIEWER
